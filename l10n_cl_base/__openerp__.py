@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Chile - Localization Installation Wizard',
-    'version': '9.0.3.2.0',
+    'version': '9.0.4.0.0',
     'category': 'Chilean Localization',
     'license': 'AGPL-3',
     'sequence': 14,
@@ -16,8 +16,8 @@ single screen, the progress of what is not fully developed yet.
         'base_setup'
     ],
     'data': [
-        'l10n_cl_base_groups.xml',
-        'res_config_view.xml',
+        'views/l10n_cl_base_groups.xml',
+        'views/res_config_view.xml',
     ],
     'installable': True,
     'auto_install': True,

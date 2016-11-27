@@ -1,5 +1,9 @@
+.. image:: https://img.shields.io/badge/licence-AGPL--3-blue.svg
+   :target: http://www.gnu.org/licenses/agpl-3.0-standalone.html
+   :alt: License: AGPL-3
+
 [![Build Status](https://travis-ci.org/odoo-chile/l10n_cl_base.svg)](https://travis-ci.org/odoo-chile/l10n_cl_base)
-[![Coverage Status](https://coveralls.io/repos/odoo-chile/l10n_cl_base/badge.svg?branch=8.0&service=github)](https://coveralls.io/github/odoo-chile/l10n_cl_base?branch=8.0)
+[![Coverage Status](https://coveralls.io/repos/odoo-chile/l10n_cl_base/badge.svg?branch=9.0&service=github)](https://coveralls.io/github/odoo-chile/l10n_cl_base?branch=9.0)
 [![Code Climate](https://codeclimate.com/github/odoo-chile/l10n_cl_base/badges/gpa.svg)](https://codeclimate.com/github/odoo-chile/l10n_cl_base)
 
 # l10n_cl_base
@@ -22,11 +26,10 @@ Will provide a dependency list here
 
 
 ## Credits
-<p>
-<img alt="Logo BMYA" src="http://crm.blancomartin.cl/index.php?entryPoint=image&name=c82ab43f-e8dd-b2fa-25ff-56017f69d116" />
-</p>
-**Blanco Martin & Asociados EIRL** - http://blancomartin.cl
+![Logo BMyA](https://blancomartin.cl/website/image/ir.attachment/9711_e6d1eea/datas)
+**Blanco Martin & Asociados EIRL** -  http://blancomartin.cl
 
+See also collabs in COLLABORATORS.md file
  
 Odoo - Instalador y Configurador General para Localización Chilena
 ==================================================================
@@ -44,7 +47,5 @@ Este módulo provee un medio conveniente para instalar todos los módulos de la 
 Se proveerá una lista de dependencias aquí
 
 ## Créditos
-<p>
-<img alt="Logo BMYA" src="http://crm.blancomartin.cl/index.php?entryPoint=image&name=c82ab43f-e8dd-b2fa-25ff-56017f69d116" />
-</p>
-**Blanco Martin & Asociados EIRL** - http://blancomartin.cl
+![Logo BMyA](https://blancomartin.cl/website/image/ir.attachment/9711_e6d1eea/datas)
+**Blanco Martin & Asociados EIRL** -  http://blancomartin.cl

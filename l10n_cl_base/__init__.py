@@ -3,6 +3,6 @@
 # Daniel Blanco - Blanco Martin & Asociados
 ''' see license at __openerp__.py '''
 
-from . import res_config
+from . import models
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
