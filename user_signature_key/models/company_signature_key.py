@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import os, datetime
-from openerp import models, fields, api
-from openerp.tools.translate import _
-from openerp.exceptions import Warning
-from openerp import SUPERUSER_ID
+from odoo import models, fields, api
+from odoo.tools.translate import _
+from odoo.exceptions import Warning
+from odoo import SUPERUSER_ID
 try:
     from M2Crypto import X509 as M2X509
     from M2Crypto.EVP import MessageDigest

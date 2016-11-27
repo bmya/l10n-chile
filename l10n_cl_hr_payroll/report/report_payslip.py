@@ -31,9 +31,9 @@
 #
 ##############################################################################
 from tools import amount_to_text_en
-from openerp.osv import osv
-from openerp.report import report_sxw
-from openerp.addons.l10n_cl_hr_payroll.report import payslip_report
+from odoo.osv import osv
+from odoo.report import report_sxw
+from odoo.addons.l10n_cl_hr_payroll.report import payslip_report
 
 
 class payslip_report(payslip_report.payslip_report): :

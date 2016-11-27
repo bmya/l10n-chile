@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
   <template id="dte_stock_picking" inherit_id="stock.report_picking" >
       <t t-call="report.html_container" position="replace">
           <t t-foreach="docs" t-as="o">
@@ -299,4 +299,4 @@
                     attachment_use="True"
                     attachment="(object.state in ('open','paid')) and ('CED_'+(object.number or '').replace('/','')+'.pdf')"
           />
-</openerp>
+</odoo>

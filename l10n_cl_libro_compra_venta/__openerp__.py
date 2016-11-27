@@ -28,5 +28,5 @@ Chile - Libros mensuales de Compra y Venta
         'wizard/build_and_send_moves.xml',
         'security/ir.model.access.csv',
         ],
-    'version': '9.0.3.1.0',
+    'version': '10.0.3.1.0',
 }

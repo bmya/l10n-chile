@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data>
         <!-- We add a name to filter so that we can search by default them -->
         <record id="view_account_journal_search" model="ir.ui.view">
@@ -39,4 +39,4 @@
             </field>
         </record> -->
     </data>
-</openerp>
+</odoo>

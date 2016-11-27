@@ -23,8 +23,8 @@
 ##############################################################################
 
 import time
-from openerp.osv import osv
-from openerp.report import report_sxw
+from odoo.osv import osv
+from odoo.report import report_sxw
 
 
 class report_hr_salary_employee_bymonth(report_sxw.rml_parse):

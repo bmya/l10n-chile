@@ -28,7 +28,7 @@
 #
 ##############################################################################
 
-from openerp.osv import fields, osv
+from odoo.osv import fields, osv
 
 
 class res_state_city(osv.osv):

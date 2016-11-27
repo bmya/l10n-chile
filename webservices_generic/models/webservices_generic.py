@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from openerp import fields, api, models, _
+from odoo import fields, api, models, _
 import time, md5
 from datetime import datetime, timedelta
-from openerp.exceptions import Warning
+from odoo.exceptions import Warning
 import os, sys, json
 try:
     import urllib3

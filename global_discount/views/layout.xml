@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
   <template id="global_discount_layout" inherit_id="l10n_cl_dte.dte_external_layout">
       <tr name="subtotal" position="after">
         <tr t-if="o.global_discount > 0" class="border-black" style="max-height:11px; font-size:12px !important;">
@@ -10,4 +10,4 @@
         </tr>
        </tr>
    </template>
-</openerp>
+</odoo>

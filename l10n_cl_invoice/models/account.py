@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from openerp.osv import fields
-from openerp import fields as new_fields
-from openerp import api, models, _
-from openerp.exceptions import Warning
+from odoo.osv import fields
+from odoo import fields as new_fields
+from odoo import api, models, _
+from odoo.exceptions import Warning
 import logging
 _logger = logging.getLogger(__name__)
 

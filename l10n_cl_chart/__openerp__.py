@@ -5,7 +5,7 @@
 
 {
     'name': 'Chile Localization Chart Account BMyA',
-    'version': '9.0.2.0.0',
+    'version': '10.0.2.0.0',
     'description': """
 Chilean accounting chart and tax localization.
 ==============================================

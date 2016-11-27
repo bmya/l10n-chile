@@ -29,7 +29,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields
+from odoo import models, fields
 
 
 class BankSbif(models.Model):

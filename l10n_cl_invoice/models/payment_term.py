@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from openerp import fields, models, api, _
-from openerp.exceptions import Warning
+from odoo import fields, models, api, _
+from odoo.exceptions import Warning
 import logging
 
 class paymentTerm(models.Model):

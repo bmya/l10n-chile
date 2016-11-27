@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {   'active': True,
-    'author': u'Daniel Santibáñez Polanco, Chilean Localization Team 9.0',
+    'author': u'Daniel Santibáñez Polanco, Chilean Localization Team 10.0',
     'website': 'http://globalresponse.cl',
     'category': 'Stock/picking',
     'demo_xml': [],
@@ -31,5 +31,5 @@
         'views/libro_guias.xml',
         'wizard/masive_send_dte.xml',
     ],
-    'version': '9.0.3.0',
+    'version': '10.0.3.0',
 }

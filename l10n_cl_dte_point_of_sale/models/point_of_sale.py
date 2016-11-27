@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from openerp import fields, models, api, _
-from openerp.exceptions import UserError
+from odoo import fields, models, api, _
+from odoo.exceptions import UserError
 from datetime import datetime, timedelta
 import logging
 from lxml import etree
 from lxml.etree import Element, SubElement
-from openerp import SUPERUSER_ID
-from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT as DTF
+from odoo import SUPERUSER_ID
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT as DTF
 
 import xml.dom.minidom
 import pytz

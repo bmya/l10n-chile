@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from openerp import osv, models, fields, api, _
-from openerp.osv import fields as old_fields
-from openerp.exceptions import except_orm, UserError
+from odoo import osv, models, fields, api, _
+from odoo.osv import fields as old_fields
+from odoo.exceptions import except_orm, UserError
 import openerp.addons.decimal_precision as dp
-from openerp.tools.float_utils import float_compare, float_round
+from odoo.tools.float_utils import float_compare, float_round
 import logging
 _logger = logging.getLogger(__name__)
 

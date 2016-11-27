@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<openerp>
+<odoo>
     <data>
     	<!-- vista de formulario -->
         
@@ -107,4 +107,4 @@
         <menuitem name="Webservices Server" action="act_webservices_server" id="menu_action_act_webservices_server" parent="base.menu_config" sequence="120"/>
         
    </data>
-</openerp>
+</odoo>

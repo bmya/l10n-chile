@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <record id="l10n_cl_chart.IVAV_19" model="account.tax.template">
       <field name="sii_code">14</field>
     </record>
@@ -53,4 +53,4 @@
       <field name="refund_account_id" ref="l10n_cl_chart.210706"/>
       <field name="account_id" ref="l10n_cl_chart.210706"/>
     </record>
-</openerp>
+</odoo>

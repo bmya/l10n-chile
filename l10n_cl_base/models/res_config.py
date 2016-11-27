@@ -3,7 +3,7 @@
 # Daniel Blanco - Blanco Martin & Asociados
 ##############################################################################
 '''This code intended to define transient fields for installing modules'''
-from openerp import models, fields, api
+from odoo import models, fields, api
 
 # TODO: para que no falle el tipo de contribuyente (tax payer type) en una
 # empresa que ya está funcionando, el wizard debe preguntar la compañia y pedir

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from openerp.osv import fields, osv
+from odoo.osv import fields, osv
 
 
 class product_template(osv.osv):

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <menuitem id="account_reports_cl_statements_menu" name="Chilean Statements" parent="account.menu_finance_reports" sequence="3" groups="account.group_account_user"/>
     <!-- Account Types -->
     <record id="account_account_type_NCLASIFICADO" model="account.account.type">
@@ -1052,4 +1052,4 @@
         <field name="income_currency_exchange_account_id" ref="420201"/>
         <field name="expense_currency_exchange_account_id" ref="420201"/>
     </record>
-</openerp>
+</odoo>

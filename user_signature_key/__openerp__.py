@@ -20,7 +20,7 @@
 ##############################################################################
 {
     "name": """User Signature Key""",
-    'version': '9.0.0.0.1',
+    'version': '10.0.0.0.1',
     'category': 'Utilities',
     'sequence': 12,
     'author':  'BMyA SA - Blanco Martín & Asociados',
