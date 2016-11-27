@@ -26,48 +26,52 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from odoo import models, fields
 
-from odoo.osv import fields, osv
 
+class ResState(models.Model):
 
-class res_state(osv.osv):
-
-    def name_get(self, cr, uid, ids, context=None):
+    def name_get(self, ids):
         if not len(ids):
             return []
         res = []
-        for state in self.browse(cr, uid, ids, context=context):
+        for state in self.browse(ids):
             data = []
             acc = state
             while acc:
                 data.insert(0, acc.name)
                 acc = acc.parent_id
             data = ' / '.join(data)
-            res.append((state.id, (state.code and '[' + state.code + '] ' or '') + data))
+            res.append((
+                state.id,
+                (state.code and '[' + state.code + '] ' or '') + data))
 
         return res
 
 
-    def complete_name_search(self, cr, user, name, args=None, operator='ilike', context=None, limit=100):
+    def complete_name_search(
+            self, name, args=None, operator='ilike', imit=100):
         if not args:
             args = []
         args = args[:]
         ids = []
         if name:
-            ids = self.search(cr, user, [('name', operator, name)]+ args, limit=limit)
+            ids = self.search([('name', operator, name)]+ args, limit=limit)
             if not ids and len(name.split()) >= 2:
                 #Separating code and name of account for searching
-                operand1,operand2 = name.split(': ',1) #name can contain spaces e.g. OpenERP S.A.
-                ids = self.search(cr, user, [('name', operator, operand2)]+ args, limit=limit)
+                operand1,operand2 = name.split(': ',1)
+                #name can contain spaces e.g. OpenERP S.A.
+                ids = self.search([('name', operator, operand2)]+ args,
+                                  limit=limit)
         else:
-            ids = self.search(cr, user, args, context=context, limit=limit)
-        return self.name_get(cr, user, ids, context=context)
+            ids = self.search(args, limit=limit)
+        return self.name_get(ids)
 
-    def _name_get_fnc(self, cr, uid, ids, prop, unknow_none, context=None):
+    def _name_get_fnc(self, ids):
         if not ids:
             return []
         res = []
-        for state in self.browse(cr, uid, ids, context=context):
+        for state in self.browse(ids):
             data = []
             acc = state
             while acc:
@@ -79,16 +83,17 @@ class res_state(osv.osv):
 
     _name = 'res.country.state'
     _inherit = 'res.country.state'
-    _columns = {
-            'code': fields.char('State Code', size=32,help='The state code.\n', required=True),
-            'complete_name': fields.function(_name_get_fnc, method=True, type="char", string='Complete Name', fnct_search=complete_name_search),
-            'parent_id': fields.many2one('res.country.state','Parent State', index=True, domain=[('type','=','view')]),
-            'child_ids': fields.one2many('res.country.state', 'parent_id', string='Child States'),
-            'type': fields.selection([('view','View'), ('normal','Normal')], 'Type'),
-        }
+    code = fields.Char(
+        'State Code', size=32,help='The state code.\n', required=True)
+    complete_name = fields.Char(
+        '_name_get_fnc', method=True, string='Complete Name',
+        fnct_search=complete_name_search)
+    parent_id = fields.Many2one(
+        'res.country.state','Parent State', index=True,
+        domain=[('type','=','view')])
+    child_ids = fields.One2many(
+        'res.country.state', 'parent_id', string='Child States')
+    type = fields.Selection([('view','View'), ('normal','Normal')], 'Type')
     _defaults = {
             'type': 'normal',
         }
-
-res_state()
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

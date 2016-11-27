@@ -28,16 +28,16 @@
 #
 ##############################################################################
 
-from odoo.osv import fields, osv
+from odoo import fields, models
+from odoo.osv import osv
 
+class ResStateCity(models.Model):
 
-class res_state_city(osv.osv):
-
-    def name_get(self, cr, uid, ids, context=None):
-        if not len(ids):
+    def name_get(self):
+        if not len(self._ids):
             return []
         res = []
-        for city in self.browse(cr, uid, ids, context=context):
+        for city in self.browse(ids):
             res.append((city.id, (city.code and '[' + city.code + '] ' or '') + city.name))
         
         return res
@@ -77,14 +77,22 @@ class res_state_city(osv.osv):
         
     _name = 'res.country.state.city'
     _description = "City of state"
-    _columns = {
-            'name': fields.char('City Name',help='The City Name.',required=True),
-            'code': fields.char('City Code', size=32,help='The city code.\n', required=True),
-            'complete_name': fields.function(_name_get_fnc, method=True, type="char", string='Complete Name', fnct_search=complete_name_search),
-            'country_id': fields.many2one('res.country', 'Country', required=True),
-            'state_id': fields.many2one('res.country.state','State', index=True, domain="[('country_id','=',country_id),('type','=','normal')]"),
-            'type': fields.selection([('view','View'), ('normal','Normal')], 'Type'),
-        }
+
+    name = fields.Char(
+        'City Name',help='The City Name.',required=True)
+    code = fields.Char(
+        'City Code', size=32,help='The city code.\n', required=True)
+    complete_name = fields.Char(
+        compute="_name_get_fnc", method=True, type="char",
+        string='Complete Name', fnct_search=complete_name_search)
+    country_id = fields.Many2one(
+        'res.country', 'Country', required=True)
+    state_id = fields.Many2one(
+        'res.country.state','State', select=True,
+        domain="[('country_id','=',country_id),('type','=','normal')]")
+    type = fields.Selection(
+        [('view','View'), ('normal','Normal')], 'Type')
+
     _defaults = {
             'type': 'normal',
         }

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from odoo import osv, models, fields, api, _
-from odoo.osv import fields as old_fields
 from odoo.exceptions import except_orm, UserError
 import openerp.addons.decimal_precision as dp
 from odoo.tools.float_utils import float_compare, float_round

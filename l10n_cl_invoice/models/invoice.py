@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import osv, models, fields, api, _
-from odoo.osv import fields as old_fields
 from odoo.exceptions import except_orm, UserError
-import openerp.addons.decimal_precision as dp
+# import openerp.addons.decimal_precision as dp
 # from inspect import currentframe, getframeinfo
 # estas 2 lineas son para imprimir el numero de linea del script
 # (solo para debug)

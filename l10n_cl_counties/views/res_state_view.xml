@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        
         <record id="view_country_state_city_tree" model="ir.ui.view">
             <field name="name">res.country.state.city.tree</field>
             <field name="model">res.country.state.city</field>
@@ -33,6 +32,5 @@
                 </form>
             </field>
         </record>
-
     </data>
 </odoo>

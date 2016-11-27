@@ -22,7 +22,7 @@
 ##############################################################################
 {
     "name": "Chile Localization Regions, Cities and Counties",
-    "version": "9.1.2",
+    "version": "10.0.1.2.0",
     "description": """
 Chilean Regions, Cities and Counties .
 Lista de regiones, ciudades y comunas de Chile

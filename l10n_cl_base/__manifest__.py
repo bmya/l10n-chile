@@ -13,7 +13,7 @@ single screen, the progress of what is not fully developed yet.
     'author':  u'Blanco Martín & Asociados',
     'website': 'http://blancomartin.cl',
     'depends': [
-        'base_setup'
+        'base'
     ],
     'data': [
         'views/l10n_cl_base_groups.xml',

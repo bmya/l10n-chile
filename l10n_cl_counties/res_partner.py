@@ -39,7 +39,7 @@ class res_partner(models.Model):
     @api.multi
     def _asign_city(self, source):
         if self.city_id:
-	       return {'value':{'city': self.city_id.name}}
+            return {'value':{'city': self.city_id.name}}
 
 class res_company(models.Model):
 
@@ -50,5 +50,5 @@ class res_company(models.Model):
     @api.multi
     def _asign_city(self, source):
         if self.city_id:
-	       return {'value':{'city': self.city_id.name}}
+            return {'value':{'city': self.city_id.name}}
 

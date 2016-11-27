@@ -20,10 +20,6 @@ class ChileanBaseConfiguration(models.TransientModel):
         help="""Installs module l10n_cl_chart, allowing to choose different \
 account options.""")
 
-#     module_l10n_cl_account_vat_ledger = fields.Boolean(
-#         'Install VAT Ledger',
-#         help="""Installs module l10n_cl_account_vat_ledger, allowing to export \
-# sales and purchases VAT ledger in XLS format. Requires Aeroo Reports.""")
     module_l10n_cl_libro_compra_venta = fields.Boolean(
         'Install VAT Ledger',
         help="""Installs module for vat ledger, allowing to export \

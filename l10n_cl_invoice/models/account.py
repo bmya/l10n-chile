@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo.osv import fields
+# from odoo.osv import fields
 from odoo import fields as new_fields
 from odoo import api, models, _
 from odoo.exceptions import Warning

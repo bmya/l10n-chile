@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-
         <record model="ir.ui.view" id="view_partner_form_states_city_inherit">
             <field name='name'>res.partner.form.states.city.inherit</field>
             <field name='model'>res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form"/>
             <field name='type'>form</field>
             <field name='arch' type='xml'>
+                <field name="city" position="after"/>
                 <field name="state_id" position="after">
                     <field name="city_id" placeholder="Comuna" style="width: 100%" options='{"no_open": True}'/>
                 </field>
