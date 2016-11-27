@@ -3,7 +3,7 @@
 #
 #    OpenERP, Open Source Management Solution
 # Copyright (c) 2012 Cubic ERP - Teradata SAC. (http://cubicerp.com).
-#
+# Copyright (c) 2016 Blanco Martin & Asociados (http://blancomartin.cl).
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsability of assessing all potential
 # consequences resulting from its eventual inadequacies and bugs
@@ -26,27 +26,29 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-
 from odoo import models, fields, api
 
 
-class res_partner(models.Model):
-
+class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    state_id = fields.Many2one("res.country.state", 'Ubication', domain="[('country_id','=',country_id),('type','=','normal')]")
+    state_id = fields.Many2one(
+        "res.country.state", 'Ubication',
+        domain="[('country_id', '=', country_id), ('type', '=', 'normal')]")
 
-    @api.model
-    def _get_default_country(self):
-        return self.env.user.company_id.country_id.id or self.env.user.partner_id.country_id.id
+    # @api.model
+    # def _get_default_country(self):
+    #     return self.env.user.company_id.country_id.id or \
+    #            self.env.user.partner_id.country_id.id
 
+    # _defaults ={
+    #     'country_id': lambda self,
+    #                          c: self.env['res.partner']._get_default_country()
+    # }
 
-    _defaults ={
-        'country_id' : lambda self, cr, uid, c: self.pool.get('res.partner')._get_default_country(cr, uid, context=c)
-    }
-
-class res_company(models.Model):
-
+class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    state_id = fields.Many2one("res.country.state", 'Ubication', domain="[('country_id','=',country_id),('type','=','normal')]")
+    state_id = fields.Many2one(
+        "res.country.state", 'Ubication',
+        domain="[('country_id', '=', country_id), ('type', '=', 'normal')]")

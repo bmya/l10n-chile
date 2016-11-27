@@ -9,7 +9,8 @@
             <field name='arch' type='xml'>
                 <field name="city" position="after"/>
                 <field name="state_id" position="after">
-                    <field name="city_id" placeholder="Comuna" style="width: 100%" options='{"no_open": True}'/>
+                    <field name="city_id" placeholder="Comuna"
+                           style="width: 100%" options='{"no_open": True}'/>
                 </field>
             </field>
         </record>
@@ -21,7 +22,8 @@
             <field name='type'>form</field>
             <field name='arch' type='xml'>
                 <field name="state_id" position="after">
-                    <field name="city_id" placeholder="Comuna" style="width: 100%" options='{"no_open": True}'/>
+                    <field name="city_id" placeholder="Comuna"
+                           style="width: 100%" options='{"no_open": True}'/>
                 </field>
             </field>
         </record>
@@ -32,10 +34,10 @@
             <field name="model">res.company</field>
             <field name="arch" type="xml">
                 <field name="state_id" position="after">
-                    <field name="city_id" placeholder="Comuna" style="width: 100%" options='{"no_open": True}'/>
+                    <field name="city_id" placeholder="Comuna"
+                           style="width: 100%" options='{"no_open": True}'/>
                 </field>
             </field>
         </record>
-
     </data>
 </odoo>

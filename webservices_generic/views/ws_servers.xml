@@ -104,7 +104,9 @@
             </field>
         </record>
 		<!-- menu -->
-        <menuitem name="Webservices Server" action="act_webservices_server" id="menu_action_act_webservices_server" parent="base.menu_config" sequence="120"/>
-        
+        <menuitem name="Webservices Server"
+                  action="act_webservices_server"
+                  id="menu_action_act_webservices_server"
+                  parent="l10n_cl_base.menu_bmya_base_configuration" sequence="20"/>
    </data>
 </odoo>

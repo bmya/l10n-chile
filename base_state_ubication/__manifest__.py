@@ -20,21 +20,22 @@
 ##############################################################################
 {
     "name": "States Inherited (Recursive Ubication)",
-    "version": "2.0",
+    "version": "10.0.2.0.0",
     "description": """
-        Add parent state to standard state and transform the states on recursive ubication
-        """,
-    "author": "Cubic ERP",
+Add parent state to standard state and transform the states on \
+recursive ubication.
+""",
+    "author": u"Cubic ERP, Blanco Martín & Asociados",
     "website": "http://cubicERP.com",
     "category": "Others",
     "depends": ["base"],
-    "data":["res_state_view.xml",
-            "res_partner_view.xml",
-            ],
+    "data":[
+        "views/res_state_view.xml",
+        "views/res_partner_view.xml",
+    ],
     "demo_xml": [ ],
     "update_xml": [ ],
     "active": False,
     "installable": True,
     "certificate" : "",
 }
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

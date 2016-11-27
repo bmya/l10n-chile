@@ -26,29 +26,30 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-
 from odoo import models, fields, api
 
 
-class res_partner(models.Model):
-
+class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    city_id = fields.Many2one("res.country.state.city", 'City', domain="[('state_id','=',state_id),('type','=','normal')]")
+    city_id = fields.Many2one(
+        "res.country.state.city", 'City',
+        domain="[('state_id', '=', state_id), ('type', '=', 'normal')]")
 
-    @api.multi
-    def _asign_city(self, source):
-        if self.city_id:
-            return {'value':{'city': self.city_id.name}}
+    # @api.multi
+    # def _asign_city(self, source):
+    #     if self.city_id:
+    #         return {'value':{'city': self.city_id.name}}
 
-class res_company(models.Model):
-
+class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    city_id = fields.Many2one("res.country.state.city", 'City', domain="[('state_id','=',state_id),('type','=','normal')]")
+    city_id = fields.Many2one(
+        "res.country.state.city", 'City',
+        domain="[('state_id', '=', state_id), ('type', '=', 'normal')]")
 
-    @api.multi
-    def _asign_city(self, source):
-        if self.city_id:
-            return {'value':{'city': self.city_id.name}}
+    # @api.multi
+    # def _asign_city(self, source):
+    #     if self.city_id:
+    #         return {'value': {'city': self.city_id.name}}
 
