@@ -20,9 +20,13 @@ class ChileanBaseConfiguration(models.TransientModel):
         help="""Installs module l10n_cl_chart, allowing to choose different \
 account options.""")
 
-    module_l10n_cl_account_vat_ledger = fields.Boolean(
+#     module_l10n_cl_account_vat_ledger = fields.Boolean(
+#         'Install VAT Ledger',
+#         help="""Installs module l10n_cl_account_vat_ledger, allowing to export \
+# sales and purchases VAT ledger in XLS format. Requires Aeroo Reports.""")
+    module_l10n_cl_libro_compra_venta = fields.Boolean(
         'Install VAT Ledger',
-        help="""Installs module l10n_cl_account_vat_ledger, allowing to export \
+        help="""Installs module for vat ledger, allowing to export \
 sales and purchases VAT ledger in XLS format. Requires Aeroo Reports.""")
 
     module_l10n_cl_banks_sbif = fields.Boolean(
@@ -131,9 +135,9 @@ send a monthly report with 105 fields per employee, to Previred.""")
             self.module_l10n_cl_partner_activities = True
             self.module_l10n_cl_base_rut = True
 
-    @api.onchange('module_l10n_cl_dte', 'module_l10n_cl_account_vat_ledger')  # if these fields are changed, call method
+    @api.onchange('module_l10n_cl_dte', 'module_l10n_cl_libro_compra_venta')  # if these fields are changed, call method
     def check_change_cl_dte(self):
-        if self.module_l10n_cl_dte == True or self.module_l10n_cl_account_vat_ledger == True:
+        if self.module_l10n_cl_dte == True or self.module_l10n_cl_libro_compra_venta == True:
             self.module_l10n_cl_invoice = True
             self.module_l10n_cl_counties = True
 

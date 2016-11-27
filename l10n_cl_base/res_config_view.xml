@@ -38,10 +38,10 @@
 									class="oe_inline" />
 								<label for="module_l10n_cl_banks_sbif" />
 							</div>
-                            <div name='module_l10n_cl_account_vat_ledger'>
-								<field name="module_l10n_cl_account_vat_ledger"
+                            <div name='module_l10n_cl_libro_compra_venta'>
+								<field name="module_l10n_cl_libro_compra_venta"
 									class="oe_inline" />
-								<label for="module_l10n_cl_account_vat_ledger" />
+								<label for="module_l10n_cl_libro_compra_venta" />
 							</div>
 							<div name='module_l10n_cl_financial_indicators'>
 								<field name="module_l10n_cl_financial_indicators"

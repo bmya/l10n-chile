@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-{   'active': False,
-    'author': u'Daniel Santibañez Polanco, Chilean Localization Team 9.0',
+{
+   'active': False,
+    'author': u'Daniel Santibañez Polanco, Blanco Martín & Asociados',
     'website': 'http://globalresponse.cl',
-    'category': 'Account/invoice',
+    'category': 'Localization/Chile',
     'demo_xml': [],
     'depends': [
         'account',
@@ -13,15 +14,12 @@
         'report_xlsx'
         ],
     'description': u'''
-\n\nMódulo de Facturación de la localización Chilena.\n\n\nIncluye:\n
-- Configuración de libros, diarios (journals) y otros detalles para facturación para Chile.\n
-- Asistente para configurar los talonarios de facturas, boletas, guías de despacho, etc.
-- obtener módulo de exportación xlsx "Base report xlsx" desde https://github.com/OCA/reporting-engine
+Chile - Libros mensuales de Compra y Venta
 ''',
     'init_xml': [],
     'installable': True,
     'license': 'AGPL-3',
-    'name': u'Chile - Sistema de apoyo a la facturación',
+    'name': u'Chile - Libros mensuales de Compra y Venta',
     'test': [],
     'data': [
         'views/libro_compra_venta.xml',
@@ -30,5 +28,5 @@
         'wizard/build_and_send_moves.xml',
         'security/ir.model.access.csv',
         ],
-    'version': '9.0.3.0',
+    'version': '9.0.3.1.0',
 }

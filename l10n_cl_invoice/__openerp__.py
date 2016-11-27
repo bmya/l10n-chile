@@ -2,6 +2,7 @@
 {   'active': False,
     'author': u'Blanco Martín & Asociados, Chilean Localization Team 9.0',
     'website': 'http://blancomartin.cl',
+    'version': '9.0.3.1.0',
     'category': 'Localization/Chile',
     'demo_xml': [
        # 'data/partner_demo.xml',
@@ -68,6 +69,5 @@
         'data/res.currency.csv',
         'data/tax.xml',
         #'views/sii_menuitem.xml',
-    ],
-    'version': '9.0.3.0',
+    ]    
 }
