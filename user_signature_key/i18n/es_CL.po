@@ -1,0 +1,169 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* user_signature_key
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: l10n_cl_invoice - Odoo V8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-03-21 19:58+0000\n"
+"PO-Revision-Date: 2016-03-21 17:06-0300\n"
+"Last-Translator: Daniel Santibáñez Polanco"
+"<daniel@blancomartin.cl>\n"
+"Language-Team: Blanco Martín & Asociados <info@blancomartin.cl>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+"Language: es_CL\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_final_date
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_final_date
+msgid "Final Date"
+msgstr "Fecha Final"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_not_before
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_not_before
+msgid "Not Before"
+msgstr "No antes"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_subject_c
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_subject_c
+msgid "Subject Country"
+msgstr "País Del Sujeto"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_subject_common_name
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_subject_common_name
+msgid "Subject Common Name"
+msgstr "Nombre común del sujeto"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_issuer_country
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_issuer_country
+msgid "Issuer Country"
+msgstr "País del emisor"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_issuer_common_name
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_issuer_common_name
+msgid "Issuer Common Name"
+msgstr "Nombre común del emisor"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_cert_signature_algor
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_cert_signature_algor
+msgid "Signature Algorithm"
+msgstr "Algoritmo de la firma"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_private_key_check
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_private_key_check
+msgid "Private Key Check"
+msgstr "Comprobar clave privada"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_not_after
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_not_after
+msgid "Not After"
+msgstr "No después de"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_subject_title
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_subject_title
+msgid "Subject Title"
+msgstr "Título del Sujeto"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_subject_serial_number
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_subject_serial_number
+msgid "Subject Serial Number"
+msgstr "Número de serie del Sujeto"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_subject_email_address
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_subject_email_address
+msgid "Subject Email Address"
+msgstr "correo electrónico del Sujeto"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_issuer_serial_number
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_issuer_serial_number
+msgid "Issuer Serial Number"
+msgstr "Número de serie del emisor"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_issuer_email_address
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_issuer_email_address
+msgid "Issuer Email Address"
+msgstr "Correo electrónico del emisor"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_cert_serial_number
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_cert_serial_number
+msgid "Serial Number"
+msgstr "Número de serie"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_private_key_bits
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_private_key_bits
+msgid "Private Key Bits"
+msgstr "Bits de la clave privada"
+
+#. module: user_signature_key
+#: model:ir.model.fields,field_description:user_signature_key.field_res_company_private_key_type
+#: model:ir.model.fields,field_description:user_signature_key.field_res_users_private_key_type
+msgid "Private Key Type"
+msgstr "Tipo clave privada"
+
+#. module: user_signature_key
+#: model:ir.ui.view,arch_db:user_signature_key.view_user_signature_tab_form
+#: model:ir.ui.view,arch_db:user_signature_key.view_company_signature_tab_form
+msgid "Next"
+msgstr "Siguiente"
+
+#. module: user_signature_key
+#: model:ir.ui.view,arch_db:user_signature_key.view_user_signature_tab_form
+#: model:ir.ui.view,arch_db:user_signature_key.view_company_signature_tab_form
+msgid "Signature File"
+msgstr "Archivo de firma"
+
+#. module: user_signature_key
+#: model:ir.ui.view,arch_db:user_signature_key.view_user_signature_tab_form
+#: model:ir.ui.view,arch_db:user_signature_key.view_company_signature_tab_form
+msgid "Check Signature"
+msgstr "Comprobar Firma"
+
+#. module: user_signature_key
+#: model:ir.ui.view,arch_db:user_signature_key.view_user_signature_tab_form
+#: model:ir.ui.view,arch_db:user_signature_key.view_company_signature_tab_form
+msgid "Clean Signature"
+msgstr "Borrar Firma"
+
+#. module: user_signature_key
+#: model:ir.ui.view,arch_db:user_signature_key.view_user_signature_tab_form
+#: model:ir.ui.view,arch_db:user_signature_key.view_company_signature_tab_form
+msgid "Authorized Users"
+msgstr "Usuarios Autorizados"
+
+#. module: user_signature_key
+#: model:ir.ui.view,arch_db:user_signature_key.view_user_signature_tab_form
+#: model:ir.ui.view,arch_db:user_signature_key.view_company_signature_tab_form
+msgid "Private Key"
+msgstr "Clave privada"
+
+#. module: user_signature_key
+#: model:ir.ui.view,arch_db:user_signature_key.view_user_signature_tab_form
+#: model:ir.ui.view,arch_db:user_signature_key.view_company_signature_tab_form
+msgid "Certificate Key"
+msgstr "Certificado de clave"
+
+#. module: user_signature_key
+#: model:ir.ui.view,arch_db:user_signature_key.view_user_signature_tab_form
+#: model:ir.ui.view,arch_db:user_signature_key.view_company_signature_tab_form
+msgid "Preferences"
+msgstr "Preferencias"

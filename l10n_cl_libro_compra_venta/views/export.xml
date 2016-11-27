@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <report
+      id="libro_xlsx"
+      model="account.move.book"
+      string="Libro"
+      report_type="xlsx"
+      name="account.move.book.xlsx"
+      file="account.move.book.xlsx"
+      attachment_use="True"
+      attachment="(object.state in ('Enviado','Proceso')) and ((object.name or '').replace('/','')+'.xlsx')"
+  />
+</openerp>

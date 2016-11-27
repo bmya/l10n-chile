@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record model="ir.ui.view" id="view_partner_form_states_city_inherit">
+            <field name='name'>res.partner.form.states.city.inherit</field>
+            <field name='model'>res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name='type'>form</field>
+            <field name='arch' type='xml'>
+                <field name="state_id" position="after">
+                    <field name="city_id" placeholder="Comuna" style="width: 100%" options='{"no_open": True}'/>
+                </field>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_partner_address_form_states_city_inherit">
+            <field name='name'>res.partner.address.form.states.city.inherit</field>
+            <field name='model'>res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_address_form"/>
+            <field name='type'>form</field>
+            <field name='arch' type='xml'>
+                <field name="state_id" position="after">
+                    <field name="city_id" placeholder="Comuna" style="width: 100%" options='{"no_open": True}'/>
+                </field>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_company_city_inherit_form">
+            <field name="name">res.company.city.form.inherit</field>
+            <field name="inherit_id" ref="base.view_company_form"/>
+            <field name="model">res.company</field>
+            <field name="arch" type="xml">
+                <field name="state_id" position="after">
+                    <field name="city_id" placeholder="Comuna" style="width: 100%" options='{"no_open": True}'/>
+                </field>
+            </field>
+        </record>
+
+    </data>
+</openerp>
