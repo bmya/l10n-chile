@@ -114,7 +114,7 @@ class AccountInvoice(models.Model):
                 else:
                     line[2]['debit'] = total
             new_lines.append(line)
-        if dif != 0 :
+        if dif != 0:
             new_lines = self._repair_diff(new_lines, dif)
         return new_lines
 
@@ -212,7 +212,7 @@ class AccountInvoice(models.Model):
             if rec.company_id:
                 available_turn_ids = rec.company_id.company_activities_ids
                 for turn in available_turn_ids:
-                    rec.turn_issuer= turn.id
+                    rec.turn_issuer = turn.id
 
     @api.model
     def name_get(self):
@@ -247,7 +247,7 @@ class AccountInvoice(models.Model):
             name='', args=args, operator='ilike', limit=limit,
             name_get_uid=name_get_uid)
 
-    def _buscarTaxEquivalente(self,tax):
+    def _buscar_tax_equivalente(self, tax):
         tax_n = self.env['account.tax'].search(
             [
                 ('sii_code', '=', tax.sii_code),
@@ -305,7 +305,7 @@ class AccountInvoice(models.Model):
                         if tax.company_id.id == self.company_id.id:
                             tax_ids.append(tax.id)
                         else:
-                            tax_n = self._buscarTaxEquivalente(tax)
+                            tax_n = self._buscar_tax_equivalente(tax)
                             if not tax_n:
                                 tax_n = self._crearTaxEquivalente(tax)
                             tax_ids.append(tax_n.id)
@@ -316,7 +316,7 @@ class AccountInvoice(models.Model):
                         if tax.company_id.id == self.company_id.id:
                             tax_ids.append(tax.id)
                         else:
-                            tax_n = self._buscarTaxEquivalente(tax)
+                            tax_n = self._buscar_tax_equivalente(tax)
                             if not tax_n:
                                 tax_n = self._crearTaxEquivalente(tax)
                             tax_ids.append(tax_n.id)
@@ -325,7 +325,7 @@ class AccountInvoice(models.Model):
                 line.invoice_line_tax_ids = False
                 line.invoice_line_tax_ids = tax_ids
 
-    @api.onchange('journal_id', 'partner_id', 'turn_issuer','invoice_turn')
+    @api.onchange('journal_id', 'partner_id', 'turn_issuer', 'invoice_turn')
     def _get_available_journal_document_class(self, default=None):
         for inv in self:
             invoice_type = inv.type
@@ -364,12 +364,12 @@ class AccountInvoice(models.Model):
                         # para poner como primera alternativa estos
                         #        document_class_id =
                         # self.get_document_class_default(document_classes)
-                        if invoice_type  in [ 'in_refund', 'out_refund']:
+                        if invoice_type in ['in_refund', 'out_refund']:
                             domain += [('sii_document_class_id.document_type',
                                         'in', ['debit_note', 'credit_note'])]
                         else:
                             domain += [('sii_document_class_id.document_type',
-                                        'in', ['invoice','invoice_in'])]
+                                        'in', ['invoice', 'invoice_in'])]
 
                         # For domain, we search all documents
                         document_classes = self.env[
@@ -494,15 +494,12 @@ a VAT."""))
         states={'draft': [('readonly', False)]})
     # solamente para compras tratamiento del iva
     no_rec_code = fields.Selection([
-        ('1', 'Compras destinadas a IVA a generar operaciones no gravados '
-              'o exentas.'),
+        ('1', 'Compras destinadas a IVA a generar operaciones no gravados \
+o exentas.'),
         ('2', 'Facturas de proveedores registrados fuera de plazo.'),
-        ('3', 'Gastos rechazados.'),
-        ('4', 'Entregas gratuitas (premios, bonificaciones, etc.) recibidos.'),
-        ('9', 'Otros.')],
-        string="Código No recuperable",
-        readonly=True,
-        states={'draft': [('readonly', False)]})
+        ('3', 'Gastos rechazados.'), ('4', 'Entregas gratuitas (premios, \
+bonificaciones, etc.) recibidos.'), ('9', 'Otros.')], string="Código No \
+recuperable", readonly=True, states={'draft': [('readonly', False)]})
     # TODO select 1 automático si es emisor 2Categoría
 
     document_number = fields.Char(
@@ -521,11 +518,9 @@ a VAT."""))
     referencias = fields.One2many(
         'account.invoice.referencias', 'invoice_id', readonly=True,
         states={'draft': [('readonly', False)]})
-    forma_pago = fields.Selection([
-        ('1','Contado'), ('2','Crédito'), ('3','Gratuito')],
-        string="Forma de pago", readonly=True,
-        states={'draft': [('readonly', False)]},
-        default='1')
+    forma_pago = fields.Selection([('1', 'Contado'), ('2', 'Crédito'), ('3', '\
+Gratuito')], string="Forma de pago", readonly=True, states={'draft': [('\
+readonly', False)]}, default='1')
     contact_id = fields.Many2one('res.partner', string="Contacto")
 
     @api.one
@@ -543,14 +538,12 @@ a VAT."""))
             invoice_ids = self.search(domain)
             if invoice_ids:
                 raise UserError(
-                    _('Supplier Invoice Number must be unique per Supplier '
-                      'and Company!'))
+                    _('Supplier Invoice Number must be unique per Supplier and \
+Company!'))
 
-    _sql_constraints = [
-        ('number_supplier_invoice_number',
-            'unique(supplier_invoice_number, partner_id, company_id)',
-         'Supplier Invoice Number must be unique per Supplier and Company!'),
-    ]
+    _sql_constraints = [('number_supplier_invoice_number',
+                         'unique(supplier_invoice_number, partner_id, \
+company_id)', 'Supplier Invoice No must be unique per Supplier and Company!')]
 
     @api.multi
     def action_move_create(self):
@@ -560,9 +553,8 @@ a VAT."""))
                     obj_inv.sii_document_number:
                 if invtype in ('out_invoice', 'out_refund'):
                     if not obj_inv.journal_document_class_id.sequence_id:
-                        raise osv.except_osv(_('Error!'), _(
-                            'Please define sequence on the journal related '
-                            'documents to this invoice.'))
+                        raise osv.except_osv(_('Error!'), _('Please define \
+sequence on the journal related documents to this invoice.'))
                     sii_document_number = obj_inv.journal_document_class_id.\
                         sequence_id.next_by_id()
                     prefix = obj_inv.journal_document_class_id.\
@@ -579,10 +571,11 @@ a VAT."""))
                     obj_inv.sii_document_number:
                 obj_inv.write({'sii_document_number': sii_document_number})
             document_class_id = obj_inv.sii_document_class_id.id
-            guardar = {'document_class_id': document_class_id,
+            guardar = {
+                'document_class_id': document_class_id,
                 'sii_document_number': obj_inv.sii_document_number,
-                'no_rec_code':obj_inv.no_rec_code,
-                'iva_uso_comun':obj_inv.iva_uso_comun,}
+                'no_rec_code': obj_inv.no_rec_code,
+                'iva_uso_comun': obj_inv.iva_uso_comun}
             obj_inv.move_id.write(guardar)
         return True
 
@@ -631,22 +624,23 @@ a VAT."""))
             issuer_responsability_id = partner.responsability_id.id
             receptor_responsability_id = company.partner_id.responsability_id.id
             if invoice_type == 'in_invoice':
-                print('responsabilidad del partner')
-                if issuer_responsability_id == self.env[
-                    'ir.model.data'].get_object_reference(
-                    'l10n_cl_invoice', 'res_BH')[1]:
-                    _logger.info('el proveedor es de segunda categoria y '
-                                 'emite boleta de honorarios')
+                _logger.inifo('responsabilidad del partner')
+                if issuer_responsability_id == self.env['ir.model.data'].\
+                        get_object_reference('l10n_cl_invoice', 'res_BH')[1]:
+                    _logger.info('el proveedor es de segunda categoria y emite \
+boleta de honorarios')
                 else:
-                    _logger.info('el proveedor es de primera categoria y '
-                                 'emite facturas o facturas no afectas')
+                    _logger.info('el proveedor es de primera categoria y emite \
+facturas o facturas no afectas')
                 domain = [
                     ('issuer_ids', '=', issuer_responsability_id),
                     ('receptor_ids', '=', receptor_responsability_id)]
             else:
                 # nota de credito de compras
-                domain = ['|',('issuer_ids', '=', issuer_responsability_id),
-                              ('receptor_ids', '=', receptor_responsability_id)]
+                domain = [
+                    '|',
+                    ('issuer_ids', '=', issuer_responsability_id),
+                    ('receptor_ids', '=', receptor_responsability_id)]
         else:
             raise except_orm(_('Operation Type Error'),
                              _('Operation Type Must be "Sale" or "Purchase"'))
@@ -659,8 +653,7 @@ a VAT."""))
         #      _('Please, set your company tax payer type (in company or \
         #      partner before to continue.'))
 
-        document_letter_ids = document_letter_obj.search(
-             domain)
+        document_letter_ids = document_letter_obj.search(domain)
         return document_letter_ids
 
     @api.multi
@@ -674,7 +667,7 @@ a VAT."""))
                 if self.search([('reference', '=', invoice.reference),
                                 ('journal_document_class_id', '=',
                                  invoice.journal_document_class_id.id),
-                                ('partner_id','=', invoice.partner_id.id),
+                                ('partner_id', '=', invoice.partner_id.id),
                                 ('type', '=', invoice.type),
                                 ('id', '!=', invoice.id)]):
                     raise UserError(
@@ -689,13 +682,14 @@ class Referencias(models.Model):
     _name = 'account.invoice.referencias'
 
     origen = fields.Char(string="Origin")
-    sii_referencia_TpoDocRef =  fields.Many2one('sii.document_class',
-        string="SII Reference Document Type")
+    sii_referencia_TpoDocRef = fields.Many2one('sii.document_class', string="\
+SII Reference Document Type")
     sii_referencia_CodRef = fields.Selection(
         [('1', 'Anula Documento de Referencia'),
          ('2', 'Corrige texto Documento Referencia'),
          ('3', 'Corrige montos')], string="SII Reference Code")
     motivo = fields.Char(string="Motivo")
-    invoice_id = fields.Many2one('account.invoice', ondelete='cascade',
-                                 index=True,copy=False,string="Documento")
+    invoice_id = fields.Many2one(
+        'account.invoice', ondelete='cascade', index=True, copy=False,
+        string="Documento")
     fecha_documento = fields.Date(string="Fecha Documento", required=True)

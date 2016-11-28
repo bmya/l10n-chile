@@ -69,7 +69,8 @@
                 </field>
 
                 <field name="origin" position="replace">
-                    <field name="origin" attrs="{'readonly':[('state','not in',['draft'])]}" />
+                    <field name="origin" />
+                    <!--attrs="{'readonly':[('state', '!=', 'draft'])]}"-->
                 </field>
 
                 <field name="tax_line_ids" position="before">
