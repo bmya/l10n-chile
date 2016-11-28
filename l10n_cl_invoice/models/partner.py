@@ -51,16 +51,15 @@ class ResPartner(models.Model):
                     self.document_number))).zfill(9).upper()
             vat = 'CL%s' % document_number
             # TODO: revisar si corresponde hacer aca
-            exist = self.env['res.partner'].search([('vat','=', vat)], limit=1)
+            exist = self.env['res.partner'].search([('vat', '=', vat)], limit=1)
             if exist:
                 self.vat = self.document_number = ""
                 return {
                     'warning': {
                         'title': "El Rut ya está siendo usado",
-                        'message':
-            _("El usuario %s está utilizando este documento" ) % exist.name,
-                        }
-                    }
+                        'message': _(
+                            "El usuario {} está utilizando este documento").
+                        format(exist.name)}}
             # revision - fin
             self.vat = vat
             self.document_number = '{}.{}.{}-{}'.format(
