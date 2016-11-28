@@ -90,8 +90,4 @@ class ResStateCity(models.Model):
         'res.country.state', 'State', select=True,
         domain="[('country_id', '=', country_id), ('type', '=', 'normal')]")
     type = fields.Selection(
-        [('view', 'View'), ('normal', 'Normal')], 'Type')
-
-    # _defaults = {
-    #     'type': 'normal',
-    # }
+        [('view', 'View'), ('normal', 'Normal')], 'Type', default='normal')

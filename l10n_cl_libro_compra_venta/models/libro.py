@@ -200,7 +200,8 @@ class Libro(models.Model):
         string='Periodo Tributario',
         required=True,
         readonly=True,
-        states={'draft': [('readonly', False)]})
+        states={'draft': [('readonly', False)]},
+        default=datetime.now().strftime('%Y-%m'))
     company_id = fields.Many2one('res.company',
         string="Compañía",
         required=True,
@@ -224,18 +225,14 @@ class Libro(models.Model):
         string="Fecha",
         required=True,
         readonly=True,
-        states={'draft': [('readonly', False)]})
+        states={'draft': [('readonly', False)]},
+        default=datetime.now())
 
     boletas = fields.One2many('account.move.book.boletas',
         'book_id',
         string="Boletas",
         readonly=True,
         states={'draft': [('readonly', False)]})
-
-    _defaults = {
-        'date' : datetime.now(),
-        'periodo_tributario': datetime.now().strftime('%Y-%m'),
-    }
 
     def split_cert(self, cert):
         certf, j = '', 0

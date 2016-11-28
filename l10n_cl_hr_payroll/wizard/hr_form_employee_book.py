@@ -3,7 +3,7 @@
 #
 #    Odoo, Open Source Management Solution Chilean Payroll
 #
-#    Copyright (c) 2015 Blanco Martin y Asociados - Nelson Ramírez Sánchez
+#    Copyright (c) 2015 Blanco Martin y Asociados - Nelson Ramï¿½rez Sï¿½nchez
 #    Daniel Blanco
 #    http://blancomartin.cl
 #
@@ -33,9 +33,7 @@ class hr_salary_employee_bymonth(models.TransientModel):
     end_date = fields.Date('End Date', required=True)
 
     _defaults = {
-
         'end_date': lambda *a: time.strftime('%Y-%m-%d'),
-
     }
 
     def print_report(self, cr, uid, ids, context=None):

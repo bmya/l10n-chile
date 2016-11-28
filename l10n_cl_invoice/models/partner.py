@@ -9,7 +9,6 @@ class res_partner(models.Model):
     #def _get_default_tp_type(self):
     #    return self.env.ref('l10n_cl_invoice.res_IVARI').id
     # todo: pasar los valores por defecto a un nuevo módulo
-    # por ejemplo "l10n_cl_res_partner_defaults
 
     #def _get_default_doc_type(self):
     #    return self.env.ref('l10n_cl_invoice.dt_RUT').id

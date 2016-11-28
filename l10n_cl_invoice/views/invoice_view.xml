@@ -45,9 +45,9 @@
             <field name="model">account.invoice</field>
             <field name="inherit_id" ref="account.invoice_form"/>
             <field name="arch" type="xml">
-              <button name="invoice_cancel" position="attributes">
+              <!--<button name="invoice_cancel" position="attributes">
                   <attribute name="invisible">1</attribute>
-              </button>
+              </button>-->
               <field name="state" position="before">
                 <button name="%(account.action_account_invoice_refund)d" type='action' string='Refund Invoice' groups="base.group_user" attrs="{'invisible': ['|',('type', '=', 'out_invoice'), ('state', 'not in', ('open','proforma2','paid'))]}"/>
               </field>
@@ -139,9 +139,9 @@
             <field name="model">account.invoice</field>
             <field name="inherit_id" ref="account.invoice_supplier_form"/>
             <field name="arch" type="xml">
-              <button name="invoice_cancel" position="attributes">
+              <!--<button name="invoice_cancel" position="attributes">
                   <attribute name="invisible">1</attribute>
-              </button>
+              </button>-->
               <field name="state" position="before">
                 <button name="%(account.action_account_invoice_refund)d" type='action' string='Ask Refund' groups="account.group_account_invoice" attrs="{'invisible': ['|',('type', '=', 'in_invoice'),('state','not in',('open','paid'))]}"/>
               </field>

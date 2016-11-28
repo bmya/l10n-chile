@@ -18,11 +18,15 @@
                         domain="[('parent_id', '>=', 1),
                         ('tax_category', '=', tp_sii_code)]"/>
                 </field>
-                 <group name="account_grp">
-                    <field name="invoice_vat_discrimination_default"/>
-                </group>
+                <field name="website" position="after">
+                    <group name="account_grp">
+                        <field name="invoice_vat_discrimination_default"/>
+                     </group>
+                </field>
+                <!--<xpath expr="//notebook/page/group/group/field[@name='sequence']" position="after">
+
+                </xpath>-->
             </field>
         </record>
-
     </data>
 </odoo>

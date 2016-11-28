@@ -3,7 +3,6 @@ from odoo import models, fields
 
 
 class PartnerActivities(models.Model):
-
     _description = 'SII Economical Activities Printable Description'
     _name = 'sii.activity.description'
 
@@ -14,11 +13,8 @@ class PartnerActivities(models.Model):
         required=True, translate=True, default='SI')
 
     active = fields.Boolean(
-        'Active', help="Allows you to hide the activity without removing it.")
-
-    _defaults = {
-        'active': 1,
-    }
+        'Active', help="Allows you to hide the activity without removing it.",
+        default=True)
 
 
 class PartnerTurns(models.Model):

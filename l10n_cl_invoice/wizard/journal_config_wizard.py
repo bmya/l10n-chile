@@ -49,11 +49,6 @@ Include unusual taxes documents, as transfer invoice, and reissue
     # def _get_journal_excempt(self):
     #     return True
 
-#    _defaults= {
-#        'debit_notes': 'own_sequence',
-#        'credit_notes': 'own_sequence',
-#    }
-
 
     def confirm(self):
         """

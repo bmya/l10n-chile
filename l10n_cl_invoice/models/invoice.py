@@ -523,7 +523,7 @@ a VAT."""))
             obj_inv.move_id.write(guardar)
         return True
 
-    def get_operation_type(self, cr, uid, invoice_type, context=None):
+    def get_operation_type(self, invoice_type):
         if invoice_type in ['in_invoice', 'in_refund']:
             operation_type = 'purchase'
         elif invoice_type in ['out_invoice', 'out_refund']:
