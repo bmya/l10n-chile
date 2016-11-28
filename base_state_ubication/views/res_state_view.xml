@@ -9,9 +9,10 @@
             <field name='inherit_id' ref='base.view_country_state_tree'/>
             <field name="arch" type="xml">
                 <xpath expr="/tree/field[@name='code']" position="after">
+                    <field name="id" invisible="1"/>
                     <field name="complete_name"/>
                     <field name="type"/>
-        </xpath>
+                </xpath>
             </field>
         </record>
         
@@ -22,12 +23,12 @@
             <field name='inherit_id' ref='base.view_country_state_form'/>
             <field name="arch" type="xml">
                 <xpath expr="/form/group/field[@name='code']" position="replace">
+                    <field name="id" invisible="1"/>
                     <field name="code"/>
                     <field name="parent_id"/>
                     <field name="type"/>
-        </xpath>
+                </xpath>
             </field>
         </record>
-
     </data>
 </odoo>

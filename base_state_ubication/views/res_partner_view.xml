@@ -11,6 +11,7 @@
               <field name="state_id" position="replace"/>
               <field name="country_id" position="replace"/>
               <field name="street2" position="after">
+                  <field name="id" invisible="1"/>
                   <field name="country_id" placeholder="Country" class="oe_no_button" options='{"no_open": True, "no_create": True}'/>
                   <field name="state_id" class="oe_no_button" placeholder="Ubication" style="width: 100%" options='{"no_open": True, "no_create": True}' domain="[('country_id','=',country_id),('type','=','normal')]" string="Ubication"/>
               </field>
@@ -26,6 +27,7 @@
               <field name="state_id" position="replace"/>
               <field name="country_id" position="replace"/>
               <field name="street2" position="after">
+                  <field name="id" invisible="1"/>
                   <field name="country_id" placeholder="Country" class="oe_no_button" options='{"no_open": True, "no_create": True}'/>
                   <field name="state_id" class="oe_no_button" placeholder="Ubication" style="width: 100%" options='{"no_open": True}' domain="[('country_id','=',country_id),('type','=','normal')]" string="Ubication"/>
               </field>

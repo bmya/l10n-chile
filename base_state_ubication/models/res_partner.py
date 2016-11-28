@@ -34,7 +34,9 @@ class ResPartner(models.Model):
 
     state_id = fields.Many2one(
         "res.country.state", 'Ubication',
-        domain="[('country_id', '=', country_id), ('type', '=', 'normal')]")
+        domain="[('country_id', '=', country_id), "
+               "('type', '=', 'normal'), "
+               "('id', '!=', id)]")
 
     # @api.model
     # def _get_default_country(self):
@@ -51,4 +53,6 @@ class ResCompany(models.Model):
 
     state_id = fields.Many2one(
         "res.country.state", 'Ubication',
-        domain="[('country_id', '=', country_id), ('type', '=', 'normal')]")
+        domain="[('country_id', '=', country_id), "
+               "('type', '=', 'normal'), "
+               "('id', '!=', id)]")

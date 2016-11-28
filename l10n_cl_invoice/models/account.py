@@ -195,14 +195,16 @@ class account_move_line(models.Model):
 class account_journal_sii_document_class(models.Model):
     _name = "account.journal.sii_document_class"
     _description = "Journal SII Documents"
+    _order = 'journal_id desc, sequence, id'
+    # _rec_name = 'short_name'
 
-    def name_get(self, cr, uid, ids, context=None):
+    @api.model
+    def name_get(self):
         result = []
-        for record in self.browse(cr, uid, ids, context=context):
+        for record in self:
             result.append((record.id, record.sii_document_class_id.name))
         return result
 
-    _order = 'journal_id desc, sequence, id'
 
     sii_document_class_id = new_fields.Many2one('sii.document_class',
                                                 'Document Type', required=True)
@@ -213,9 +215,10 @@ class account_journal_sii_document_class(models.Model):
     journal_id = new_fields.Many2one(
         'account.journal', 'Journal', required=True)
     sequence = new_fields.Integer('Sequence',)
+    # short_name = new_fields.Char('Short Title')
 
 
-class account_journal(models.Model):
+class AccountJournal(models.Model):
     _inherit = "account.journal"
 
     sucursal_id = new_fields.Many2one(
@@ -291,12 +294,12 @@ class account_journal(models.Model):
             raise Warning(_('The company of the point of sale and of the \
                 journal must be the same!'))
 
-class res_currency(models.Model):
+class ResCurrency(models.Model):
     _inherit = "res.currency"
     sii_code = new_fields.Char('SII Code', size=4)
 
 
-class partnerActivities(models.Model):
+class PartnerActivities(models.Model):
     _inherit = 'partner.activities'
     journal_ids = new_fields.Many2many(
         'account.journal', id1='activities_id', id2='journal_id',

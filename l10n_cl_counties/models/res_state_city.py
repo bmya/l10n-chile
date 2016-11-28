@@ -88,6 +88,8 @@ class ResStateCity(models.Model):
         'res.country', 'Country', required=True)
     state_id = fields.Many2one(
         'res.country.state', 'State', select=True,
-        domain="[('country_id', '=', country_id), ('type', '=', 'normal')]")
+        domain="[('country_id', '=', country_id), "
+               "('type', '=', 'normal'), "
+               "('id', '!=', id)]")
     type = fields.Selection(
         [('view', 'View'), ('normal', 'Normal')], 'Type', default='normal')

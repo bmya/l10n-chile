@@ -34,7 +34,9 @@ class ResPartner(models.Model):
 
     city_id = fields.Many2one(
         "res.country.state.city", 'City',
-        domain="[('state_id', '=', state_id), ('type', '=', 'normal')]")
+        domain="[('state_id', '=', state_id), "
+               "('type', '=', 'normal'), "
+               "('id', '!=', id)]")
 
     # @api.multi
     # def _asign_city(self, source):
@@ -46,7 +48,9 @@ class ResCompany(models.Model):
 
     city_id = fields.Many2one(
         "res.country.state.city", 'City',
-        domain="[('state_id', '=', state_id), ('type', '=', 'normal')]")
+        domain="[('state_id', '=', state_id), "
+               "('type', '=', 'normal'), "
+               "('id', '!=', id)]")
 
     # @api.multi
     # def _asign_city(self, source):

@@ -86,7 +86,7 @@ class ResState(models.Model):
         string='Complete Name')
     parent_id = fields.Many2one(
         'res.country.state', 'Parent State', index=True,
-        domain=[('type', '=', 'view')])
+        domain="[('type', '=', 'view'), ('id', '!=', id)]")
     child_ids = fields.One2many(
         'res.country.state', 'parent_id', string='Child States')
     type = fields.Selection(

@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import osv, models, fields, api, _
 from odoo.exceptions import except_orm, UserError
-# import openerp.addons.decimal_precision as dp
-# from inspect import currentframe, getframeinfo
-# estas 2 lineas son para imprimir el numero de linea del script
-# (solo para debug)
-# frameinfo = getframeinfo(currentframe())
-# print(frameinfo.filename, frameinfo.lineno)
+
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -73,7 +68,7 @@ class AccountInvoiceTax(models.Model):
         else:
             super(AccountInvoiceTax, self)._compute_base_amount()
 
-class account_invoice(models.Model):
+class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
     def _repairDiff(self, move_lines, dif):#usualmente es de 1 $ cuando se aplica descuentoo es valor iva incluido
@@ -117,7 +112,7 @@ class account_invoice(models.Model):
                 else:
                     dif = total - line[2]['debit']
         if dif != 0:
-            move_lines = self._repairDiff( move_lines, dif)
+            move_lines = self._repairDiff(move_lines, dif)
         return move_lines
 
     def _compute_amount(self):
@@ -170,7 +165,6 @@ class account_invoice(models.Model):
                     tax_grouped[key]['base'] += val['base']
         return tax_grouped
 
-
     def get_document_class_default(self, document_classes):
         if self.turn_issuer.vat_affected not in ['SI', 'ND']:
             exempt_ids = [
@@ -194,7 +188,7 @@ class account_invoice(models.Model):
                 for turn in available_turn_ids:
                     rec.turn_issuer= turn.id
 
-    @api.multi
+    @api.model
     def name_get(self):
         TYPES = {
             'out_invoice': _('Invoice'),
@@ -204,20 +198,28 @@ class account_invoice(models.Model):
         }
         result = []
         for inv in self:
-            result.append(
-                (inv.id, "%s %s" % (inv.document_number or TYPES[inv.type], inv.name or '')))
+            name = u'{} ({})'.format(
+                inv.document_number or TYPES[inv.type], inv.name or '')
+            result.append((inv.id, name))
         return result
 
     @api.model
-    def name_search(self, name, args=None, operator='ilike', limit=100):
-        args = args or []
-        recs = self.browse()
-        if name:
-            recs = self.search(
-                [('document_number', '=', name)] + args, limit=limit)
-        if not recs:
-            recs = self.search([('name', operator, name)] + args, limit=limit)
-        return recs.name_get()
+    def _name_search(self, name='', args=None, operator='ilike', limit=100,
+                     name_get_uid=None):
+        # args = args or []
+        args = [] if args is None else args.copy()
+        if not (name == '' and operator == 'ilike'):
+            recs = self.browse()
+            if name:
+                recs = self.search(
+                    [('document_number', '=', name)] + args, limit=limit)
+            if not recs:
+                recs = self.search([('name', operator, name)] + args,
+                                   limit=limit)
+            # return recs.name_get()
+        return super(AccountInvoice, self)._name_search(
+            name='', args=args, operator='ilike', limit=limit,
+            name_get_uid=name_get_uid)
 
     def _buscarTaxEquivalente(self,tax):
         tax_n = self.env['account.tax'].search(
@@ -510,7 +512,7 @@ a VAT."""))
                     obj_inv.write({'move_name': move_name})
                 elif invtype in ('in_invoice', 'in_refund'):
                     sii_document_number = obj_inv.supplier_invoice_number
-        super(account_invoice, self).action_move_create()
+        super(AccountInvoice, self).action_move_create()
         for obj_inv in self:
             invtype = obj_inv.type
             if obj_inv.journal_document_class_id and not obj_inv.sii_document_number:

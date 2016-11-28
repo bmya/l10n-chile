@@ -2,6 +2,7 @@
 from __future__ import print_function
 from odoo import models, fields, api
 from odoo.tools.translate import _
+from odoo.exceptions import UserError
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ Include unusual taxes documents, as transfer invoice, and reissue
     #     return True
 
 
-    def confirm(self):
+    def confirm(self, context=None):
         """
         Confirm Configure button
         """
@@ -60,7 +61,6 @@ Include unusual taxes documents, as transfer invoice, and reissue
         journal_ids = context.get('active_ids', False)
         wizard = self.browse()
         self.create_journals(journal_ids, wizard)
-        self.create_journals()
 
     # def create_journals(self, cr, uid, journal_ids, wz, context=None):
     def create_journals(self, journal_ids, wizard):
@@ -78,11 +78,11 @@ set your company responsability in the company partner before continue.'))
             if journal_type == 'sale':
                 for doc_type in ['invoice', 'debit_note']:
                     self.create_journal_document(
-                        cr, uid, letter_ids, doc_type, journal.id, wz, context)
+                        letter_ids, doc_type, journal.id)
             elif journal_type == 'purchase':
                 for doc_type in ['invoice', 'debit_note', 'invoice_in']:
                     self.create_journal_document(
-                        cr, uid, letter_ids, doc_type, journal.id, wz, context)
+                        letter_ids, doc_type, journal.id)
                     # self.create_journal_document(
                     # cr, uid, letter_ids, doc_type, journal.id,
                     # non_dte_register, dte_register, settlement_invoice,
@@ -90,65 +90,67 @@ set your company responsability in the company partner before continue.'))
             elif journal_type in ['sale_refund', 'purchase_refund']:
                 print('notas de credito de compra o venta')
                 self.create_journal_document(
-                    cr, uid, letter_ids, 'credit_note', journal.id, wz, context)
+                    letter_ids, 'credit_note', journal.id)
 
     def create_sequence(self, name, journal):
         vals = {
             'name': journal.name + ' - ' + name,
-            'padding': 6,
-        }
-        sequence_id = self.env['ir.sequence'].create(vals)
+            'padding': 6}
+        sequence_obj = self.env['ir.sequence']
+        sequence_id = sequence_obj.sudo().create(vals)
+        # sequence_id = self.env['ir.sequence'].create(vals)
         return sequence_id
 
-    def create_journal_document(self, letter_ids, document_type,journal_id, wz):
+    def create_journal_document(
+            self, letter_ids, document_type, journal_id):
         print(document_type, letter_ids)
-        if_zf = [] if wz.free_tax_zone else [901, 906, 907]
-        if_lf = [] if wz.settlement_invoice else [40, 43]
-        if_tr = [] if wz.weird_documents else [29, 108, 914, 911, 904, 905]
-        # if_pr = [] if wz.purchase_invoices else [45, 46]
-        journal = self.pool['account.journal'].browse(
-            cr, uid, journal_id, context=context)
+        if_zf = [] if self.free_tax_zone else [901, 906, 907]
+        if_lf = [] if self.settlement_invoice else [40, 43]
+        if_tr = [] if self.weird_documents else [29, 108, 914, 911, 904, 905]
+        # if_pr = [] if self.purchase_invoices else [45, 46]
+        journal = self.env['account.journal'].browse(
+            journal_id)
         if_na = [] if journal.excempt_documents else [32, 34]
         dt_types_exclude = if_zf + if_lf + if_tr + if_na
         print(dt_types_exclude)
 
-        document_class_obj = self.pool['sii.document_class']
+        document_class_obj = self.env['sii.document_class']
         document_class_ids = document_class_obj.search([
                 ('document_letter_id', 'in', letter_ids),
                 ('document_type', '=', document_type),
                 ('sii_code', 'not in', dt_types_exclude)])
+        # raise UserError(
+        #     'letter_ids: {}, document_type: {}, sii_code not in: {}, document_class_ids: {}'.format(
+        #     letter_ids,
+        #     document_type,
+        #     dt_types_exclude,
+        #     document_class_ids))
+
+        # raise UserError(document_class_obj.browse(document_class_ids))
 
         journal_document_obj = self.env['account.journal.sii_document_class']
         sequence = 10
-        for document_class in document_class_obj.browse(document_class_ids):
-            _logger.info('ws existente -- non_dte_register: {} \
-settlement_invoice: {} free_tax: {}, dte_register {}'.format(
-                wz.non_dte_register,
-                wz.settlement_invoice,
-                wz.free_tax_zone, wz.dte_register))
-            _logger.info(document_class.report_name, document_class.sii_code)
-            if not document_class.dte:
+        for document_class_id in document_class_ids:
+            doc_class = document_class_obj.browse(document_class_id.id)
+            if not doc_class.dte:
                 _logger.info('documento manual: ')
-                if wz.non_dte_register:
+                if self.non_dte_register:
                     _logger.info('non dte')
                 else:
                     continue
             else:
                 _logger.info('documento electronico')
-                if wz.dte_register:
+                if self.dte_register:
                     _logger.info('dte')
                     pass
                 else:
                     continue
-
             _logger.info('crear')
-            sequence_id = self.create_sequence(
-                document_class.name, journal)
+            sequence_id = self.create_sequence(doc_class.name, journal)
             vals = {
-                'sii_document_class_id': document_class.id,
-                'sequence_id': sequence_id,
+                'sii_document_class_id': doc_class.id,
+                'sequence_id': sequence_id.id,
                 'journal_id': journal.id,
-                'sequence': sequence,
-            }
+                'sequence': sequence}
             journal_document_obj.create(vals)
-            sequence +=10
+            sequence += 10
