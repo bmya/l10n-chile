@@ -624,7 +624,7 @@ sequence on the journal related documents to this invoice.'))
             issuer_responsability_id = partner.responsability_id.id
             receptor_responsability_id = company.partner_id.responsability_id.id
             if invoice_type == 'in_invoice':
-                _logger.inifo('responsabilidad del partner')
+                _logger.info('responsabilidad del partner')
                 if issuer_responsability_id == self.env['ir.model.data'].\
                         get_object_reference('l10n_cl_invoice', 'res_BH')[1]:
                     _logger.info('el proveedor es de segunda categoria y emite \
