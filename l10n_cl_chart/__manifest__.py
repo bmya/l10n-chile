@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-# Copyright (c) 2016 Blanco Martin y Asociados - http://www.bmya.cl
+# Copyright (c) 2016 Blanco Martin y Asociados - Nelson Ramírez Sánchez http://www.bmya.cl
 
 {
     'name': 'Chile Localization Chart Account BMyA',
@@ -15,7 +15,7 @@ Chile, con algunas cuentas agregadas en base a experiencias de
 implementación
 
     """,
-    'author': 'Blanco Martin & Asociados',
+    'author': 'Blanco Martin & Asociados - Nelson Ramírez Sánchez',
     'website': 'http://www.bmya.cl',
     'category': 'Localization',
     'depends': ['account'],

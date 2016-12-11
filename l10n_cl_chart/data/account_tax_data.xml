@@ -102,6 +102,17 @@
         <field name="applicability">taxes</field>
     </record>
 
+    <record id="tag_cl_21" model="account.account.tag">
+        <field name="name">Compras Retención a la Renta 2da Categoría a Pagar</field>
+        <field name="applicability">taxes</field>
+    </record>
+
+    <record id="tag_cl_22" model="account.account.tag">
+        <field name="name">Impuesto Retenido 2da Categoría</field>
+        <field name="applicability">taxes</field>
+    </record>
+
+
     <record id="IVAV_19" model="account.tax.template">
       <field name="chart_template_id" ref="cl_chart_template_bmya"/>
       <field name="name">IVA 19% Venta </field>
@@ -119,11 +130,25 @@
       <field name="name">IVA 19% Compra </field>
       <field name="description">IVA 19% Compra </field>
       <field name="amount">19</field>
+      <field name="sequence" eval="1"/>
       <field name="amount_type">percent</field>
       <field name="type_tax_use">purchase</field>
       <field name="refund_account_id" ref="110701"/>
       <field name="account_id" ref="110701"/>
       <field name="tag_ids" eval="[(6,0,[ref('tag_cl_05'), ref('tag_cl_18')])]"/>
+    </record>
+
+    <record id="I_IU2C" model="account.tax.template">
+      <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+      <field name="name">Impuesto Unico de Segunda Categoría </field>
+      <field name="description">Impuesto Unico de 2da Categoría </field>
+      <field name="amount">-10</field>
+      <field name="sequence" eval="2"/>
+      <field name="amount_type">percent</field>
+      <field name="type_tax_use">purchase</field>
+      <field name="refund_account_id" ref="210704"/>
+      <field name="account_id" ref="210704"/>
+      <field name="tag_ids" eval="[(6,0,[ref('tag_cl_22'), ref('tag_cl_21')])]"/>
     </record>
 
 </odoo>

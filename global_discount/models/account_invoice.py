@@ -62,10 +62,10 @@ class GlobalDiscount(models.Model):
                 tax_grouped[id] = t
         return tax_grouped
 
-    @api.onchange('global_discount','global_discount_type')
+    @api.onchange('global_discount', 'global_discount_type')
     def _compute_amount(self):
         for inv in self:
-            if inv.global_discount > 0  and inv.global_discount_type:
+            if inv.global_discount > 0 and inv.global_discount_type:
                 taxes_grouped = inv.get_taxes_values()
                 tax_lines = inv.tax_line_ids.browse([])
                 for tax in taxes_grouped.values():
