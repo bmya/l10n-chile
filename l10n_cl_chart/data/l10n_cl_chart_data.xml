@@ -26,6 +26,9 @@
     </record>
 
     <!-- Account Templates -->
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1101 Disponible -->
     <record id="110111" model="account.account.template">
         <field name="name">Caja</field>
         <field name="code">110111</field>
@@ -34,6 +37,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1101 Disponible -->
     <record id="110120" model="account.account.template">
         <field name="name">Banco</field>
         <field name="code">110120</field>
@@ -42,22 +48,31 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1102 Inversiones y Dep a Corto Plazo  -->
     <record id="110210" model="account.account.template">
-        <field name="name">Fondos Mutuos</field>
+        <field name="name">Depósitos en Divisas</field>
         <field name="code">110210</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1102 Inversiones y Dep a Corto Plazo  -->
     <record id="110220" model="account.account.template">
-        <field name="name">Depósitos a Plazo</field>
+        <field name="name">Acciones</field>
         <field name="code">110220</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1103 Deudores Comerciales -->
     <record id="110310" model="account.account.template">
         <field name="name">Clientes</field>
         <field name="code">110310</field>
@@ -67,6 +82,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1103 Deudores Comerciales -->
     <record id="110320" model="account.account.template">
         <field name="name">Anticipo Proveedores</field>
         <field name="code">110320</field>
@@ -76,6 +94,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1104 Ctas y Docs. por Cobrar -->
     <record id="110410" model="account.account.template">
         <field name="name">Cheques a Fecha Por Cobrar</field>
         <field name="code">110410</field>
@@ -85,6 +106,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1104 Ctas y Docs. por Cobrar -->
     <record id="110420" model="account.account.template">
         <field name="name">Cuenta Por Cobrar 3eros</field>
         <field name="code">110420</field>
@@ -94,6 +118,45 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1104 Ctas y Docs. por Cobrar -->
+    <record id="110430" model="account.account.template">
+        <field name="name">Boletas en Garantía</field>
+        <field name="code">110430</field>
+        <field name="reconcile" eval="True"/>
+        <field ref="account.data_account_type_receivable" name="user_type_id"/>
+        <field name="reconcile">1</field>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1104 Ctas y Docs. por Cobrar -->
+    <record id="110440" model="account.account.template">
+        <field name="name">Letras en Cartera</field>
+        <field name="code">110440</field>
+        <field name="reconcile" eval="True"/>
+        <field ref="account.data_account_type_receivable" name="user_type_id"/>
+        <field name="reconcile">1</field>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1104 Ctas y Docs. por Cobrar -->
+    <record id="110450" model="account.account.template">
+        <field name="name">Documentos Protestados</field>
+        <field name="code">110450</field>
+        <field name="reconcile" eval="True"/>
+        <field ref="account.data_account_type_receivable" name="user_type_id"/>
+        <field name="reconcile">1</field>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1105 Creditos RRHH -->
     <record id="110510" model="account.account.template">
         <field name="name">Anticipo de Sueldo</field>
         <field name="code">110510</field>
@@ -103,6 +166,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1105 Creditos RRHH -->
     <record id="110520" model="account.account.template">
         <field name="name">Préstamos al Personal</field>
         <field name="code">110520</field>
@@ -112,6 +178,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1105 Creditos RRHH -->
     <record id="110530" model="account.account.template">
         <field name="name">Anticipos de Viáticos</field>
         <field name="code">110530</field>
@@ -121,6 +190,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1105 Creditos RRHH -->
     <record id="110540" model="account.account.template">
         <field name="name">Fondos x Rendir</field>
         <field name="code">110540</field>
@@ -130,6 +202,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1105 Creditos RRHH -->
     <record id="110550" model="account.account.template">
         <field name="name">Anticipo de Honorarios</field>
         <field name="code">110550</field>
@@ -139,6 +214,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1105 Creditos RRHH -->
     <record id="110560" model="account.account.template">
         <field name="name">Anticipo de Aguinaldo</field>
         <field name="code">110560</field>
@@ -148,6 +226,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1105 Creditos RRHH -->
     <record id="110570" model="account.account.template">
         <field name="name">Asignación Familiar</field>
         <field name="code">110570</field>
@@ -157,22 +238,64 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1105 Inversiones a Corto Plazo  -->
+    <record id="110510" model="account.account.template">
+        <field name="name">Depósitos a Plazo</field>
+        <field name="code">110510</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
     <record id="110610" model="account.account.template">
-        <field name="name">Insumos</field>
+        <field name="name">Mercaderías</field>
         <field name="code">110610</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
+    <record id="110615" model="account.account.template">
+        <field name="name">Materiales</field>
+        <field name="code">110615</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
     <record id="110620" model="account.account.template">
-        <field name="name">Equipos</field>
+        <field name="name">Insumos</field>
         <field name="code">110620</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
+    <record id="110625" model="account.account.template">
+        <field name="name">Equipos</field>
+        <field name="code">110625</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
     <record id="110630" model="account.account.template">
         <field name="name">Repuestos</field>
         <field name="code">110630</field>
@@ -181,6 +304,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
     <record id="110640" model="account.account.template">
         <field name="name">Existencias en Tránsito</field>
         <field name="code">110640</field>
@@ -189,6 +315,42 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
+    <record id="110650" model="account.account.template">
+        <field name="name">Productos Fabricados</field>
+        <field name="code">110650</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
+    <record id="110660" model="account.account.template">
+        <field name="name">Productos En Proceso</field>
+        <field name="code">110660</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1106 Existencias -->
+    <record id="110670" model="account.account.template">
+        <field name="name">Envases</field>
+        <field name="code">110670</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1107 Impuestos por recuperar -->
     <record id="110710" model="account.account.template">
         <field name="name">IVA Crédito Fiscal</field>
         <field name="code">110710</field>
@@ -197,6 +359,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1107 Impuestos por recuperar -->
     <record id="110720" model="account.account.template">
         <field name="name">Remanente Crédito Fiscal</field>
         <field name="code">110720</field>
@@ -205,6 +370,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1107 Impuestos por recuperar -->
     <record id="110730" model="account.account.template">
         <field name="name">Crédito por Activo Fijo</field>
         <field name="code">110730</field>
@@ -213,6 +381,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1107 Impuestos por recuperar -->
     <record id="110740" model="account.account.template">
         <field name="name">P.P.M.</field>
         <field name="code">110740</field>
@@ -221,6 +392,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1107 Impuestos por recuperar -->
     <record id="110750" model="account.account.template">
         <field name="name">Crédito Sence</field>
         <field name="code">110750</field>
@@ -229,14 +403,130 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1107 Impuestos por recuperar -->
+    <record id="110760" model="account.account.template">
+        <field name="name">Crédito Art 33 BIS</field>
+        <field name="code">110760</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1108 Gastos Anticipados -->
     <record id="110810" model="account.account.template">
-        <field name="name">Cta Corriente </field>
+        <field name="name">Anticipos Comercio Exterior</field>
         <field name="code">110810</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1108 Gastos Anticipados -->
+    <record id="110820" model="account.account.template">
+        <field name="name">Gastos Anticipados</field>
+        <field name="code">110820</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1108 Gastos Anticipados -->
+    <record id="110830" model="account.account.template">
+        <field name="name">Organización y Puesta en Marcha</field>
+        <field name="code">110830</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1109 Cuentas Corrientes Socios -->
+    <record id="110910" model="account.account.template">
+        <field name="name">Retiros Socios</field>
+        <field name="code">110910</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1109 Cuentas Corrientes Socios -->
+    <record id="110920" model="account.account.template">
+        <field name="name">Retiros Reinversión</field>
+        <field name="code">110920</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1110 Gastos Diferidos -->
+    <record id="111010" model="account.account.template">
+        <field name="name">Gastos Reorganización</field>
+        <field name="code">111010</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1111 Cuentas Obligadas Socios -->
+    <record id="111110" model="account.account.template">
+        <field name="name">Cuentas Obligadas Socios</field>
+        <field name="code">111110</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1112 Gastos Tributarios -->
+    <record id="111210" model="account.account.template">
+        <field name="name">Gastos Tributarios</field>
+        <field name="code">111210</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1113 Importaciones en Tránsito -->
+    <record id="111310" model="account.account.template">
+        <field name="name">Cuenta Importaciones</field>
+        <field name="code">111310</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 11 Activo Corriente -->
+    <!-- 1114 Gastos Rechazados -->
+    <record id="111410" model="account.account.template">
+        <field name="name">Gastos Rechazados</field>
+        <field name="code">111410</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 12 Activo Fijo -->
+    <!-- 1201  -->
     <record id="120110" model="account.account.template">
         <field name="name">Equipos y Mobiliario de Oficina</field>
         <field name="code">120110</field>
@@ -245,6 +535,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 12 Activo Fijo -->
+    <!-- 1201  -->
     <record id="120120" model="account.account.template">
         <field name="name">Equipos Computacionales</field>
         <field name="code">120120</field>
@@ -253,6 +546,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 12 Activo Fijo -->
+    <!-- 1201  -->
     <record id="120130" model="account.account.template">
         <field name="name">Vehículos</field>
         <field name="code">120130</field>
@@ -260,6 +556,10 @@
         <field ref="account.data_account_type_fixed_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
+
+    <!-- 1 Activo -->
+    <!-- 12 Activo Fijo -->
+    <!-- 1201  -->
     <record id="120140" model="account.account.template">
         <field name="name">Maquinaria</field>
         <field name="code">120140</field>
@@ -268,46 +568,75 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 12 Activo Fijo -->
+    <!-- 1202 Bienes Raíces -->
     <record id="120210" model="account.account.template">
-        <field name="name">Depreciación Acum Equipos y Mob de Oficina</field>
+        <field name="name">Bienes Raíces</field>
         <field name="code">120210</field>
         <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field ref="account.data_account_type_fixed_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
-    <record id="120220" model="account.account.template">
+    <!-- 1 Activo -->
+    <!-- 12 Activo Fijo -->
+    <!-- 1203 Depreciaciones Acumuladas -->
+    <record id="120310" model="account.account.template">
+        <field name="name">Depreciación Acum Equipos y Mob de Oficina</field>
+        <field name="code">120310</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_fixed_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 12 Activo Fijo -->
+    <!-- 1203 Depreciaciones Acumuladas -->
+    <record id="120320" model="account.account.template">
         <field name="name">Depreciación Acum Equipos Computacionales</field>
-        <field name="code">120220</field>
+        <field name="code">120320</field>
         <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field ref="account.data_account_type_fixed_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
-    <record id="120230" model="account.account.template">
+    <!-- 1 Activo -->
+    <!-- 12 Activo Fijo -->
+    <!-- 1203 Depreciaciones Acumuladas -->
+    <record id="120330" model="account.account.template">
         <field name="name">Depreciación Acum Otros Activos</field>
-        <field name="code">120230</field>
+        <field name="code">120330</field>
         <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field ref="account.data_account_type_fixed_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 13 Otros Activos -->
+    <!-- 1301 Intangibles -->
     <record id="130110" model="account.account.template">
-        <field name="name">Inversiones en Otras Entidades</field>
+        <field name="name">Activos Intangibles</field>
         <field name="code">130110</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 13 Otros Activos -->
+    <!-- 1301 Intangibles -->
     <record id="130120" model="account.account.template">
-        <field name="name">Activos Intangibles</field>
+        <field name="name">Derechos Otras Empresas</field>
         <field name="code">130120</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 13 Otros Activos -->
+    <!-- 1301 Intangibles -->
     <record id="130130" model="account.account.template">
         <field name="name">Cuentas por Cobrar a Personas y Empresas Relacionadas Largo Plazo</field>
         <field name="code">130130</field>
@@ -316,6 +645,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 13 Otros Activos -->
+    <!-- 1301 Intangibles -->
     <record id="130140" model="account.account.template">
         <field name="name">Documentos y Cuentas por Cobrar a Largo Plazo</field>
         <field name="code">130140</field>
@@ -324,6 +656,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 13 Otros Activos -->
+    <!-- 1301 Intangibles -->
     <record id="130150" model="account.account.template">
         <field name="name">Garantías de Obligaciones a Largo Plazo y de Obligaciones de Terceros</field>
         <field name="code">130150</field>
@@ -332,14 +667,64 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 13 Otros Activos -->
+    <!-- 1301 Intangibles -->
     <record id="130160" model="account.account.template">
         <field name="name">Títulos Patrimoniales Bolsas de Productos</field>
         <field name="code">130160</field>
         <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
+        <field ref="account.data_account_type_non_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 1 Activo -->
+    <!-- 19 Cuentas de Orden -->
+    <!-- 1901 Boletas de Garantía -->
+    <record id="190110" model="account.account.template">
+        <field name="name">Boletas de Garantía</field>
+        <field name="code">190110</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 19 Cuentas de Orden -->
+    <!-- 1902 Letras Descontadas -->
+    <record id="190210" model="account.account.template">
+        <field name="name">Letras Descontadas</field>
+        <field name="code">190210</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 19 Cuentas de Orden -->
+    <!-- 1903 Documentos en Garantía -->
+    <record id="190310" model="account.account.template">
+        <field name="name">Documentos en Garantía</field>
+        <field name="code">190310</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 1 Activo -->
+    <!-- 19 Cuentas de Orden -->
+    <!-- 1904 Acciones Suscritas -->
+    <record id="190410" model="account.account.template">
+        <field name="name">Acciones Suscritas</field>
+        <field name="code">190410</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_assets" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2101 Bancos Acreedores -->
     <record id="210110" model="account.account.template">
         <field name="name">Tarjeta de Crédito Corporativa</field>
         <field name="code">210110</field>
@@ -348,6 +733,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2101 Bancos Acreedores -->
     <record id="210120" model="account.account.template">
         <field name="name">Linea de Crédito Bancaria</field>
         <field name="code">210120</field>
@@ -356,6 +744,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2101 Bancos Acreedores -->
     <record id="210140" model="account.account.template">
         <field name="name">Crédito Comercial C/Plazo</field>
         <field name="code">210140</field>
@@ -364,6 +755,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2101 Bancos Acreedores -->
     <record id="210150" model="account.account.template">
         <field name="name">Obligaciones Leasing Corto Plazo</field>
         <field name="code">210150</field>
@@ -372,6 +766,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2101 Bancos Acreedores -->
     <record id="210160" model="account.account.template">
         <field name="name">Crédito Hipotecario C/Plazo</field>
         <field name="code">210160</field>
@@ -379,6 +776,10 @@
         <field ref="account.data_account_type_payables" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2101 Bancos Acreedores -->
     <record id="210170" model="account.account.template">
         <field name="name">Crédito Comercial LP Venc. C/Plazo</field>
         <field name="code">210170</field>
@@ -387,6 +788,20 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2101 Bancos Acreedores - Dividendos -->
+    <record id="210180" model="account.account.template">
+        <field name="name">Dividendos por Pagar</field>
+        <field name="code">210180</field>
+        <field name="reconcile" eval="True"/>
+        <field ref="account.data_account_type_payable" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2102 Proveedores -->
     <record id="210210" model="account.account.template">
         <field name="name">Proveedores</field>
         <field name="code">210210</field>
@@ -395,6 +810,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2102 Proveedores -->
     <record id="210220" model="account.account.template">
         <field name="name">Anticipo de Clientes</field>
         <field name="code">210220</field>
@@ -403,7 +821,10 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
-     <record id="210310" model="account.account.template">
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2103 Documentos por Pagar -->
+    <record id="210310" model="account.account.template">
         <field name="name">Cheques Girados y No Cobrados</field>
         <field name="code">210310</field>
         <field name="reconcile" eval="True"/>
@@ -411,6 +832,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2103 Documentos por Pagar -->
     <record id="210320" model="account.account.template">
         <field name="name">Documentos en Garantía</field>
         <field name="code">210320</field>
@@ -419,6 +843,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2103 Documentos por Pagar -->
     <record id="210330" model="account.account.template">
         <field name="name">Boleta en Garantia</field>
         <field name="code">210330</field>
@@ -427,6 +854,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2104 Provis. y Retenciones -->
     <record id="210410" model="account.account.template">
         <field name="name">AFP x Pagar</field>
         <field name="code">210410</field>
@@ -435,6 +865,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2104 Provis. y Retenciones -->
     <record id="210420" model="account.account.template">
         <field name="name">C.C.A.F. x Pagar</field>
         <field name="code">210420</field>
@@ -443,6 +876,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2104 Provis. y Retenciones -->
     <record id="210430" model="account.account.template">
         <field name="name">INP x Pagar</field>
         <field name="code">210430</field>
@@ -451,6 +887,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2104 Provis. y Retenciones -->
     <record id="210440" model="account.account.template">
         <field name="name">ISAPRES x Pagar</field>
         <field name="code">210440</field>
@@ -459,6 +898,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2104 Provis. y Retenciones -->
     <record id="210450" model="account.account.template">
         <field name="name">Mutual Seg. x Pagar</field>
         <field name="code">210450</field>
@@ -467,6 +909,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2105 RRHH por pagar -->
     <record id="210510" model="account.account.template">
         <field name="name">Sueldos por Pagar</field>
         <field name="code">210510</field>
@@ -475,6 +920,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2105 RRHH por pagar -->
     <record id="210520" model="account.account.template">
         <field name="name">Honorarios por Pagar</field>
         <field name="code">210520</field>
@@ -483,6 +931,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2105 RRHH por pagar -->
     <record id="210530" model="account.account.template">
         <field name="name">Viáticos y Otros por Pagar</field>
         <field name="code">210530</field>
@@ -491,6 +942,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2105 RRHH por pagar -->
     <record id="210540" model="account.account.template">
         <field name="name">Finiquitos por Pagar</field>
         <field name="code">210540</field>
@@ -499,6 +953,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2105 RRHH por pagar -->
     <record id="210550" model="account.account.template">
         <field name="name">Rendiciones por Pagar</field>
         <field name="code">210550</field>
@@ -507,38 +964,42 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2105 RRHH por pagar -->
+    <record id="210560" model="account.account.template">
+        <field name="name">Provisión de Vacaciones</field>
+        <field name="code">210560</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2106 Provisiones por pagar -->
     <record id="210610" model="account.account.template">
-        <field name="name">Provisión de Impuesto a la Renta</field>
+        <field name="name">Provisión de Impuesto PPM</field>
         <field name="code">210610</field>
         <field name="reconcile" eval="True"/>
         <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2106 Provisiones por pagar -->
     <record id="210620" model="account.account.template">
-        <field name="name">Provisión de Vacaciones</field>
+        <field name="name">Otras Provisiones</field>
         <field name="code">210620</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
-    <record id="210630" model="account.account.template">
-        <field name="name">Otras Provisiones</field>
-        <field name="code">210630</field>
-        <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
-        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
-    </record>
-
-    <record id="210640" model="account.account.template">
-        <field name="name">Cuenta Puente</field>
-        <field name="code">210640</field>
-        <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
-        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
-    </record>
-
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2107 Impuestos por pagar -->
     <record id="210710" model="account.account.template">
         <field name="name">IVA Débito Fiscal</field>
         <field name="code">210710</field>
@@ -547,6 +1008,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2107 Impuestos por pagar -->
     <record id="210720" model="account.account.template">
         <field name="name">PPM por Pagar</field>
         <field name="code">210720</field>
@@ -555,6 +1019,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2107 Impuestos por pagar -->
     <record id="210730" model="account.account.template">
         <field name="name">Impuesto Único Trabajadores</field>
         <field name="code">210730</field>
@@ -563,6 +1030,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2107 Impuestos por pagar -->
     <record id="210740" model="account.account.template">
         <field name="name">Impuesto Retención Segunda Categoría</field>
         <field name="code">210740</field>
@@ -571,6 +1041,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2107 Impuestos por pagar -->
     <record id="210750" model="account.account.template">
         <field name="name">Impuesto Renta 1a Categoría por Pagar</field>
         <field name="code">210750</field>
@@ -579,6 +1052,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 21 Pasivo Circulante -->
+    <!-- 2107 Impuestos por pagar -->
     <record id="210760" model="account.account.template">
         <field name="name">Impuesto Mensuales por Pagar</field>
         <field name="code">210760</field>
@@ -587,6 +1063,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 22 Pasivo a Largo Plazo -->
+    <!-- 2201 Créditos a Largo Plazo -->
     <record id="220120" model="account.account.template">
         <field name="name">Obligaciones Leasing L/Plazo</field>
         <field name="code">220120</field>
@@ -595,6 +1074,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 22 Pasivo a Largo Plazo -->
+    <!-- 2201 Créditos a Largo Plazo -->
     <record id="220130" model="account.account.template">
         <field name="name">Crédito Comercial L/Plazo</field>
         <field name="code">220130</field>
@@ -603,6 +1085,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 22 Pasivo a Largo Plazo -->
+    <!-- 2202 Provisiones a Largo Plazo -->
     <record id="220210" model="account.account.template">
         <field name="name">Provisión Indemnización por Años de Servicio</field>
         <field name="code">220210</field>
@@ -611,6 +1096,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 22 Pasivo a Largo Plazo -->
+    <!-- 2203 Otros Pasivos -->
     <record id="220310" model="account.account.template">
         <field name="name">Cta Corriente Empresa Relacionada</field>
         <field name="code">220310</field>
@@ -619,6 +1107,9 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 22 Pasivo a Largo Plazo -->
+    <!-- 2203 Otros Pasivos -->
     <record id="220320" model="account.account.template">
         <field name="name">Impuesto Diferido Largo Plazo</field>
         <field name="code">220320</field>
@@ -627,6 +1118,19 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 2 Pasivo -->
+    <!-- 22 Pasivo a Largo Plazo -->
+    <!-- 2203 Otros Pasivos -->
+    <record id="220330" model="account.account.template">
+        <field name="name">Cŕeditos a Largo Plazo</field>
+        <field name="code">220330</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 23 Patrimonio -->
+    <!-- 2301 Capital -->
     <record id="230110" model="account.account.template">
         <field name="name">Capital Social</field>
         <field name="code">230110</field>
@@ -635,53 +1139,112 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
-    <record id="230120" model="account.account.template">
-        <field name="name">Revalorización Capital Propio</field>
-        <field name="code">230120</field>
-        <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_equity" name="user_type_id"/>
-        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
-    </record>
-
-    <record id="230130" model="account.account.template">
-        <field name="name">Aportes por Enterar</field>
-        <field name="code">230130</field>
-        <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_equity" name="user_type_id"/>
-        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
-    </record>
-
+    <!-- 23 Patrimonio -->
+    <!-- 2302 Reservas de Valorización -->
     <record id="230210" model="account.account.template">
-        <field name="name">Resultado Acumulado</field>
+        <field name="name">Revalorización Capital Propio</field>
         <field name="code">230210</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_equity" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
+    <!-- 23 Patrimonio -->
+    <!-- 2302 Reservas de Valorización -->
     <record id="230220" model="account.account.template">
-        <field name="name">Resultado del Ejercicio</field>
+        <field name="name">Otras Revalorizaciones</field>
         <field name="code">230220</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_equity" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
-    <record id="230230" model="account.account.template">
+    <!-- 23 Patrimonio -->
+    <!-- 2304 Fluctuación de Valores -->
+    <record id="230410" model="account.account.template">
         <field name="name">Fluctuación de Valores</field>
-        <field name="code">230230</field>
+        <field name="code">230410</field>
         <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
+        <field ref="account.data_account_type_equity" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
-    <record id="230320" model="account.account.template">
-        <field name="name">Prestamos</field>
-        <field name="code">230320</field>
+    <!-- 23 Patrimonio -->
+    <!-- 2305 Utilidad (perdida) Ret. -->
+    <record id="230510" model="account.account.template">
+        <field name="name">Resultado Acumulado</field>
+        <field name="code">230510</field>
         <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
+        <field ref="account.data_account_type_equity" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
+
+    <!-- 23 Patrimonio -->
+    <!-- 2305 Utilidad (perdida) Ret. -->
+    <record id="230510" model="account.account.template">
+        <field name="name">Resultado del Ejercicio</field>
+        <field name="code">230510</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_equity" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 29 cuentas de orden haber -->
+    <!-- 2901 Cuentas Puente -->
+    <record id="290110" model="account.account.template">
+        <field name="name">Cuenta Puente</field>
+        <field name="code">290110</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 29 cuentas de orden haber -->
+    <!-- 2902 Responsable Garantía -->
+    <record id="290210" model="account.account.template">
+        <field name="name">Responsable Boletas Garantía</field>
+        <field name="code">290210</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 29 cuentas de orden haber -->
+    <!-- 2902 Responsable Garantía -->
+    <record id="290220" model="account.account.template">
+        <field name="name">Responsable Documentos Garantía</field>
+        <field name="code">290220</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 29 cuentas de orden haber -->
+    <!-- 2903 Responsable Letras Descontadas -->
+    <record id="290230" model="account.account.template">
+        <field name="name">Responsable Letras Descontadas</field>
+        <field name="code">290230</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <!-- 2 Pasivo -->
+    <!-- 29 cuentas de orden haber -->
+    <!-- 2906 Acciones Capital Suscripto -->
+    <record id="290610" model="account.account.template">
+        <field name="name">Acciones Capital Suscripto</field>
+        <field name="code">290610</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+
 
     <record id="310110" model="account.account.template">
         <field name="name">Ingresos por Consultoría</field>
