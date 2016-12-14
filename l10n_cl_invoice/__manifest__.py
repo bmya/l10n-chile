@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-{   'active': False,
+{'active': False,
     'author': u'Blanco Martín & Asociados, Chilean Localization Team 10.0',
     'website': 'http://blancomartin.cl',
     'version': '10.0.3.1.0',

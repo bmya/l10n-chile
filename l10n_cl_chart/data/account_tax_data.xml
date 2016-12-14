@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
      <!-- Account Tags -->
-
      <record id="tag_cl_01" model="account.account.tag">
         <field name="name">Impuestos Directos a Pagar</field>
         <field name="applicability">taxes</field>
@@ -120,8 +119,8 @@
       <field name="amount">19</field>
       <field name="amount_type">percent</field>
       <field name="type_tax_use">sale</field>
-      <field name="refund_account_id" ref="210701"/>
-      <field name="account_id" ref="210701"/>
+      <field name="refund_account_id" ref="210710"/>
+      <field name="account_id" ref="210710"/>
       <field name="tag_ids" eval="[(6,0,[ref('tag_cl_09'), ref('tag_cl_14')])]"/>
     </record>
 
@@ -133,8 +132,8 @@
       <field name="sequence" eval="1"/>
       <field name="amount_type">percent</field>
       <field name="type_tax_use">purchase</field>
-      <field name="refund_account_id" ref="110701"/>
-      <field name="account_id" ref="110701"/>
+      <field name="refund_account_id" ref="110710"/>
+      <field name="account_id" ref="110710"/>
       <field name="tag_ids" eval="[(6,0,[ref('tag_cl_05'), ref('tag_cl_18')])]"/>
     </record>
 
@@ -146,8 +145,8 @@
       <field name="sequence" eval="2"/>
       <field name="amount_type">percent</field>
       <field name="type_tax_use">purchase</field>
-      <field name="refund_account_id" ref="210704"/>
-      <field name="account_id" ref="210704"/>
+      <field name="refund_account_id" ref="210740"/>
+      <field name="account_id" ref="210740"/>
       <field name="tag_ids" eval="[(6,0,[ref('tag_cl_22'), ref('tag_cl_21')])]"/>
     </record>
 

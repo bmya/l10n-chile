@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="1" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1 Activo</field>
+        <field name="color">0</field>
+    </record>
+    <record id="11" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">11 Activo Corriente</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1101" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1101 Disponible</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1102" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1102 Inversiones y Dep a Corto Plazo</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1103" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1103 Deudores Comerciales</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1104" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1104 Ctas y Docs. por Cobrar</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1105" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1105 Creditos RRHH</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1106" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1106 Existencias</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1107" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1107 Impuestos por recuperar</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1108" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1108 Gastos Anticipados</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1109" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1109 Cuentas Corrientes Socios</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1110" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1110 Gastos Diferidos</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1111" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1111 Cuentas Obligadas Socios</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1112" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1112 Gastos Tributarios</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1113" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1113 Importaciones en Tránsito</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1114" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1114 Gastos Rechazados</field>
+        <field name="color">0</field>
+    </record>
+    <record id="12" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">12 Activo Fijo</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1201" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1201 Muebles y Utiles</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1202" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1202 Bienes Raíces</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1203" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1203 Depreciaciones Acumuladas</field>
+        <field name="color">0</field>
+    </record>
+    <record id="13" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">13 Otros Activos</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1301" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1301 Intangibles</field>
+        <field name="color">0</field>
+    </record>
+    <record id="19" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">19 Cuentas de Orden</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1901" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1901 Boletas de Garantía</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1902" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1902 Letras Descontadas</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1903" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1903 Documentos en Garantía</field>
+        <field name="color">0</field>
+    </record>
+    <record id="1904" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">1904 Acciones Suscritas</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2 Pasivo</field>
+        <field name="color">0</field>
+    </record>
+    <record id="21" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">21 Pasivo Circulante</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2101" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2101 Bancos Acreedores</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2102" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2102 Proveedores</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2103" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2103 Documentos por Pagar</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2104" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2104 Provis. y Retenciones</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2105" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2105 RRHH por pagar</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2106" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2106 Provisiones por pagar</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2107" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2107 Impuestos por pagar</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2201" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2201 Créditos a Largo Plazo</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2202" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2202 Provisiones a Largo Plazo</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2203" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2203 Otros Pasivos</field>
+        <field name="color">0</field>
+    </record>
+    <record id="23" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">23 Patrimonio</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2301" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2301 Capital</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2302" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2302 Reservas de Valorización</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2304" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2304 Fluctuación de Valores</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2305" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2305 Utilidad (perdida) Ret.</field>
+        <field name="color">0</field>
+    </record>
+    <record id="29" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">29 cuentas de orden haber</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2901" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2901 Cuentas Puente</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2902" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2902 Responsable Garantía</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2903" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2903 Responsable Letras Descontadas</field>
+        <field name="color">0</field>
+    </record>
+    <record id="2906" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">2906 Acciones Capital Suscripto</field>
+        <field name="color">0</field>
+    </record>
+</odoo>
+

@@ -33,6 +33,7 @@
         <field name="name">Caja</field>
         <field name="code">110111</field>
         <field name="reconcile" eval="False"/>
+        <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1101')])]"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
@@ -240,17 +241,6 @@
 
     <!-- 1 Activo -->
     <!-- 11 Activo Corriente -->
-    <!-- 1105 Inversiones a Corto Plazo  -->
-    <record id="110510" model="account.account.template">
-        <field name="name">Depósitos a Plazo</field>
-        <field name="code">110510</field>
-        <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
-        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
-    </record>
-
-    <!-- 1 Activo -->
-    <!-- 11 Activo Corriente -->
     <!-- 1106 Existencias -->
     <record id="110610" model="account.account.template">
         <field name="name">Mercaderías</field>
@@ -385,7 +375,7 @@
     <!-- 11 Activo Corriente -->
     <!-- 1107 Impuestos por recuperar -->
     <record id="110740" model="account.account.template">
-        <field name="name">P.P.M.</field>
+        <field name="name">P.P.M. / Art 33 BIS</field>
         <field name="code">110740</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
@@ -398,17 +388,6 @@
     <record id="110750" model="account.account.template">
         <field name="name">Crédito Sence</field>
         <field name="code">110750</field>
-        <field name="reconcile" eval="False"/>
-        <field ref="account.data_account_type_current_assets" name="user_type_id"/>
-        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
-    </record>
-
-    <!-- 1 Activo -->
-    <!-- 11 Activo Corriente -->
-    <!-- 1107 Impuestos por recuperar -->
-    <record id="110760" model="account.account.template">
-        <field name="name">Crédito Art 33 BIS</field>
-        <field name="code">110760</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -773,7 +752,7 @@
         <field name="name">Crédito Hipotecario C/Plazo</field>
         <field name="code">210160</field>
         <field name="reconcile" eval="True"/>
-        <field ref="account.data_account_type_payables" name="user_type_id"/>
+        <field ref="account.data_account_type_payable" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
@@ -1244,8 +1223,6 @@
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>
     </record>
 
-
-
     <record id="310110" model="account.account.template">
         <field name="name">Ingresos por Consultoría</field>
         <field name="code">310110</field>
@@ -1257,6 +1234,14 @@
     <record id="310210" model="account.account.template">
         <field name="name">Ventas de Productos</field>
         <field name="code">310210</field>
+        <field name="reconcile" eval="False"/>
+        <field ref="account.data_account_type_revenue" name="user_type_id"/>
+        <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+    </record>
+
+    <record id="310215" model="account.account.template">
+        <field name="name">Ventas de Servicios</field>
+        <field name="code">310215</field>
         <field name="reconcile" eval="False"/>
         <field ref="account.data_account_type_revenue" name="user_type_id"/>
         <field name="chart_template_id" ref="cl_chart_template_bmya"/>

@@ -5,7 +5,7 @@
 
 {
     'name': 'Chile Localization Chart Account BMyA',
-    'version': '10.0.2.0.0',
+    'version': '10.0.2.1.0',
     'description': """
 Chilean accounting chart and tax localization.
 ==============================================
@@ -20,6 +20,7 @@ implementación
     'category': 'Localization',
     'depends': ['account'],
     'data': [
+        'data/l10n_cl_chart_tags.xml',
         'data/l10n_cl_chart_data.xml',
         'data/account_tax_data.xml',
         'data/account_chart_template_data.yml',
