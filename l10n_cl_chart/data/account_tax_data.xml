@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <data noupdate="0">
      <!-- Account Tags -->
      <record id="tag_cl_01" model="account.account.tag">
         <field name="name">Impuestos Directos a Pagar</field>
@@ -149,5 +150,5 @@
       <field name="account_id" ref="210740"/>
       <field name="tag_ids" eval="[(6,0,[ref('tag_cl_22'), ref('tag_cl_21')])]"/>
     </record>
-
+    </data>
 </odoo>

@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-# Copyright (c) 2016 Blanco Martin y Asociados - Nelson Ramírez Sánchez http://www.bmya.cl
+# Copyright (c) 2016 Blanco Martin y Asociados - Nelson Ramírez Sánchez
+# http://www.bmya.cl
 
 from odoo import api, SUPERUSER_ID
 from odoo.addons import account
+
 
 def _auto_install_l10n(cr, registry):
     #check the country of the main company (only) and eventually load some module needed in that country
     env = api.Environment(cr, SUPERUSER_ID, {})
     country_code = env.user.company_id.country_id.code
-
     if country_code:
         #auto install localization module(s) if available
         module_list = []
@@ -19,10 +20,11 @@ def _auto_install_l10n(cr, registry):
             module_list.append('l10n_syscohada')
         elif country_code == 'GB':
             module_list.append('l10n_uk')
-        else:
-            if country_code.lower() == 'cl' and env['ir.module.module'].search([('name', '=', 'l10n_cl_chart')]):
+        elif country_code.lower() == 'cl':
+            if env['ir.module.module'].search([('name', '=', 'l10n_cl_chart')]):
                 module_list.append('l10n_cl_chart')
-            elif registry['ir.module.module'].search(cr, SUPERUSER_ID, [('name', '=', 'l10n_' + country_code.lower())]):
+        else:
+            if env['ir.module.module'].search([('name', '=', 'l10n_' + country_code.lower())]):
                 module_list.append('l10n_' + country_code.lower())
             else:
                 module_list.append('l10n_generic_coa')
@@ -41,8 +43,12 @@ def _auto_install_l10n(cr, registry):
         module_ids = env['ir.module.module'].search([('name', 'in', module_list), ('state', '=', 'uninstalled')])
         module_ids.sudo().button_install()
 
-#mokeypatch para reemplazar funcion y al ser chile instale este paquete contable en lugar del original
-account._auto_install_l10n = _auto_install_l10n# -*- coding: utf-8 -*-
+
+# mokeypatch para reemplazar funcion y al ser chile instale este paquete
+# contable en lugar del original
+account._auto_install_l10n = _auto_install_l10n
+# -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-# Copyright (c) 2016 Blanco Martin y Asociados - Nelson Ramírez Sánchez http://www.bmya.cl
+# Copyright (c) 2016 Blanco Martin y Asociados -
+# Nelson Ramírez Sánchez http://www.bmya.cl

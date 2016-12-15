@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <data noupdate="0">
     <record id="1" model="account.account.tag">
         <field name="applicability">accounts</field>
         <field name="name">1 Activo</field>
@@ -180,6 +181,11 @@
         <field name="name">2107 Impuestos por pagar</field>
         <field name="color">0</field>
     </record>
+    <record id="22" model="account.account.tag">
+        <field name="applicability">accounts</field>
+        <field name="name">22 Pasivo a Largo Plazo</field>
+        <field name="color">0</field>
+    </record>
     <record id="2201" model="account.account.tag">
         <field name="applicability">accounts</field>
         <field name="name">2201 Créditos a Largo Plazo</field>
@@ -245,5 +251,6 @@
         <field name="name">2906 Acciones Capital Suscripto</field>
         <field name="color">0</field>
     </record>
+    </data>
 </odoo>
 

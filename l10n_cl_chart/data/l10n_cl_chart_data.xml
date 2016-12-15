@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <data noupdate="0">
     <menuitem id="account_reports_cl_statements_menu" name="Chilean Statements" parent="account.menu_finance_reports" sequence="3" groups="account.group_account_user"/>
     <!-- Account Types -->
     <record id="account_account_type_NCLASIFICADO" model="account.account.type">
@@ -13,12 +14,13 @@
     </record>
 
     <record id="cl_chart_template_bmya" model="account.chart.template">
-      <field name="name">Chile - Plan de Cuentas BMYA</field>
-      <field name="bank_account_code_prefix">11012</field>
-      <field name="cash_account_code_prefix">11011</field>
-      <field name="code_digits">6</field>
-      <field name="currency_id" ref="base.CLP"/>
-      <field name="transfer_account_id" ref="transfer_account_id"/>
+        <field name="name">Chile - Plan de Cuentas BMYA</field>
+        <field name="localization">chile</field>
+        <field name="bank_account_code_prefix">1101</field>
+        <field name="cash_account_code_prefix">1101</field>
+        <field name="code_digits">6</field>
+        <field name="currency_id" ref="base.CLP"/>
+        <field name="transfer_account_id" ref="transfer_account_id"/>
     </record>
 
     <record id="transfer_account_id" model="account.account.template">
@@ -1682,4 +1684,5 @@
         <field name="income_currency_exchange_account_id" ref="420210"/>
         <field name="expense_currency_exchange_account_id" ref="420210"/>
     </record>
+    </data>
 </odoo>
