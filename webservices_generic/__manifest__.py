@@ -21,7 +21,7 @@
 
 {
     'name': 'Web Services Generic Tool',
-    'version': '0.0',
+    'version': '10.0.1.0.0',
     'category': 'Tools',
     'complexity': "easy",
     'description': "Data Model that allows to act as a repository for generic web services connection",
