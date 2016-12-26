@@ -8,9 +8,6 @@
             <field name="model">webservices.server</field>
             <field name="arch" type="xml">
                 <form string="webservices Server Data">
-                	<header>
-                        
-                    </header>
                     <sheet>
                         <div name="buttons" class="oe_right oe_button_box">
                             <button string="Test Connection" type="object" name="action_test_connection"
@@ -104,6 +101,7 @@
             </field>
         </record>
 		<!-- menu -->
+
         <menuitem name="Webservices Server"
                   action="act_webservices_server"
                   id="menu_action_act_webservices_server"
