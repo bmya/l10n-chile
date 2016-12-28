@@ -114,8 +114,8 @@ class AccountInvoice(models.Model):
                 else:
                     line[2]['debit'] = total
             new_lines.append(line)
-        if dif != 0:
-            new_lines = self._repair_diff(new_lines, dif)
+        # if dif != 0:
+        #    new_lines = self._repair_diff(new_lines, dif)
         return new_lines
 
     @api.multi
