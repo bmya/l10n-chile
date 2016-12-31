@@ -86,13 +86,12 @@ class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
     def _repair_diff(self, move_lines, dif):
-        # usualmente es de 1 $ cuando se aplica descuentoo es valor
-        # iva incluido
+        if move_lines[0][2]['currency_id'] != self.company_id.currency_id:
+            return move_lines
         total = self.amount_total
         new_lines = []
         for line in move_lines:
             if line[2]['tax_ids'] and not line[2]['tax_line_id']:
-                # iva ya viene con descuento
                 if dif > 0:
                     val = 1
                     dif -= 1
@@ -104,7 +103,7 @@ class AccountInvoice(models.Model):
                 if line[2]['tax_ids']:
                     for t in line[2]['tax_ids']:
                         imp = self.env['account.tax'].browse(t[1])
-                        if imp.amount > 0  and line[2]['debit'] > 0:
+                        if imp.amount > 0 and line[2]['debit'] > 0:
                             line[2]['debit'] += val
                         elif imp.amount > 0:
                             line[2]['credit'] += val
@@ -116,9 +115,6 @@ class AccountInvoice(models.Model):
             new_lines.append(line)
         if dif != 0:
             new_lines = self._repair_diff(new_lines, dif)
-            _logger.info(
-                'valor de la variable dif usada en _repair_diff: {}'.format(
-                    dif))
         return new_lines
 
     @api.multi
