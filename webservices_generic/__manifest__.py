@@ -30,6 +30,9 @@
     "external_dependencies": {
         'python': ['urllib3', 'pysftp']
     },
+    'depends': [
+        'l10n_cl_base',
+    ],
     'data': [
         'views/ws_servers.xml',
         # 'data/web.services.xml',
@@ -38,5 +41,7 @@
     ],
     'license': 'AGPL-3',
     'installable': True,
+    'auto_install': False,
+    'application': True,
 }
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
