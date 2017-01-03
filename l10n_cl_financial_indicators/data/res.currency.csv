@@ -1,0 +1,6 @@
+"id","active","rounding","decimal_places","name","position","symbol"
+"base.EUR","True","0.01","6","EUR","before","€"
+"base.UF","True","1e-12","14","UF","after","UF"
+"base.USD","True","0.01","6","USD","before","U$S"
+"base.UTM","True","1e-12","14","UTM","after","UTM"
+"base.CLP","True","1.0","0","CLP","before","CL$"
