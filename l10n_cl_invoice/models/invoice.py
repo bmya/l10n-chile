@@ -398,8 +398,6 @@ a VAT."""))
         'company_id.invoice_vat_discrimination_default',)
     def get_vat_discriminated(self):
         vat_discriminated = False
-        # agregarle una condicion: si el giro es afecto a iva, debe
-        # seleccionar factura, de lo contrario boleta (to-do)
         if self.sii_document_class_id.document_letter_id.vat_discriminated or \
             self.company_id.invoice_vat_discrimination_default == \
                 'discriminate_default':
