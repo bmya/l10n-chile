@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import osv, models, fields, api, _
 from odoo.exceptions import except_orm, UserError
+import json
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -324,77 +325,55 @@ class AccountInvoice(models.Model):
                 line.invoice_line_tax_ids = False
                 line.invoice_line_tax_ids = tax_ids
 
-    @api.onchange('journal_id', 'partner_id', 'turn_issuer', 'invoice_turn')
-    def _get_available_journal_document_class(self, default=None):
-        for inv in self:
-            invoice_type = inv.type
-            document_class_ids = []
-            document_class_id = False
-
-            inv.available_journal_document_class_ids = self.env[
-                'account.journal.sii_document_class']
-            if invoice_type in [
-                    'out_invoice', 'in_invoice', 'out_refund', 'in_refund']:
-                operation_type = inv.get_operation_type(invoice_type)
-
-                if inv.use_documents:
-                    letter_ids = inv.get_valid_document_letters(
-                        inv.partner_id.id, operation_type, inv.company_id,
-                        inv.turn_issuer.vat_affected, invoice_type)
-                    if letter_ids:
-                        domain = [
-                            ('journal_id', '=', inv.journal_id.id),
-                            ('sii_document_class_id.document_letter_id',
-                             'in', letter_ids.ids)]
-                        # If document_type in context we try to serch specific
-                        # document document_type = self._context.get(
-                        # 'document_type', False) en este punto document_type
-                        # siempre es falso. TODO: revisar esta opcion
-                        # document_type = self._context.get(
-                        # 'document_type', False)
-                        #if document_type:
-                        #    document_classes = self.env[
-                        #        'account.journal.sii_document_class'].search(
-                        #        domain + [
-                        # ('sii_document_class_id.document_type', '=',
-                        # document_type)])
-                        #    if document_classes.ids:
-                        #        # revisar si hay condicion de exento,
-                        # para poner como primera alternativa estos
-                        #        document_class_id =
-                        # self.get_document_class_default(document_classes)
-                        if invoice_type in ['in_refund', 'out_refund']:
-                            domain += [('sii_document_class_id.document_type',
-                                        'in', ['debit_note', 'credit_note'])]
-                        else:
-                            domain += [('sii_document_class_id.document_type',
-                                        'in', ['invoice', 'invoice_in'])]
-
-                        # For domain, we search all documents
-                        document_classes = self.env[
-                            'account.journal.sii_document_class'].search(domain)
-                        document_class_ids = document_classes.ids
-                        # If not specific document type found, we choose
-                        # another one
-                        if not document_class_id and document_class_ids:
-                            # revisar si hay condicion de exento, para poner
-                            # como primera alternativa estos
-                            # to-do: manejar más fino el documento por defecto.
-                            document_class_id = inv.get_document_class_default(
-                                document_classes)
-                # incorporado nuevo, para la compra
-                if operation_type == 'purchase':
-                    inv.available_journals = []
-
-            inv.available_journal_document_class_ids = document_class_ids
-            if not inv.journal_document_class_id or default:
-                if default:
-                    for dc in document_classes:
-                        if dc.sii_document_class_id.id == default:
-                            document_class_id = dc.id
-                inv.journal_document_class_id = document_class_id
-            else:
-                inv.journal_document_class_id = False
+    @api.one
+    @api.depends('journal_id', 'partner_id', 'turn_issuer')
+    def _get_available_journal_document_class(self):
+        invoice_type = self.type
+        document_class_ids = []
+        document_class_id = False
+        self.available_journal_document_class_ids = self.env[
+            'account.journal.sii_document_class']
+        if invoice_type in [
+                'out_invoice', 'in_invoice', 'out_refund', 'in_refund']:
+            operation_type = self.get_operation_type(invoice_type)
+            if self.use_documents:
+                letter_ids = self.get_valid_document_letters(
+                    self.partner_id.id, operation_type, self.company_id.id)
+                # domain = [
+                #     ('journal_id', '=', self.journal_id.id),
+                #     '|', ('sii_document_class_id.document_letter_id',
+                #           'in', letter_ids),
+                #          ('sii_document_class_id.document_letter_id',
+                #           '=', False)]
+                # If document_type in context we try to serch specific document
+                document_type = self._context.get('document_type', False)
+                if document_type:
+                    document_classes = self.env[
+                        'account.journal.sii_document_class'].search(
+                        domain + [('sii_document_class_id.document_type',
+                                   '=', document_type)])
+                    if document_classes.ids:
+                        # revisar si hay condicion de exento, para poner como
+                        # primera alternativa estos
+                        document_class_id = self.get_document_class_default(
+                            document_classes)
+                # For domain, we search all documents
+                #### linea de reemplazo de todo el resto
+                domain = [('journal_id', '=', self.journal_id.id),]
+                #####
+                # raise UserError(json.dumps(domain))
+                document_classes = self.env[
+                    'account.journal.sii_document_class'].search(domain)
+                document_class_ids = document_classes.ids
+                # If not specific document type found, we choose another one
+                if not document_class_id and document_class_ids:
+                    # revisar si hay condicion de exento, para poner
+                    # como primera alternativa estos
+                    # todo: manejar más fino el documento por defecto.
+                    document_class_id = self.get_document_class_default(
+                        document_classes)
+        self.available_journal_document_class_ids = document_class_ids
+        self.journal_document_class_id = document_class_id
 
     @api.onchange('sii_document_class_id')
     def _check_vat(self):
@@ -594,14 +573,14 @@ sequence on the journal related documents to this invoice.'))
         document_letter_obj = self.env['sii.document_letter']
         user = self.env.user
         partner = self.partner_id
-
+        if not company:
+            company = self.company_id
         if not partner_id or not company or not operation_type:
             return []
-
         partner = partner.commercial_partner_id
 
         if operation_type == 'sale':
-            issuer_responsability_id = company.partner_id.responsability_id.id
+            issuer_responsability_id = self.company_id.partner_id.responsability_id.id
             receptor_responsability_id = partner.responsability_id.id
             if invoice_type == 'out_invoice':
                 if vat_affected == 'SI':

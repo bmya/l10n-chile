@@ -60,8 +60,7 @@ class L10nClFinancialIndicators(models.Model):
                 'currency_id': currency_id.id,
                 'rate': 1/rate,
                 'name': rate_name}
-            print values
-            self.env['res.currency.rate'].create(values)
+            rates = self.env['res.currency.rate'].create(values)
             print "se actualizó la moneda"
             print indicadores[self.name][1]
     
@@ -71,5 +70,7 @@ class L10nClFinancialIndicators(models.Model):
             _logger.info(
                 'Iterando la moneda "{}" por proceso planificado'.format(
                     indic[0]))
-            self.action_update_currency()
+            webservice_rec = self.env['webservices.server'].search([('name','=',indic[0])])
+            if webservice_rec:
+                webservice_rec.action_update_currency()
         return True

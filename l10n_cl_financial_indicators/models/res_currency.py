@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
+from odoo.addons import decimal_precision as dp
 
 class Currency(models.Model):
     _inherit = "res.currency"
     
-    rate = fields.Float(compute='_compute_current_rate', string='Current Rate', digits=(12, 9),
+    rate = fields.Float(compute='_compute_current_rate', string='Current Rate', 
+                        digits=dp.get_precision('Currency'),
                         help='The rate of the currency to the currency of rate 1.')
-    rounding = fields.Float(string='Rounding Factor', digits=(12, 9), default=0.01)
+    rounding = fields.Float(string='Rounding Factor', default=0.01, 
+                            digits=dp.get_precision('Currency'))
     
     @api.multi
     def _compute_current_rate(self):
@@ -28,4 +31,5 @@ class Currency(models.Model):
 class CurrencyRate(models.Model):
     _inherit = "res.currency.rate"
     
-    rate = fields.Float(digits=(12, 9), help='The rate of the currency to the currency of rate 1')
+    rate = fields.Float(digits=dp.get_precision('Currency'), 
+                    help='The rate of the currency to the currency of rate 1')
