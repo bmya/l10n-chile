@@ -346,7 +346,9 @@ class AccountInvoice(models.Model):
                 #          ('sii_document_class_id.document_letter_id',
                 #           '=', False)]
                 # If document_type in context we try to serch specific document
+                # domain modificado
                 document_type = self._context.get('document_type', False)
+
                 if document_type:
                     document_classes = self.env[
                         'account.journal.sii_document_class'].search(
