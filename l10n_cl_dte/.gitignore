@@ -1,1 +1,4 @@
 *.pyc
+*.pem
+*.p12
+.idea
