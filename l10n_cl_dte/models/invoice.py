@@ -167,6 +167,16 @@ class Invoice(models.Model):
         return response_j
 
     @staticmethod
+    def remove_plurals(dte):
+        dte = collections.OrderedDict(
+            [('Detalle', v) if k == 'Detalles' else (k, v) for k, v in
+             dte.items()])
+        dte = collections.OrderedDict(
+            [('Referencia', v) if k == 'Referencias' else (k, v) for k, v in
+             dte.items()])
+        return dte
+
+    @staticmethod
     def char_replace(text):
         """
         Funcion para reemplazar caracteres especiales
@@ -358,25 +368,25 @@ version="1.0">
 </EnvioDTE>'''.format(doc, typedoc)
         return xml
 
-    '''
-    Funcion usada en autenticacion en SII
-    Insercion del nodo de firma (1ra) dentro del DTE
-    Una vez firmado.
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2016-06-01
-    '''
     def create_template_doc1(self, doc, sign):
+        """
+        Funcion usada en autenticacion en SII
+        Insercion del nodo de firma (1ra) dentro del DTE
+        Una vez firmado.
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-06-01
+        """
         xml = doc.replace('</DTE>', '') + sign + '</DTE>'
         return xml
 
-    '''
-    Funcion usada en autenticacion en SII
-    Insercion del nodo de firma (2da) dentro del DTE
-    Una vez firmado.
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2016-06-01
-    '''
     def create_template_env1(self, doc, sign):
+        """
+        Funcion usada en autenticacion en SII
+        Insercion del nodo de firma (2da) dentro del DTE
+        Una vez firmado.
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-06-01
+        """
         xml = doc.replace('</EnvioDTE>', '') + sign + '</EnvioDTE>'
         return xml
 
@@ -396,11 +406,11 @@ version="1.0">
         xml = doc.replace('</EnvioBOLETA>', '') + sign + '</EnvioBOLETA>'
         return xml
 
-    '''
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2016-06-01
-    '''
     def sign_seed(self, message, privkey, cert):
+        """
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-06-01
+        """
         doc = etree.fromstring(message)
         signed_node = xmldsig(
             doc, digest_algorithm=u'sha1').sign(
@@ -411,16 +421,16 @@ version="1.0">
             signed_node, pretty_print=True).replace('ds:', '')
         return msg
 
-    '''
-    Funcion usada en autenticacion en SII
-    Obtencion del token a partir del envio de la semilla firmada
-    Basada en función de ejemplo mostrada en el sitio edreams.cl
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2016-06-01
-    '''
-    def get_token(self, seed_file,company_id):
+    def get_token(self, seed_file, company_id):
+        """
+        Funcion usada en autenticacion en SII
+        Obtencion del token a partir del envio de la semilla firmada
+        Basada en función de ejemplo mostrada en el sitio edreams.cl
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-06-01
+        """
         url = server_url[company_id.dte_service_provider] + 'GetTokenFromSeed.jws?WSDL'
-        ns = 'urn:'+ server_url[company_id.dte_service_provider] +'GetTokenFromSeed.jws'
+        ns = 'urn:' + server_url[company_id.dte_service_provider] +'GetTokenFromSeed.jws'
         _server = SOAPProxy(url, ns)
         tree = etree.fromstring(seed_file)
         ss = etree.tostring(tree, pretty_print=True, encoding='iso-8859-1')
@@ -438,13 +448,14 @@ version="1.0">
     def long_to_bytes(self, n, blocksize=0):
         """long_to_bytes(n:long, blocksize:int) : string
         Convert a long integer to a byte string.
-        If optional blocksize is given and greater than zero, pad the front of the
-        byte string with binary zeros so that the length is a multiple of
+        If optional blocksize is given and greater than zero, pad the front of
+        the byte string with binary zeros so that the length is a multiple of
         blocksize.
         """
         # after much testing, this algorithm was deemed to be the fastest
         s = b''
-        n = long(n)  # noqa
+        n = long(n)
+        # noqa
         import struct
         pack = struct.pack
         while n > 0:
@@ -459,7 +470,8 @@ version="1.0">
             s = b'\000'
             i = 0
         s = s[i:]
-        # add back some pad bytes.  this could be done more efficiently w.r.t. the
+        # add back some pad bytes.  this could be done more efficiently
+        # w.r.t. the
         # de-padding being done above, but sigh...
         if blocksize > 0 and len(s) % blocksize:
             s = (blocksize - len(s) % blocksize) * b'\000' + s
@@ -472,40 +484,59 @@ version="1.0">
         digest = base64.b64encode(self.digest(mess))
         reference_uri='#'+uri
         signed_info = Element("SignedInfo")
-        c14n_method = SubElement(signed_info, "CanonicalizationMethod", Algorithm='http://www.w3.org/TR/2001/REC-xml-c14n-20010315')
-        sign_method = SubElement(signed_info, "SignatureMethod", Algorithm='http://www.w3.org/2000/09/xmldsig#rsa-sha1')
+        c14n_method = SubElement(
+            signed_info, "CanonicalizationMethod",
+            Algorithm='http://www.w3.org/TR/2001/REC-xml-c14n-20010315')
+        sign_method = SubElement(
+            signed_info, "SignatureMethod",
+            Algorithm='http://www.w3.org/2000/09/xmldsig#rsa-sha1')
         reference = SubElement(signed_info, "Reference", URI=reference_uri)
         transforms = SubElement(reference, "Transforms")
-        SubElement(transforms, "Transform", Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315")
-        digest_method = SubElement(reference, "DigestMethod", Algorithm="http://www.w3.org/2000/09/xmldsig#sha1")
+        SubElement(
+            transforms, "Transform",
+            Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315")
+        digest_method = SubElement(
+            reference, "DigestMethod",
+            Algorithm="http://www.w3.org/2000/09/xmldsig#sha1")
         digest_value = SubElement(reference, "DigestValue")
         digest_value.text = digest
-        signed_info_c14n = etree.tostring(signed_info,method="c14n",exclusive=False,with_comments=False,inclusive_ns_prefixes=None)
+        signed_info_c14n = etree.tostring(
+            signed_info, method="c14n", exclusive=False,
+            with_comments=False,inclusive_ns_prefixes=None)
         if type in ['doc','recep']:
             att = 'xmlns="http://www.w3.org/2000/09/xmldsig#"'
         else:
-            att = 'xmlns="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
+            att = 'xmlns="http://www.w3.org/2000/09/xmldsig#" \
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         #@TODO Find better way to add xmlns:xsi attrib
-        signed_info_c14n = signed_info_c14n.replace("<SignedInfo>","<SignedInfo " + att + ">")
-        sig_root = Element("Signature",attrib={'xmlns':'http://www.w3.org/2000/09/xmldsig#'})
+        signed_info_c14n = signed_info_c14n.replace(
+            "<SignedInfo>","<SignedInfo " + att + ">")
+        sig_root = Element(
+            "Signature", attrib={'xmlns': 'http://www.w3.org/2000/09/xmldsig#'})
         sig_root.append(etree.fromstring(signed_info_c14n))
         signature_value = SubElement(sig_root, "SignatureValue")
         from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        from cryptography.hazmat.primitives.serialization \
+            import load_pem_private_key
         import OpenSSL
         from OpenSSL.crypto import *
         type_ = FILETYPE_PEM
         key=OpenSSL.crypto.load_privatekey(type_,privkey.encode('ascii'))
         signature= OpenSSL.crypto.sign(key,signed_info_c14n,'sha1')
-        signature_value.text =textwrap.fill(base64.b64encode(signature),64)
+        signature_value.text =textwrap.fill(base64.b64encode(signature), 64)
         key_info = SubElement(sig_root, "KeyInfo")
         key_value = SubElement(key_info, "KeyValue")
         rsa_key_value = SubElement(key_value, "RSAKeyValue")
         modulus = SubElement(rsa_key_value, "Modulus")
-        key = load_pem_private_key(privkey.encode('ascii'),password=None, backend=default_backend())
-        modulus.text =  textwrap.fill(base64.b64encode(self.long_to_bytes(key.public_key().public_numbers().n)),64)
+        key = load_pem_private_key(
+            privkey.encode('ascii'), password=None, backend=default_backend())
+        modulus.text =  textwrap.fill(
+            base64.b64encode(
+                self.long_to_bytes(key.public_key().public_numbers().n)), 64)
         exponent = SubElement(rsa_key_value, "Exponent")
-        exponent.text = self.ensure_str(base64.b64encode(self.long_to_bytes(key.public_key().public_numbers().e)))
+        exponent.text = self.ensure_str(
+            base64.b64encode(self.long_to_bytes(
+                key.public_key().public_numbers().e)))
         x509_data = SubElement(key_info, "X509Data")
         x509_certificate = SubElement(x509_data, "X509Certificate")
         x509_certificate.text = '\n'+textwrap.fill(cert,64)
@@ -553,7 +584,8 @@ version="1.0">
             obj = user = self.env.user
         _logger.info(obj.name)
         if not obj.cert:
-            obj = self.env['res.users'].search([("authorized_users_ids","=", user.id)])
+            obj = self.env['res.users'].search(
+                [("authorized_users_ids", "=", user.id)])
             if not obj or not obj.cert:
                 obj = self.env['res.company'].browse([comp_id.id])
                 if not obj.cert or not user.id in obj.authorized_users_ids.ids:
@@ -564,6 +596,24 @@ version="1.0">
             'priv_key': obj.priv_key,
             'cert': obj.cert}
         return signature_data
+
+    @staticmethod
+    def safe_variable(var, varname='default'):
+        msg = {
+            'default': u'variable',
+            'company_email':  u'variable correo del emisor',
+            'company_street': u'dirección de la compañía',
+            'company_county': u'comuna de la compañía',
+            'company_city': u'ciudad de la compañía',
+            'partner_email': u'variable correo del receptor',
+            'partner_street': u'dirección del receptor',
+            'partner_county': u'comuna del receptor',
+            'partner_city': u'ciudad del receptor',
+        }
+        if not var:
+            raise UserError(
+                u'La {} no está configurada.'.format(msg[varname]))
+        return var
 
     @staticmethod
     def get_resolution_data(comp_id):
@@ -580,8 +630,9 @@ version="1.0">
         return resolution_data
 
     @api.multi
-    def send_xml_file(self, envio_dte=None, file_name="envio",company_id=False, 
-                      sii_result='NoEnviado', doc_ids=''):
+    def send_xml_file(
+            self, envio_dte=None, file_name="envio",company_id=False,
+            sii_result='NoEnviado', doc_ids=''):
         if not company_id.dte_service_provider:
             raise UserError(_("Not Service provider selected!"))
         #try:
@@ -602,10 +653,13 @@ version="1.0">
             url = 'https://maullin.sii.cl'
         post = '/cgi_dte/UPL/DTEUpload'
         headers = {
-            'Accept': 'image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, application/vnd.ms-powerpoint, application/ms-excel, application/msword, */*',
+            'Accept': 'image/gif, image/x-xbitmap, image/jpeg, \
+image/pjpeg, application/vnd.ms-powerpoint, application/ms-excel, \
+application/msword, */*',
             'Accept-Language': 'es-cl',
             'Accept-Encoding': 'gzip, deflate',
-            'User-Agent': 'Mozilla/4.0 (compatible; PROG 1.0; Windows NT 5.0; YComp 5.0.2.4)',
+            'User-Agent': 'Mozilla/4.0 (compatible; PROG 1.0; Windows NT 5.0; \
+YComp 5.0.2.4)',
             'Referer': '{}'.format(company_id.website),
             'Connection': 'Keep-Alive',
             'Cache-Control': 'no-cache',
@@ -620,14 +674,20 @@ version="1.0">
         multi  = urllib3.filepost.encode_multipart_formdata(params)
         headers.update({'Content-Length': '{}'.format(len(multi[0]))})
         response = pool.request_encode_body('POST', url+post, params, headers)
-        retorno = {'sii_xml_response': response.data, 'sii_result': 'NoEnviado','sii_send_ident':''}
+        retorno = {
+            'sii_xml_response': response.data,
+            'sii_result': 'NoEnviado',
+            'sii_send_ident': ''}
         if response.status != 200:
             return retorno
         respuesta_dict = xmltodict.parse(response.data)
         if respuesta_dict['RECEPCIONDTE']['STATUS'] != '0':
-            _logger.info(connection_status[respuesta_dict['RECEPCIONDTE']['STATUS']])
+            _logger.info(
+                connection_status[respuesta_dict['RECEPCIONDTE']['STATUS']])
         else:
-            retorno.update({'sii_result': 'Enviado','sii_send_ident':respuesta_dict['RECEPCIONDTE']['TRACKID']})
+            retorno.update(
+                {'sii_result': 'Enviado',
+                 'sii_send_ident':respuesta_dict['RECEPCIONDTE']['TRACKID']})
         return retorno
 
     '''
@@ -645,13 +705,13 @@ version="1.0">
             'target': 'self',
         }
 
-    '''
-    Funcion para descargar el folio tomando el valor desde la secuencia
-    correspondiente al tipo de documento.
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2016-05-01
-    '''
     def get_folio(self):
+        """
+        Funcion para descargar el folio tomando el valor desde la secuencia
+        correspondiente al tipo de documento.
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-05-01
+        """
         # saca el folio directamente de la secuencia
         return int(self.sii_document_number)
 
@@ -672,10 +732,11 @@ version="1.0">
 
     def get_caf_file(self):
         """
-        Se Retorna el CAF que corresponda a la secuencia, independiente del estado
-        ya que si se suben 2 CAF y uno está por terminar y se hace un evío masivo
-        Deja fuera Los del antiguo CAF, que son válidos aún, porque no se han enviado; y arroja Error
-        de que la secuencia no está en el rango del CAF
+        Se Retorna el CAF que corresponda a la secuencia, independiente del
+        estado ya que si se suben 2 CAF y uno está por terminar y se hace un
+        evío masivo Deja fuera Los del antiguo CAF, que son válidos aún,
+        porque no se han enviado; y arroja Error de que la secuencia no está
+        en el rango del CAF
         """
         caffiles = self.journal_document_class_id.sequence_id.dte_caf_ids
         if not caffiles:
@@ -709,12 +770,13 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         rut = rut.replace('CL0','').replace('CL','')
         return rut
 
-    '''
-    Funcion creacion de imagen pdf417 basada en biblioteca elaphe
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2016-05-01
-    '''
     def pdf417bc(self, ted):
+        """
+        Funcion creacion de imagen pdf417 basada en biblioteca elaphe
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-05-01
+        """
+
         bc = barcode(
             'pdf417',
             ted,
@@ -730,23 +792,24 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         )
         return bc
 
-    '''
-    Funcion usada en SII
-    para firma del timbre (dio errores de firma para el resto de los doc)
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2015-03-01
-    '''
     def digest(self, data):
+        """
+        Funcion usada en SII
+        para firma del timbre (dio errores de firma para el resto de los doc)
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2015-03-01
+        """
+
         sha1 = hashlib.new('sha1', data)
         return sha1.digest()
 
-    '''
-    Funcion usada en SII
-    para firma del timbre (dio errores de firma para el resto de los doc)
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2015-03-01
-    '''
     def signrsa(self, MESSAGE, KEY, digst=''):
+        """
+        Funcion usada en SII
+        para firma del timbre (dio errores de firma para el resto de los doc)
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2015-03-01
+        """
         KEY = KEY.encode('ascii')
         rsa = M2Crypto.EVP.load_key_string(KEY)
         rsa.reset_context(md='sha1')
@@ -764,13 +827,13 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 'exponent': base64.b64encode(rsa_m.e),
                 'digest': base64.b64encode(self.digest(MESSAGE))}
 
-    '''
-    Funcion usada en SII
-    para firma del timbre (dio errores de firma para el resto de los doc)
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2015-03-01
-    '''
     def signmessage(self, MESSAGE, KEY, pubk='', digst=''):
+        """
+        Funcion usada en SII
+        para firma del timbre (dio errores de firma para el resto de los doc)
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2015-03-01
+        """
         rsa = M2Crypto.EVP.load_key_string(KEY)
         rsa.reset_context(md='sha1')
         rsa_m = rsa.get_rsa()
@@ -787,11 +850,11 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 'exponent': base64.b64encode(rsa_m.e),
                 'digest': base64.b64encode(self.digest(MESSAGE))}
 
-    '''
+    """
     Definicion de extension de modelo de datos para account.invoice
      @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
      @version: 2015-02-01
-    '''
+    """
     sii_batch_number = fields.Integer(
         copy=False,
         string='Batch Number',
@@ -1115,28 +1178,36 @@ TRACKID antes de revalidar, reintente la validación.')
             _logger.info(record_id)
 
     @staticmethod
-    def _acortar_str(self, texto, size=1):
+    def shorten_string(var, size=1):
         c = 0
-        cadena = ""
-        while c < size and c < len(texto):
-            cadena += texto[c]
+        chain = ''
+        while c < size and c < len(var):
+            chain += var[c]
             c += 1
-        return cadena
+        return chain
 
     @api.multi
-    def invoice_validate(self):
-		for inv in self:
-			inv.sii_result = 'NoEnviado'
-			inv.responsable_envio = self.env.user.id
-			if inv.type in ['out_invoice', 'out_refund']:
-				inv._timbrar()
-		super(invoice,self).invoice_validate()
-
+    def action_invoice_open(self):
+        for inv in self:
+            inv.sii_result = 'NoEnviado'
+            inv.responsable_envio = self.env.user.id
+            if inv.type in ['out_invoice', 'out_refund'] and \
+                    inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
+                inv._timbrar()
+            else:
+                dte = collections.OrderedDict()
+                tpo_dte = inv._tpo_dte()
+                dte = inv._dte()
+                dte = self.remove_plurals(dte)
+                del dte['Encabezado']['Totales']
+                raise UserError('dte: {}'.format(json.dumps(dte)))
+                dte[(tpo_dte + ' ID')] = dte
+        super(Invoice, self).action_invoice_open()
 
     @api.multi
     def do_dte_send_invoice(self, n_atencion=None):
         for inv in self:
-            if inv.sii_result not in ['','NoEnviado','Rechazado']:
+            if inv.sii_result not in ['', 'NoEnviado', 'Rechazado']:
                 raise UserError(
                     u"El documento {} ya ha sido enviado o está en cola de \
 envío".format(inv.sii_document_number))
@@ -1193,50 +1264,57 @@ envío".format(inv.sii_document_number))
         return IdDoc
 
     def _emisor(self):
-        Emisor= collections.OrderedDict()
-        Emisor['RUTEmisor'] = self.format_vat(self.company_id.vat)
+        emisor= collections.OrderedDict()
+        emisor['RUTEmisor'] = self.format_vat(self.company_id.vat)
         if self._es_boleta():
-            Emisor['RznSocEmisor'] = self.company_id.partner_id.name
-            Emisor['GiroEmisor'] = self._acortar_str(
+            emisor['RznSocEmisor'] = self.company_id.partner_id.name
+            emisor['GiroEmisor'] = self.shorten_string(
                 self.company_id.activity_description.name, 80)
         else:
-            Emisor['RznSoc'] = self.company_id.partner_id.name
-            Emisor['GiroEmis'] = self._acortar_str(
+            emisor['RznSoc'] = self.company_id.partner_id.name
+            emisor['GiroEmis'] = self.shorten_string(
                 self.company_id.activity_description.name, 80)
-            Emisor['Telefono'] = self.company_id.phone or ''
-            Emisor['CorreoEmisor'] = self.company_id.dte_email
-            Emisor['item'] = self._giros_emisor()
+            emisor['Telefono'] = self.company_id.phone or ''
+            emisor['CorreoEmisor'] = self.safe_variable(
+                self.company_id.dte_email, 'company_email')
+            emisor['item'] = self._giros_emisor()
         if self.journal_id.sii_code:
-            Emisor['Sucursal'] = self.journal_id.sucursal.name
-            Emisor['CdgSIISucur'] = self.journal_id.sii_code
-        Emisor['DirOrigen'] = self.company_id.street + ' ' + (
+            emisor['Sucursal'] = self.journal_id.sucursal.name
+            emisor['CdgSIISucur'] = self.journal_id.sii_code
+        emisor['DirOrigen'] = self.safe_variable(
+            self.company_id.street, 'company_street') + ' ' + (
             self.company_id.street2 or '')
-        Emisor['CmnaOrigen'] = self.company_id.city_id.name or ''
-        Emisor['CiudadOrigen'] = self.company_id.city or ''
-        return Emisor
+        emisor['CmnaOrigen'] = self.safe_variable(
+            self.company_id.city_id.name, 'company_county')
+        emisor['CiudadOrigen'] = self.safe_variable(
+            self.company_id.city, 'company_city')
+        return emisor
 
     def _receptor(self):
-        Receptor = collections.OrderedDict()
+        receptor = collections.OrderedDict()
         if not self.partner_id.vat and not self._es_boleta():
             raise UserError("Debe Ingresar RUT Receptor")
-        #if self._es_boleta():
-        #    Receptor['CdgIntRecep']
-        Receptor['RUTRecep'] = self.format_vat(self.partner_id.vat)
-        Receptor['RznSocRecep'] = self._acortar_str(self.partner_id.name, 100)
+        # if self._es_boleta():
+        #     receptor['CdgIntRecep']
+        receptor['RUTRecep'] = self.format_vat(self.partner_id.vat)
+        receptor['RznSocRecep'] = self.shorten_string(self.partner_id.name, 100)
         if not self._es_boleta():
             if not self.activity_description:
                 raise UserError(_('Seleccione giro del partner'))
-            Receptor['GiroRecep'] = self._acortar_str(
+            receptor['GiroRecep'] = self.shorten_string(
                 self.activity_description.name, 40)
         if self.partner_id.phone:
-            Receptor['Contacto'] = self.partner_id.phone
+            receptor['Contacto'] = self.partner_id.phone
         if self.partner_id.dte_email and not self._es_boleta():
-            Receptor['CorreoRecep'] = self.partner_id.dte_email
-        Receptor['DirRecep'] = self.partner_id.street+ ' ' + (
+            receptor['CorreoRecep'] = self.partner_id.dte_email
+        receptor['DirRecep'] = self.safe_variable(
+            self.partner_id.street, 'partner_street') + ' ' + (
             self.partner_id.street2 or '')
-        Receptor['CmnaRecep'] = self.partner_id.city_id.name
-        Receptor['CiudadRecep'] = self.partner_id.city
-        return Receptor
+        receptor['CmnaRecep'] = self.safe_variable(
+            self.partner_id.city_id.name, 'partner_county')
+        receptor['CiudadRecep'] = self.safe_variable(
+            self.partner_id.city, 'partner_city')
+        return receptor
 
     def _totales(self, MntExe=0, no_product=False, tax_include=False):
         Totales = collections.OrderedDict()
@@ -1283,12 +1361,12 @@ envío".format(inv.sii_document_number))
         return Totales
 
     def _encabezado(self, MntExe=0, no_product=False, tax_include=False):
-        Encabezado = collections.OrderedDict()
-        Encabezado['IdDoc'] = self._id_doc(tax_include, MntExe)
-        Encabezado['Emisor'] = self._emisor()
-        Encabezado['Receptor'] = self._receptor()
-        Encabezado['Totales'] = self._totales(MntExe, no_product)
-        return Encabezado
+        encabezado = collections.OrderedDict()
+        encabezado['IdDoc'] = self._id_doc(tax_include, MntExe)
+        encabezado['Emisor'] = self._emisor()
+        encabezado['Receptor'] = self._receptor()
+        encabezado['Totales'] = self._totales(MntExe, no_product)
+        return encabezado
 
     @api.multi
     def get_barcode(self, no_product=False):
@@ -1301,15 +1379,15 @@ envío".format(inv.sii_document_number))
         if not self.partner_id.vat:
             raise UserError(_("Fill Partner VAT"))
         result['TED']['DD']['RR'] = self.format_vat(self.partner_id.vat)
-        result['TED']['DD']['RSR'] = self._acortar_str(self.partner_id.name, 40)
+        result['TED']['DD']['RSR'] = self.shorten_string(self.partner_id.name, 40)
         result['TED']['DD']['MNT'] = int(round(self.amount_total))
         if no_product:
             result['TED']['DD']['MNT'] = 0
         for line in self.invoice_line_ids:
-            result['TED']['DD']['IT1'] = self._acortar_str(
+            result['TED']['DD']['IT1'] = self.shorten_string(
                 line.product_id.name,40)
             if line.product_id.default_code:
-                result['TED']['DD']['IT1'] = self._acortar_str(
+                result['TED']['DD']['IT1'] = self.shorten_string(
                     line.product_id.name.replace(
                         '['+line.product_id.default_code+'] ', ''), 40)
             break
@@ -1380,11 +1458,11 @@ envío".format(inv.sii_document_number))
             #   lines['ItemEspectaculo'] =
 #            if self._es_boleta():
 #                lines['RUTMandante']
-            lines['NmbItem'] = self._acortar_str(line.product_id.name,80) #
-            lines['DscItem'] = self._acortar_str(line.name, 1000) 
+            lines['NmbItem'] = self.shorten_string(line.product_id.name, 80)
+            lines['DscItem'] = self.shorten_string(line.name, 1000)
             #descripción más extensa
             if line.product_id.default_code:
-                lines['NmbItem'] = self._acortar_str(
+                lines['NmbItem'] = self.shorten_string(
                     line.product_id.name.replace(
                         '['+line.product_id.default_code+'] ', ''), 80)
             #lines['InfoTicket']
@@ -1409,15 +1487,17 @@ envío".format(inv.sii_document_number))
             if no_product:
                 lines['MontoItem'] = 0
             line_number += 1
-            invoice_lines.extend([{'Detalle': lines}])
+            if self.company_id.dte_service_provider not in ['LIBREDTE']:
+                invoice_lines.extend([{'Detalle': lines}])
+            else:
+                invoice_lines.extend([lines])
             if 'IndExe' in lines:
                 tax_include = False
         return {
                 'invoice_lines': invoice_lines,
-                'MntExe':MntExe,
-                'no_product':no_product,
-                'tax_include': tax_include,
-                }
+                'MntExe': MntExe,
+                'no_product': no_product,
+                'tax_include': tax_include}
 
     def _dte(self, n_atencion=None):
         dte = collections.OrderedDict()
@@ -1430,41 +1510,45 @@ envío".format(inv.sii_document_number))
         if self.company_id.dte_service_provider == 'SIIHOMO' and isinstance(
                 n_atencion, unicode) and n_atencion != '' and \
                 not self._es_boleta():
-            ref_line = {}
             ref_line = collections.OrderedDict()
             ref_line['NroLinRef'] = lin_ref
             ref_line['TpoDocRef'] = "SET"
             ref_line['FolioRef'] = self.get_folio()
             ref_line['FchRef'] = datetime.strftime(datetime.now(), '%Y-%m-%d')
-            ref_line['RazonRef'] = "CASO "+n_atencion+"-" + str(
+            ref_line['RazonRef'] = "CASO " + n_atencion + "-" + str(
                 self.sii_batch_number)
             lin_ref = 2
-            ref_lines.extend([{'Referencia':ref_line}])
-        if self.referencias :
+            ref_lines.extend([{'Referencia': ref_line}])
+        if self.referencias:
             for ref in self.referencias:
                 ref_line = {}
                 ref_line = collections.OrderedDict()
                 ref_line['NroLinRef'] = lin_ref
                 if not self._es_boleta():
-                    if  ref.sii_referencia_TpoDocRef:
+                    if ref.sii_referencia_TpoDocRef:
                         ref_line['TpoDocRef'] = \
                             ref.sii_referencia_TpoDocRef.sii_code
                         ref_line['FolioRef'] = ref.origen
                     ref_line['FchRef'] = ref.fecha_documento or \
                                          datetime.strftime(
                                              datetime.now(), '%Y-%m-%d')
-                if ref.sii_referencia_CodRef not in ['','none', False]:
+                if ref.sii_referencia_CodRef not in ['', 'none', False]:
                     ref_line['CodRef'] = ref.sii_referencia_CodRef
                 ref_line['RazonRef'] = ref.motivo
                 if self._es_boleta():
                     ref_line['CodVndor'] = self.seler_id.id
                     ref_lines['CodCaja'] = self.journal_id.point_of_sale_id.name
-                ref_lines.extend([{'Referencia':ref_line}])
+                # ref_lines.extend([{'Referencia': ref_line}])
+                if self.company_id.dte_service_provider not in ['LIBREDTE']:
+                    ref_lines.extend([{'Referencia': ref_line}])
+                else:
+                    ref_lines.extend([ref_line])
                 lin_ref += 1
-        dte['item'] = invoice_lines['invoice_lines']
-
-        dte['reflines'] = ref_lines
-        dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
+        dte['Detalles'] = invoice_lines['invoice_lines']
+        if len(ref_lines) > 0:
+            dte['Referencias'] = ref_lines
+        if self.company_id.dte_service_provider not in ['LIBREDTE']:
+            dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
         return dte
 
     def _dte_to_xml(self, dte, tpo_dte="Documento"):
@@ -1472,10 +1556,10 @@ envío".format(inv.sii_document_number))
         dte[(tpo_dte + ' ID')]['TEDd'] = ''
         xml = dicttoxml.dicttoxml(
             dte, root=False, attr_type=False) \
-            .replace('<item>','').replace('</item>','')\
-            .replace('<reflines>','').replace('</reflines>','')\
-            .replace('<TEDd>','').replace('</TEDd>','')\
-            .replace('</' + tpo_dte + '_ID>','\n'+ted+'\n</'+ tpo_dte + '_ID>')
+            .replace('<item>', '').replace('</item>', '')\
+            .replace('<reflines>', '').replace('</reflines>', '')\
+            .replace('<TEDd>', '').replace('</TEDd>', '')\
+            .replace('</' + tpo_dte + '_ID>', '\n'+ted+'\n</'+ tpo_dte + '_ID>')
         return xml
 
     def _tpo_dte(self):
@@ -1489,10 +1573,10 @@ envío".format(inv.sii_document_number))
             signature_d = self.get_digital_signature(self.company_id)
         except:
             raise UserError(_('''There is no Signer Person with an \
-        authorized signature for you in the system. Please make sure that \
-        'user_signature_key' module has been installed and enable a digital \
-        signature, for you or make the signer to authorize you to use his \
-        signature.'''))
+authorized signature for you in the system. Please make sure that \
+'user_signature_key' module has been installed and enable a digital \
+signature, for you or make the signer to authorize you to use his \
+signature.'''))
         certp = signature_d['cert'].replace(
             BC, '').replace(EC, '').replace('\n', '')
         folio = self.get_folio()
@@ -1534,20 +1618,21 @@ envío".format(inv.sii_document_number))
                 # será recahazada laguía porque debe estar declarada la
                 # factura primero
             es_boleta = inv._es_boleta()
-            try:
-                signature_d = self.get_digital_signature(inv.company_id)
-            except:
-                raise UserError(_('''There is no Signer Person with an \
+            if inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
+                raise UserError(inv.company_id.dte_service_provider)
+                try:
+                    signature_d = self.get_digital_signature(inv.company_id)
+                except:
+                    raise UserError(_('''There is no Signer Person with an \
 authorized signature for you in the system. Please make sure that \
 'user_signature_key' module has been installed and enable a digital signature,
 for you or make the signer to authorize you to use his signature.'''))
-            certp = signature_d['cert'].replace(
-                BC, '').replace(EC, '').replace('\n', '')
-            if inv.company_id.dte_service_provider == 'SIIHOMO':
+                certp = signature_d['cert'].replace(
+                    BC, '').replace(EC, '').replace('\n', '')
                 # Retimbrar con número de atención y envío
                 inv._timbrar(n_atencion)
             elif inv.company_id.dte_service_provider == 'LIBREDTE':
-                pass
+                raise UserError(inv._dte(n_atencion))
             # @TODO Mejarorar esto en lo posible
             if not inv.sii_document_class_id.sii_code in clases:
                 clases[inv.sii_document_class_id.sii_code] = []
@@ -1565,7 +1650,6 @@ for you or make the signer to authorize you to use his signature.'''))
 hacer eso en un envío')
             company_id = inv.company_id
             # @TODO hacer autoreconciliación
-
         file_name = ""
         dtes={}
         SubTotDTE = ''
@@ -1617,7 +1701,7 @@ hacer eso en un envío')
                 'sii_xml_request': envio_dte,
                 'sii_send_file_name': file_name})
 
-    def _get_send_status(self, track_id, signature_d,token):
+    def _get_send_status(self, track_id, signature_d, token):
         url = server_url[
                   self.company_id.dte_service_provider] + 'QueryEstUp.jws?WSDL'
         ns = 'urn:'+ server_url[
@@ -1710,26 +1794,26 @@ cola de envío interna en odoo''')
     @api.multi
     def wizard_upload(self):
         return {
-                'type': 'ir.actions.act_window',
-                'res_model': 'sii.dte.upload_xml.wizard',
-                'src_model': 'account.invoice',
-                'view_mode': 'form',
-                'view_type': 'form',
-                'views': [(False, 'form')],
-                'target': 'new',
-                'tag': 'action_upload_xml_wizard'}
+            'type': 'ir.actions.act_window',
+            'res_model': 'sii.dte.upload_xml.wizard',
+            'src_model': 'account.invoice',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'views': [(False, 'form')],
+            'target': 'new',
+            'tag': 'action_upload_xml_wizard'}
 
     @api.multi
     def wizard_validar(self):
         return {
-                'type': 'ir.actions.act_window',
-                'res_model': 'sii.dte.validar.wizard',
-                'src_model': 'account.invoice',
-                'view_mode': 'form',
-                'view_type': 'form',
-                'views': [(False, 'form')],
-                'target': 'new',
-                'tag': 'action_validar_wizard'}
+            'type': 'ir.actions.act_window',
+            'res_model': 'sii.dte.validar.wizard',
+            'src_model': 'account.invoice',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'views': [(False, 'form')],
+            'target': 'new',
+            'tag': 'action_validar_wizard'}
 
     @api.multi
     def invoice_print(self):
@@ -1752,6 +1836,6 @@ cola de envío interna en odoo''')
         total_discount = 0
         for l in self.invoice_line_ids:
             total_discount += (
-                ((l.discount or 0.00) /100) * l.price_unit * l.quantity)
+                ((l.discount or 0.00) / 100) * l.price_unit * l.quantity)
         _logger.info(total_discount)
         return self.currency_id.round(total_discount)
