@@ -21,7 +21,7 @@ import hashlib
 import cchardet
 import ssl
 from SOAPpy import SOAPProxy
-# from signxml import xmldsig, methods
+from signxml import xmldsig, methods
 import textwrap
 # from signxml import *
 # from lxml import objectify
@@ -479,10 +479,11 @@ version="1.0">
 
     def sign_full_xml(self, message, privkey, cert, uri, type='doc'):
         doc = etree.fromstring(message)
-        string = etree.tostring(doc[0])
+        string = etree.tostring(doc[1])
+        # raise UserError('string sign: {}'.format(message))
         mess = etree.tostring(etree.fromstring(string), method="c14n")
         digest = base64.b64encode(self.digest(mess))
-        reference_uri='#'+uri
+        reference_uri = '#' + uri
         signed_info = Element("SignedInfo")
         c14n_method = SubElement(
             signed_info, "CanonicalizationMethod",
@@ -631,7 +632,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
 
     @api.multi
     def send_xml_file(
-            self, envio_dte=None, file_name="envio",company_id=False,
+            self, envio_dte=None, file_name="envio", company_id=False,
             sii_result='NoEnviado', doc_ids=''):
         if not company_id.dte_service_provider:
             raise UserError(_("Not Service provider selected!"))
@@ -670,7 +671,7 @@ YComp 5.0.2.4)',
         params['dvSender'] = signature_d['subject_serial_number'][-1]
         params['rutCompany'] = company_id.vat[2:-1]
         params['dvCompany'] = company_id.vat[-1]
-        params['archivo'] = (file_name,envio_dte,"text/xml")
+        params['archivo'] = (file_name,envio_dte, "text/xml")
         multi  = urllib3.filepost.encode_multipart_formdata(params)
         headers.update({'Content-Length': '{}'.format(len(multi[0]))})
         response = pool.request_encode_body('POST', url+post, params, headers)
@@ -687,7 +688,7 @@ YComp 5.0.2.4)',
         else:
             retorno.update(
                 {'sii_result': 'Enviado',
-                 'sii_send_ident':respuesta_dict['RECEPCIONDTE']['TRACKID']})
+                 'sii_send_ident': respuesta_dict['RECEPCIONDTE']['TRACKID']})
         return retorno
 
     '''
@@ -712,8 +713,7 @@ YComp 5.0.2.4)',
          @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
          @version: 2016-05-01
         """
-        # saca el folio directamente de la secuencia
-        return int(self.sii_document_number)
+        return int(self.next_invoice_number)
 
     def get_folio_current(self):
         """
@@ -739,14 +739,14 @@ YComp 5.0.2.4)',
         en el rango del CAF
         """
         caffiles = self.journal_document_class_id.sequence_id.dte_caf_ids
+        folio = self.get_folio()
         if not caffiles:
             raise UserError(_('''There is no CAF file available or in use \
 for this Document. Please enable one.'''))
-        folio = self.get_folio()
         for caffile in caffiles:
             post = base64.b64decode(caffile.caf_file)
             post = xmltodict.parse(post.replace(
-                '<?xml version="1.0"?>','',1))
+                '<?xml version="1.0"?>', '', 1))
             folio_inicial = post['AUTORIZACION']['CAF']['DA']['RNG']['D']
             folio_final = post['AUTORIZACION']['CAF']['DA']['RNG']['H']
             if folio in range(int(folio_inicial), (int(folio_final)+1)):
@@ -1198,9 +1198,9 @@ TRACKID antes de revalidar, reintente la validación.')
                 dte = collections.OrderedDict()
                 tpo_dte = inv._tpo_dte()
                 dte = inv._dte()
-                dte = self.remove_plurals(dte)
+                # dte = self.remove_plurals(dte)
                 del dte['Encabezado']['Totales']
-                raise UserError('dte: {}'.format(json.dumps(dte)))
+                # raise UserError('dte: {}'.format(json.dumps(dte)))
                 dte[(tpo_dte + ' ID')] = dte
         super(Invoice, self).action_invoice_open()
 
@@ -1232,7 +1232,8 @@ envío".format(inv.sii_document_number))
     def _giros_emisor(self):
         giros_emisor = []
         for turn in self.company_id.company_activities_ids:
-            giros_emisor.extend([{'Acteco': turn.code}])
+            # giros_emisor.extend([{'Acteco': turn.code}])
+            giros_emisor.extend([turn.code])
         return giros_emisor
 
     def _id_doc(self, tax_include=False, MntExe=0):
@@ -1277,7 +1278,7 @@ envío".format(inv.sii_document_number))
             emisor['Telefono'] = self.company_id.phone or ''
             emisor['CorreoEmisor'] = self.safe_variable(
                 self.company_id.dte_email, 'company_email')
-            emisor['item'] = self._giros_emisor()
+            emisor['Acteco'] = self._giros_emisor()
         if self.journal_id.sii_code:
             emisor['Sucursal'] = self.journal_id.sucursal.name
             emisor['CdgSIISucur'] = self.journal_id.sii_code
@@ -1393,6 +1394,7 @@ envío".format(inv.sii_document_number))
             break
 
         resultcaf = self.get_caf_file()
+        # raise UserError('result caf: {}'.format(resultcaf))
         result['TED']['DD']['CAF'] = resultcaf['AUTORIZACION']['CAF']
         dte = result['TED']['DD']
         dicttoxml.set_debug(False)
@@ -1488,7 +1490,8 @@ envío".format(inv.sii_document_number))
                 lines['MontoItem'] = 0
             line_number += 1
             if self.company_id.dte_service_provider not in ['LIBREDTE']:
-                invoice_lines.extend([{'Detalle': lines}])
+                # invoice_lines.extend([{'Detalle': lines}])
+                invoice_lines.extend([lines])
             else:
                 invoice_lines.extend([lines])
             if 'IndExe' in lines:
@@ -1518,7 +1521,8 @@ envío".format(inv.sii_document_number))
             ref_line['RazonRef'] = "CASO " + n_atencion + "-" + str(
                 self.sii_batch_number)
             lin_ref = 2
-            ref_lines.extend([{'Referencia': ref_line}])
+            # ref_lines.extend([{'Referencia': ref_line}])
+            ref_lines.extend([ref_line])
         if self.referencias:
             for ref in self.referencias:
                 ref_line = {}
@@ -1540,26 +1544,35 @@ envío".format(inv.sii_document_number))
                     ref_lines['CodCaja'] = self.journal_id.point_of_sale_id.name
                 # ref_lines.extend([{'Referencia': ref_line}])
                 if self.company_id.dte_service_provider not in ['LIBREDTE']:
-                    ref_lines.extend([{'Referencia': ref_line}])
+                    # ref_lines.extend([{'Referencia': ref_line}])
+                    ref_lines.extend([ref_line])
                 else:
                     ref_lines.extend([ref_line])
                 lin_ref += 1
-        dte['Detalles'] = invoice_lines['invoice_lines']
+        dte['Detalle'] = invoice_lines['invoice_lines']
+        _logger.info('dte.....{}'.format(json.dumps(dte)))
         if len(ref_lines) > 0:
-            dte['Referencias'] = ref_lines
+            dte['Referencia'] = ref_lines
         if self.company_id.dte_service_provider not in ['LIBREDTE']:
             dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
+        else:
+            del dte['Encabezado']['Totales']
         return dte
 
     def _dte_to_xml(self, dte, tpo_dte="Documento"):
         ted = dte[tpo_dte + ' ID']['TEDd']
         dte[(tpo_dte + ' ID')]['TEDd'] = ''
+        # xml = dicttoxml.dicttoxml(
+        #     dte, root=False, attr_type=False) \
+        #     .replace('<item>', '').replace('</item>', '')\
+        #     .replace('<reflines>', '').replace('</reflines>', '')\
+        #     .replace('<TEDd>', '').replace('</TEDd>', '')\
+        #     .replace('</' + tpo_dte + '_ID>', '\n'+ted+'\n</'+ tpo_dte + '_ID>')
         xml = dicttoxml.dicttoxml(
-            dte, root=False, attr_type=False) \
-            .replace('<item>', '').replace('</item>', '')\
-            .replace('<reflines>', '').replace('</reflines>', '')\
-            .replace('<TEDd>', '').replace('</TEDd>', '')\
-            .replace('</' + tpo_dte + '_ID>', '\n'+ted+'\n</'+ tpo_dte + '_ID>')
+            dte, root=False, attr_type=False).replace('<item>', '')\
+            .replace('</item>', '').replace('<TEDd>', '')\
+            .replace('</TEDd>', '').replace(
+            '</{}_ID>'.format(tpo_dte), '\n{}\n</{}_ID>'.format(ted, tpo_dte))
         return xml
 
     def _tpo_dte(self):
@@ -1586,19 +1599,22 @@ signature.'''))
         doc_id = '<' + tpo_dte + ' ID="{}">'.format(doc_id_number)
         dte = collections.OrderedDict()
         dte[(tpo_dte + ' ID')] = self._dte(n_atencion)
+        # raise UserError('dte timbrado: {}'.format(json.dumps(dte)))
         xml = self._dte_to_xml(dte, tpo_dte)
-        root = etree.XML( xml )
+        root = etree.XML(xml)
         xml_pret = etree.tostring(root, pretty_print=True).replace(
             '<' + tpo_dte + '_ID>', doc_id).replace(
             '</' + tpo_dte + '_ID>', '</' + tpo_dte + '>')
         envelope_efact = self.convert_encoding(xml_pret, 'ISO-8859-1')
         envelope_efact = self.create_template_doc(envelope_efact)
+        # raise UserError('envelope_efact: {}'.format(envelope_efact))
         type = 'doc'
         if self._es_boleta():
             type = 'bol'
         einvoice = self.sign_full_xml(
             envelope_efact, signature_d['priv_key'],
             self.split_cert(certp), doc_id_number, type)
+        raise UserError('envelope_efact: {}'.format(envelope_efact))
         self.sii_xml_request = einvoice
 
     @api.multi
