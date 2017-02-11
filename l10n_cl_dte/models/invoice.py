@@ -23,11 +23,14 @@ import ssl
 from SOAPpy import SOAPProxy
 from signxml import xmldsig, methods
 import textwrap
+import unicodedata
+import numbers
+import decimal
 # from signxml import *
 # from lxml import objectify
 # from lxml.etree import XMLSyntaxError
 
-# from xml.dom.minidom import parseString
+from xml.dom.minidom import parseString
 try:
     urllib3.disable_warnings()
 except:
@@ -104,6 +107,149 @@ special_chars = [
     [u'Ú', 'U'],
     [u'Ñ', 'N']]
 
+"""
+Diccionario para normalizar datos y emplear en diversos tipos de documentos
+a Futuro.
+La idea es cambiar la manera en que se rellenan, normalizan, y validan los
+tags, mediante una forma unificada y tendiendo a usar decoradores y funciones
+para todas las finalidades.
+Además esta parte de la implementación, para mejor efectividad se deberá migrar
+a una biblioteca separada, de manera que se pueda acceder desde diferentes
+addons: permitiendo así seguir el principio "DRY" de Python.
+el value[0] de la lista representa la longitud admitida
+Propuesta:
+todo: el value[1] si es obligatorio o no
+todo: el value[2] puede ser la llamada a funcion para validar
+todo: el value[3] el nombre de campo mapeado en Odoo
+@author: Daniel Blanco Martín daniel[at]blancomartin.cl
+@version: 2017-02-11
+"""
+normalize_tags = collections.OrderedDict()
+normalize_tags['RutEmisor'] = [10]
+normalize_tags['RznSoc'] = [100]
+normalize_tags['GiroEmis'] = [80]
+normalize_tags['Telefono'] = [20]
+normalize_tags['CorreoEmisor'] = [
+    80, u'variable correo del emisor']
+normalize_tags['Actecos'] = collections.OrderedDict()
+normalize_tags['Actecos']['Acteco'] = [6]
+normalize_tags['CdgTraslado'] = [1]
+normalize_tags['FolioAut'] = [5]
+normalize_tags['FchAut'] = [10]
+normalize_tags['Sucursal'] = [20]
+normalize_tags['CdgSIISucur'] = [9]
+normalize_tags['CodAdicSucur'] = [20]
+normalize_tags['DirOrigen'] = [60, u'dirección de la compañía']
+normalize_tags['CmnaOrigen'] = [20, u'comuna de la compañía']
+normalize_tags['CiudadOrigen'] = [20, u'ciudad de la compañía']
+normalize_tags['CdgVendedor'] = [60]
+normalize_tags['IdAdicEmisor'] = [20]
+normalize_tags['IdAdicEmisor'] = [20]
+normalize_tags['RUTRecep'] = [10, u'RUT del receptor']
+normalize_tags['CdgIntRecep'] = [20]
+normalize_tags['RznSocRecep'] = [100, u'Razón social o nombre receptor']
+normalize_tags['NumId'] = [20]
+normalize_tags['Nacionalidad'] = [3]
+normalize_tags['IdAdicRecep'] = [20]
+normalize_tags['GiroRecep'] = [40, u'variable con giro del receptor']
+normalize_tags['Contacto'] = [80]
+normalize_tags['CorreoRecep'] = [80, u'variable correo del receptor']
+normalize_tags['DirRecep'] = [70, u'dirección del receptor']
+normalize_tags['CmnaRecep'] = [20, u'comuna del receptor']
+normalize_tags['CiudadRecep'] = [20, u'ciudad del receptor']
+normalize_tags['DirPostal'] = [70]
+normalize_tags['CmnaPostal'] = [20]
+normalize_tags['CiudadPostal'] = [20]
+normalize_tags['Patente'] = [8]
+normalize_tags['RUTTrans'] = [10]
+normalize_tags['RUTChofer'] = [10]
+normalize_tags['NombreChofer'] = [30]
+normalize_tags['DirDest'] = [70]
+normalize_tags['CmnaDest'] = [20]
+normalize_tags['CiudadDest'] = [20]
+normalize_tags['CiudadDest'] = [20]
+normalize_tags['MntNeto'] = [18]
+normalize_tags['MntExe'] = [18]
+normalize_tags['MntBase'] = [18]
+normalize_tags['MntMargenCom'] = [18]
+normalize_tags['TasaIVA'] = [5]
+normalize_tags['IVA'] = [18]
+normalize_tags['IVAProp'] = [18]
+normalize_tags['IVATerc'] = [18]
+normalize_tags['TipoImp'] = [3]
+normalize_tags['TasaImp'] = [5]
+normalize_tags['MontoImp'] = [18]
+normalize_tags['IVANoRet'] = [18]
+normalize_tags['CredEC'] = [18]
+normalize_tags['GmtDep'] = [18]
+normalize_tags['ValComNeto'] = [18]
+normalize_tags['ValComExe'] = [18]
+normalize_tags['ValComIVA'] = [18]
+normalize_tags['MntTotal'] = [18]
+normalize_tags['MontoNF'] = [18]
+normalize_tags['MontoPeriodo'] = [18]
+normalize_tags['SaldoAnterior'] = [18]
+normalize_tags['VlrPagar'] = [18]
+normalize_tags['TpoMoneda'] = [15]
+normalize_tags['TpoCambio'] = [10]
+normalize_tags['MntNetoOtrMnda'] = [18]
+normalize_tags['MntExeOtrMnda'] = [18]
+normalize_tags['MntFaeCarneOtrMnda'] = [18]
+normalize_tags['MntMargComOtrMnda'] = [18]
+normalize_tags['IVAOtrMnda'] = [18]
+# pluralizado deliberadamente 'Detalles' en lugar de ImptoReten
+# se usó 'Detalles' (plural) para diferenciar del tag real 'Detalle'
+# el cual va aplicado a cada elemento de la lista o tabla.
+# según el tipo de comunicación, se elimina el tag Detalles o se le quita el
+# plural en la conversion a xml
+normalize_tags['NroLinDet'] = [4]
+# ojo qu este que sigue es tabla tambien
+normalize_tags['TpoCodigo'] = [10]
+normalize_tags['VlrCodigo'] = [35]
+normalize_tags['TpoDocLiq'] = [3]
+normalize_tags['IndExe'] = [3]
+# todo: falta retenedor
+normalize_tags['NmbItem'] = [80]
+normalize_tags['DscItem'] = [1000]
+normalize_tags['QtyRef'] = [18]
+normalize_tags['UnmdRef'] = [4]
+normalize_tags['PrcRef'] = [18]
+normalize_tags['QtyItem'] = [18]
+# todo: falta tabla subcantidad
+normalize_tags['FchElabor'] = [10]
+normalize_tags['FchVencim'] = [10]
+normalize_tags['UnmdItem'] = [10]
+normalize_tags['PrcItem'] = [18]
+# todo: falta tabla OtrMnda
+normalize_tags['DescuentoOct'] = [5]
+normalize_tags['DescuentoMonto'] = [18]
+# todo: falta tabla distrib dcto
+# todo: falta tabla distrib recargo
+# todo: falta tabla cod imp adicional y retenciones
+normalize_tags['MontoItem'] = [18]
+# todo: falta subtotales informativos
+# ojo que estos descuentos podrían ser globales más de uno,
+# pero la implementación soporta uno solo
+normalize_tags['NroLinDR'] = [2]
+normalize_tags['TpoMov'] = [1]
+normalize_tags['GlosaDR'] = [45]
+normalize_tags['TpoValor'] = [1]
+normalize_tags['ValorDR'] = [18]
+normalize_tags['ValorDROtrMnda'] = [18]
+normalize_tags['IndExeDR'] = [1]
+# pluralizado deliberadamente
+normalize_tags['NroLinRef'] = [2]
+normalize_tags['TpoDocRef'] = [3]
+normalize_tags['IndGlobal'] = [3]
+normalize_tags['FolioRef'] = [18]
+normalize_tags['RUTOtr'] = [10]
+normalize_tags['IdAdicOtr'] = [20]
+normalize_tags['FchRef'] = [10]
+normalize_tags['CodRef'] = [1]
+normalize_tags['RazonRef'] = [1]
+# todo: faltan comisiones y otros cargos
+pluralizeds = ['Actecos', 'Detalles', 'Referencias', 'ImptoRetens']
+
 
 class Invoice(models.Model):
     """
@@ -126,6 +272,43 @@ class Invoice(models.Model):
         """
         return discount
 
+    @staticmethod
+    def remove_node(dte):
+        pass
+        return dte
+
+    @staticmethod
+    def remove_plurals(dte):
+        dte1 = OrderedDict()
+        for k, v in dte.items():
+            if k in pluralizeds:
+                k = k[:-1]
+                vn = []
+                for v1 in v:
+                    vn.append(v1[k])
+                    v = vn
+            else:
+                k, v = k, v
+            dte1[k] = v
+        return dte1
+
+    @staticmethod
+    def char_replace(text):
+        """
+        Funcion para reemplazar caracteres especiales
+        Esta funcion sirve para salvar bug en libreDTE con los recortes de
+        giros que están codificados en utf8 (cuando trunca, trunca la
+        codificacion)
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-07-31
+        """
+        for char in special_chars:
+            try:
+                text = text.replace(char[0], char[1])
+            except:
+                pass
+        return text
+
     def enviar_ldte(self, inv, dte, headers):
         """
         Función para enviar el dte a libreDTE
@@ -135,6 +318,11 @@ class Invoice(models.Model):
         :param dte:
         :return:
         """
+        dte['Encabezado']['Emisor'] = self.remove_plurals(
+            dte['Encabezado']['Emisor'])
+        dte = self.remove_plurals(dte)
+        dte = self.char_replace(dte)
+
         response_emitir = pool.urlopen(
             'POST', api_emitir, headers=headers, body=json.dumps(
                 dte))
@@ -165,34 +353,6 @@ class Invoice(models.Model):
         _logger.info('response_j')
         _logger.info(response_j)
         return response_j
-
-    @staticmethod
-    def remove_plurals(dte):
-        dte = collections.OrderedDict(
-            [('Detalle', v) if k == 'Detalles' else (k, v) for k, v in
-             dte.items()])
-        dte = collections.OrderedDict(
-            [('Referencia', v) if k == 'Referencias' else (k, v) for k, v in
-             dte.items()])
-        return dte
-
-    @staticmethod
-    def char_replace(text):
-        """
-        Funcion para reemplazar caracteres especiales
-        Esta funcion sirve para salvar bug en libreDTE con los recortes de
-        giros que están codificados en utf8 (cuando trunca, trunca la
-        codificacion)
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2016-07-31
-        """
-        for char in special_chars:
-            try:
-                text = text.replace(char[0], char[1])
-            except:
-                pass
-        print(text)
-        return text
 
     @staticmethod
     def create_template_doc(doc):
@@ -599,21 +759,14 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         return signature_data
 
     @staticmethod
-    def safe_variable(var, varname='default'):
-        msg = {
-            'default': u'variable',
-            'company_email':  u'variable correo del emisor',
-            'company_street': u'dirección de la compañía',
-            'company_county': u'comuna de la compañía',
-            'company_city': u'ciudad de la compañía',
-            'partner_email': u'variable correo del receptor',
-            'partner_street': u'dirección del receptor',
-            'partner_county': u'comuna del receptor',
-            'partner_city': u'ciudad del receptor',
-        }
+    def safe_variable(var, key):
+        try:
+            msg = normalize_tags[key][1]
+        except:
+            msg = u'variable'
         if not var:
             raise UserError(
-                u'La {} no está configurada.'.format(msg[varname]))
+                u'La {} no está configurada.'.format(msg))
         return var
 
     @staticmethod
@@ -1183,14 +1336,20 @@ TRACKID antes de revalidar, reintente la validación.')
             _logger.info(attachment_id)
             _logger.info(record_id)
 
-    @staticmethod
-    def shorten_string(var, size=1):
-        c = 0
-        chain = ''
-        while c < size and c < len(var):
-            chain += var[c]
-            c += 1
-        return chain
+    def normalize_string(self, var, key, control='truncate'):
+        if isinstance(key, (int, long, float, complex)):
+            size = key
+            control = 'truncate'
+        else:
+            size = normalize_tags[key][0]
+        if self.company_id.dte_service_provider in ['LIBREDTE']:
+            var = self.char_replace(var)
+            # var = unicodedata.normalize('NFKD', var).encode('ascii', 'ignore')
+        if control == 'truncate':
+            var = var[:size]
+        elif control == 'safe':
+            self.safe_variable(var, key)
+        return var
 
     @api.multi
     def action_invoice_open(self):
@@ -1238,8 +1397,8 @@ envío".format(inv.sii_document_number))
     def _giros_emisor(self):
         giros_emisor = []
         for turn in self.company_id.company_activities_ids:
-            # giros_emisor.extend([{'Acteco': turn.code}])
-            giros_emisor.extend([turn.code])
+            giros_emisor.extend([{'Acteco': turn.code}])
+            # giros_emisor.extend([turn.code])
         return giros_emisor
 
     def _id_doc(self, tax_include=False, MntExe=0):
@@ -1274,27 +1433,32 @@ envío".format(inv.sii_document_number))
         emisor= collections.OrderedDict()
         emisor['RUTEmisor'] = self.format_vat(self.company_id.vat)
         if self._es_boleta():
-            emisor['RznSocEmisor'] = self.company_id.partner_id.name
-            emisor['GiroEmisor'] = self.shorten_string(
-                self.company_id.activity_description.name, 80)
+            emisor['RznSocEmisor'] = self.normalize_string(
+                self.company_id.partner_id.name, 'RznSoc', 'safe')
+            emisor['GiroEmisor'] = self.normalize_string(
+                self.company_id.activity_description.name, 'GiroEmis', 'safe')
         else:
-            emisor['RznSoc'] = self.company_id.partner_id.name
-            emisor['GiroEmis'] = self.shorten_string(
-                self.company_id.activity_description.name, 80)
-            emisor['Telefono'] = self.company_id.phone or ''
-            emisor['CorreoEmisor'] = self.safe_variable(
-                self.company_id.dte_email, 'company_email')
-            emisor['Acteco'] = self._giros_emisor()
+            emisor['RznSoc'] = self.normalize_string(
+                self.company_id.partner_id.name, 'RznSoc', 'safe')
+            emisor['GiroEmis'] = self.normalize_string(
+                self.company_id.activity_description.name, 'GiroEmis', 'safe')
+            emisor['Telefono'] = self.normalize_string(
+                self.company_id.phone or '', 'Telefono', 'truncate')
+            emisor['CorreoEmisor'] = self.normalize_string(
+                self.company_id.dte_email, 'CorreoEmisor', 'safe')
+            emisor['Actecos'] = self._giros_emisor()
         if self.journal_id.sii_code:
-            emisor['Sucursal'] = self.journal_id.sucursal.name
-            emisor['CdgSIISucur'] = self.journal_id.sii_code
-        emisor['DirOrigen'] = self.safe_variable(
-            self.company_id.street, 'company_street') + ' ' + (
-            self.company_id.street2 or '')
-        emisor['CmnaOrigen'] = self.safe_variable(
-            self.company_id.city_id.name, 'company_county')
-        emisor['CiudadOrigen'] = self.safe_variable(
-            self.company_id.city, 'company_city')
+            emisor['Sucursal'] = self.normalize_string(
+                self.journal_id.sucursal.name, 'Sucursal', 'truncate')
+            emisor['CdgSIISucur'] = self.normalize_string(
+                self.journal_id.sii_code or '', 'CdgSIISucur', 'truncate')
+        emisor['DirOrigen'] = self.normalize_string('{} {}'.format(
+            self.company_id.street or '', self.company_id.street2 or ''),
+            'DirOrigen', 'safe')
+        emisor['CmnaOrigen'] = self.normalize_string(
+            self.company_id.city_id.name, 'CmnaOrigen', 'safe')
+        emisor['CiudadOrigen'] = self.normalize_string(
+            self.company_id.city, 'CiudadOrigen', 'safe')
         return emisor
 
     def _receptor(self):
@@ -1304,23 +1468,25 @@ envío".format(inv.sii_document_number))
         # if self._es_boleta():
         #     receptor['CdgIntRecep']
         receptor['RUTRecep'] = self.format_vat(self.partner_id.vat)
-        receptor['RznSocRecep'] = self.shorten_string(self.partner_id.name, 100)
+        receptor['RznSocRecep'] = self.normalize_string(
+            self.partner_id.name, 'RznSocRecep', 'safe')
         if not self._es_boleta():
             if not self.activity_description:
                 raise UserError(_('Seleccione giro del partner'))
-            receptor['GiroRecep'] = self.shorten_string(
-                self.activity_description.name, 40)
+            receptor['GiroRecep'] = self.normalize_string(
+                self.activity_description.name, 'GiroRecep', 'safe')
         if self.partner_id.phone:
-            receptor['Contacto'] = self.partner_id.phone
+            receptor['Contacto'] = self.normalize_string(
+                self.partner_id.phone, 'Contacto', 'truncate')
         if self.partner_id.dte_email and not self._es_boleta():
             receptor['CorreoRecep'] = self.partner_id.dte_email
-        receptor['DirRecep'] = self.safe_variable(
-            self.partner_id.street, 'partner_street') + ' ' + (
-            self.partner_id.street2 or '')
-        receptor['CmnaRecep'] = self.safe_variable(
-            self.partner_id.city_id.name, 'partner_county')
-        receptor['CiudadRecep'] = self.safe_variable(
-            self.partner_id.city, 'partner_city')
+        receptor['DirRecep'] = self.normalize_string('{} {}'.format(
+            self.partner_id.street or '',
+            self.partner_id.street2 or ''), 'DirRecep', 'safe')
+        receptor['CmnaRecep'] = self.normalize_string(
+            self.partner_id.city_id.name, 'CmnaRecep', 'safe')
+        receptor['CiudadRecep'] = self.normalize_string(
+            self.partner_id.city, 'CiudadRecep', 'safe')
         return receptor
 
     def _totales(self, MntExe=0, no_product=False, tax_include=False):
@@ -1386,15 +1552,16 @@ envío".format(inv.sii_document_number))
         if not self.partner_id.vat:
             raise UserError(_("Fill Partner VAT"))
         result['TED']['DD']['RR'] = self.format_vat(self.partner_id.vat)
-        result['TED']['DD']['RSR'] = self.shorten_string(self.partner_id.name, 40)
+        result['TED']['DD']['RSR'] = self.normalize_string(
+            self.partner_id.name, 40)
         result['TED']['DD']['MNT'] = int(round(self.amount_total))
         if no_product:
             result['TED']['DD']['MNT'] = 0
         for line in self.invoice_line_ids:
-            result['TED']['DD']['IT1'] = self.shorten_string(
-                line.product_id.name,40)
+            result['TED']['DD']['IT1'] = self.normalize_string(
+                line.product_id.name, 40)
             if line.product_id.default_code:
-                result['TED']['DD']['IT1'] = self.shorten_string(
+                result['TED']['DD']['IT1'] = self.normalize_string(
                     line.product_id.name.replace(
                         '['+line.product_id.default_code+'] ', ''), 40)
             break
@@ -1411,7 +1578,7 @@ envío".format(inv.sii_document_number))
             '><key name="@algoritmo">SHA1withRSA</key>',
             ' algoritmo="SHA1withRSA">').replace(
             '<key name="#text">', '').replace(
-            '</key>','').replace('<CAF>', '<CAF version="1.0">')+'</DD>'
+            '</key>', '').replace('<CAF>', '<CAF version="1.0">')+'</DD>'
         ddxml = self.convert_encoding(ddxml, 'utf-8')
         keypriv = (resultcaf['AUTORIZACION']['RSASK']).encode(
             'latin-1').replace('\t', '')
@@ -1419,7 +1586,7 @@ envío".format(inv.sii_document_number))
             'latin-1').replace('\t', '')
         #####
         ## antes de firmar, formatear
-        root = etree.XML( ddxml )
+        root = etree.XML(ddxml)
         ##
         # formateo sin remover indents
         ddxml = etree.tostring(root)
@@ -1469,13 +1636,16 @@ envío".format(inv.sii_document_number))
             #   lines['ItemEspectaculo'] =
 #            if self._es_boleta():
 #                lines['RUTMandante']
-            lines['NmbItem'] = self.shorten_string(line.product_id.name, 80)
-            lines['DscItem'] = self.shorten_string(line.name, 1000)
+            lines['NmbItem'] = self.normalize_string(
+                line.product_id.name, 'NmbItem', 'safe')
+            lines['DscItem'] = self.normalize_string(
+                line.name, 'DscItem', 'truncate')
             # descripción más extensa
             if line.product_id.default_code:
-                lines['NmbItem'] = self.shorten_string(
+                lines['NmbItem'] = self.normalize_string(
                     line.product_id.name.replace(
-                        '['+line.product_id.default_code+'] ', ''), 80)
+                        '['+line.product_id.default_code+'] ', ''),
+                    'NmbItem', 'truncate')
             # lines['InfoTicket']
             qty = round(line.quantity, 4)
             if not no_product:
@@ -1498,11 +1668,7 @@ envío".format(inv.sii_document_number))
             if no_product:
                 lines['MontoItem'] = 0
             line_number += 1
-            if self.company_id.dte_service_provider not in ['LIBREDTE']:
-                # invoice_lines.extend([{'Detalle': lines}])
-                invoice_lines.extend([lines])
-            else:
-                invoice_lines.extend([lines])
+            invoice_lines.extend([{'Detalle': lines}])
             if 'IndExe' in lines:
                 tax_include = False
         return {
@@ -1529,9 +1695,11 @@ envío".format(inv.sii_document_number))
             ref_line['FchRef'] = datetime.strftime(datetime.now(), '%Y-%m-%d')
             ref_line['RazonRef'] = "CASO " + n_atencion + "-" + str(
                 self.sii_batch_number)
-            lin_ref = 2
-            ref_lines.extend([{'Referencia': ref_line}])
+            lin_ref += 1
             # ref_lines.extend([ref_line])
+            ref_lines.extend([{'Referencia': ref_line}])
+        # raise UserError('referencias...: {}, ref anteriores'.format(
+        #     self.referencias, json.dumps(ref_lines)))
         if self.referencias:
             for ref in self.referencias:
                 ref_line = collections.OrderedDict()
@@ -1556,17 +1724,19 @@ envío".format(inv.sii_document_number))
                 #     ref_lines.extend([ref_line])
                 # else:
                 #     ref_lines.extend([ref_line])
-                ref_lines.extend([ref_line])
+                ref_lines.extend([{'Referencia': ref_line}])
+                # raise UserError(
+                #     'referencias despues...: {}'.format(json.dumps(ref_lines)))
                 lin_ref += 1
-        dte['Detalle'] = invoice_lines['invoice_lines']
-        _logger.info('dte.....{}'.format(json.dumps(dte)))
+        dte['Detalles'] = invoice_lines['invoice_lines']
         if len(ref_lines) > 0:
-            dte['Referencia'] = ref_lines
+            dte['Referencias'] = ref_lines
         if self.company_id.dte_service_provider not in ['LIBREDTE']:
             dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
         else:
             del dte['Encabezado']['Totales']
-        # raise UserError('dte.....{}'.format(json.dumps(dte)))
+        _logger.info('dte.....{}'.format(json.dumps(dte)))
+        raise UserError('stop dentro _dte')
         return dte
 
     def _dte_to_xml(self, dte, tpo_dte="Documento"):
