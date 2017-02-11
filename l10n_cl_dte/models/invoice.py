@@ -706,6 +706,12 @@ YComp 5.0.2.4)',
             'target': 'self',
         }
 
+    @staticmethod
+    def safe_date(date):
+        if not date:
+            date = datetime.now().strftime('%Y-%m-%d')
+        return date
+
     def get_folio(self):
         """
         Funcion para descargar el folio tomando el valor desde la secuencia
@@ -1240,7 +1246,7 @@ envío".format(inv.sii_document_number))
         IdDoc = collections.OrderedDict()
         IdDoc['TipoDTE'] = self.sii_document_class_id.sii_code
         IdDoc['Folio'] = self.get_folio()
-        IdDoc['FchEmis'] = self.date_invoice
+        IdDoc['FchEmis'] = self.safe_date(self.date_invoice)
         if self._es_boleta():
             IdDoc['IndServicio'] = 3
             #@TODO agregar las otras opciones a la fichade producto servicio
@@ -1453,21 +1459,24 @@ envío".format(inv.sii_document_number))
             for t in line.invoice_line_tax_ids:
                 tax_include = t.price_include
                 if t.amount == 0 or t.sii_code in [0]:
-                    #@TODO mejor manera de identificar exento de afecto
+                    # TODO: mejor manera de identificar exento de afecto
                     lines['IndExe'] = 1
                     MntExe += int(round(line.price_tax_included, 0))
-            #if line.product_id.type == 'events':
+            if not tax_include:
+                lines['IndExe'] = 1
+                MntExe += int(round(line.price_tax_included, 0))
+            # if line.product_id.type == 'events':
             #   lines['ItemEspectaculo'] =
 #            if self._es_boleta():
 #                lines['RUTMandante']
             lines['NmbItem'] = self.shorten_string(line.product_id.name, 80)
             lines['DscItem'] = self.shorten_string(line.name, 1000)
-            #descripción más extensa
+            # descripción más extensa
             if line.product_id.default_code:
                 lines['NmbItem'] = self.shorten_string(
                     line.product_id.name.replace(
                         '['+line.product_id.default_code+'] ', ''), 80)
-            #lines['InfoTicket']
+            # lines['InfoTicket']
             qty = round(line.quantity, 4)
             if not no_product:
                 lines['QtyItem'] = qty
@@ -1484,7 +1493,7 @@ envío".format(inv.sii_document_number))
                     round((((line.discount / 100) * lines['PrcItem']) * qty)))
             if not no_product and not tax_include:
                 lines['MontoItem'] = int(round(line.price_subtotal, 0))
-            elif not no_product :
+            elif not no_product:
                 lines['MontoItem'] = int(round(line.price_tax_included, 0))
             if no_product:
                 lines['MontoItem'] = 0
@@ -1521,11 +1530,10 @@ envío".format(inv.sii_document_number))
             ref_line['RazonRef'] = "CASO " + n_atencion + "-" + str(
                 self.sii_batch_number)
             lin_ref = 2
-            # ref_lines.extend([{'Referencia': ref_line}])
-            ref_lines.extend([ref_line])
+            ref_lines.extend([{'Referencia': ref_line}])
+            # ref_lines.extend([ref_line])
         if self.referencias:
             for ref in self.referencias:
-                ref_line = {}
                 ref_line = collections.OrderedDict()
                 ref_line['NroLinRef'] = lin_ref
                 if not self._es_boleta():
@@ -1543,11 +1551,12 @@ envío".format(inv.sii_document_number))
                     ref_line['CodVndor'] = self.seler_id.id
                     ref_lines['CodCaja'] = self.journal_id.point_of_sale_id.name
                 # ref_lines.extend([{'Referencia': ref_line}])
-                if self.company_id.dte_service_provider not in ['LIBREDTE']:
-                    # ref_lines.extend([{'Referencia': ref_line}])
-                    ref_lines.extend([ref_line])
-                else:
-                    ref_lines.extend([ref_line])
+                # if self.company_id.dte_service_provider not in ['LIBREDTE']:
+                #     # ref_lines.extend([{'Referencia': ref_line}])
+                #     ref_lines.extend([ref_line])
+                # else:
+                #     ref_lines.extend([ref_line])
+                ref_lines.extend([ref_line])
                 lin_ref += 1
         dte['Detalle'] = invoice_lines['invoice_lines']
         _logger.info('dte.....{}'.format(json.dumps(dte)))
@@ -1557,6 +1566,7 @@ envío".format(inv.sii_document_number))
             dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
         else:
             del dte['Encabezado']['Totales']
+        # raise UserError('dte.....{}'.format(json.dumps(dte)))
         return dte
 
     def _dte_to_xml(self, dte, tpo_dte="Documento"):
@@ -1608,9 +1618,9 @@ signature.'''))
         envelope_efact = self.convert_encoding(xml_pret, 'ISO-8859-1')
         envelope_efact = self.create_template_doc(envelope_efact)
         # raise UserError('envelope_efact: {}'.format(envelope_efact))
-        type = 'doc'
-        if self._es_boleta():
-            type = 'bol'
+        # type = 'doc'
+        type = 'bol' if self._es_boleta() else 'doc'
+        #    type = 'bol'
         einvoice = self.sign_full_xml(
             envelope_efact, signature_d['priv_key'],
             self.split_cert(certp), doc_id_number, type)
