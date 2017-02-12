@@ -118,7 +118,7 @@
                 </field>
 
                 <field name="journal_id" position="after">
-                    <field name="turn_issuer"
+                       <field name="turn_issuer"
                            domain="[('journal_ids', '=', journal_id)]"
                            attrs="{'required':[('use_documents', '=', True)]}"
                            options="{'no_create': True}"/>

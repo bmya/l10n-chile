@@ -11,8 +11,8 @@
                     placeholder="Giros del Partner" widget="many2many_tags"
                     options="{'no_create': True}" 
                     domain="[('parent_id', '>=', 1)]"
-                    invisible="True"/>
-                <field name="activity_description" />
+                    invisible="False"/>
+                <field name="activity_description" invisible="True"/>
             </field>
         </field>
     </record>

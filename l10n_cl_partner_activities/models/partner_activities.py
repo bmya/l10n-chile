@@ -3,7 +3,6 @@ from odoo import models, fields
 
 
 class PartnerActivities(models.Model):
-
     _description = 'SII Economical Activities'
     _name = 'partner.activities'
 
@@ -28,13 +27,13 @@ class PartnerActivities(models.Model):
 
 
 class PartnerTurns(models.Model):
-
     _description = 'Partner registered turns'
     _inherit = 'res.partner'
 
     partner_activities_ids = fields.Many2many(
         'partner.activities', id1='partner_id', id2='activities_id',
-        string='Activities Names')
+        string='Activities Names',
+        help=u'Seleccione las actividades económicas registradas en el SII')
 
 
 class CompanyTurns(models.Model):
@@ -45,4 +44,5 @@ class CompanyTurns(models.Model):
     company_activities_ids = fields.Many2many(
         string='Activities Names',
         related='partner_id.partner_activities_ids',
-        relation='partner.activities')
+        relation='partner.activities',
+        help=u'Seleccione las actividades económicas registradas en el SII')

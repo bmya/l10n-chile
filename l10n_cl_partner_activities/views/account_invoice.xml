@@ -7,9 +7,13 @@
             <field name="inherit_id" ref="account.invoice_form" />
             <field name="arch" type="xml">
                 <field name='partner_id' position="after">
-                    <field name="invoice_turn" domain="[('partner_id', '=', partner_id)]" invisible="True"/>
+                    <field name="invoice_turn"
+                           domain="[('partner_ids', '=', partner_id)]"
+                           invisible="False"
+                           options="{'no_quick_create': True, 'no_create_edit': True}"
+                    />
                     <field name="activity_description"
-                            placeholder="Glosa descriptiva" options="{'no_edit': True}"/>
+                            placeholder="Glosa descriptiva" options="{'no_edit': True}" invisible="True"/>
                 </field>
             </field>
         </record>
@@ -20,9 +24,13 @@
             <field name="inherit_id" ref="account.invoice_supplier_form"/>
             <field name="arch" type="xml">
                 <field name='partner_id' position="after">
-                    <field name="invoice_turn" domain="[('partner_id', '=', partner_id)]"  invisible="True"/>
+                    <field name="invoice_turn"
+                           domain="[('partner_ids', '=', partner_id)]"
+                           invisible="False"
+                           options="{'no_quick_create': True, 'no_create_edit': True}"
+                    />
                     <field name="activity_description"
-                            placeholder="Glosa descriptiva" options="{'no_edit': True}"/>
+                            placeholder="Glosa descriptiva" options="{'no_edit': True}" invisible="True"/>
                 </field>
             </field>
         </record>
