@@ -1,6 +1,4 @@
-
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 from odoo import models, fields, api
 from odoo.tools.translate import _
 from odoo.exceptions import UserError
@@ -88,7 +86,7 @@ set your company responsability in the company partner before continue.'))
                     # non_dte_register, dte_register, settlement_invoice,
                     # free_tax_zone, credit_notes, debit_notes, context)
             elif journal_type in ['sale_refund', 'purchase_refund']:
-                print('notas de credito de compra o venta')
+                _logger.info('notas de credito de compra o venta')
                 self.create_journal_document(
                     letter_ids, 'credit_note', journal.id)
 
@@ -103,7 +101,7 @@ set your company responsability in the company partner before continue.'))
 
     def create_journal_document(
             self, letter_ids, document_type, journal_id):
-        print(document_type, letter_ids)
+        _logger.info(document_type, letter_ids)
         if_zf = [] if self.free_tax_zone else [901, 906, 907]
         if_lf = [] if self.settlement_invoice else [40, 43]
         if_tr = [] if self.weird_documents else [29, 108, 914, 911, 904, 905]
@@ -112,7 +110,7 @@ set your company responsability in the company partner before continue.'))
             journal_id)
         if_na = [] if journal.excempt_documents else [32, 34]
         dt_types_exclude = if_zf + if_lf + if_tr + if_na
-        print(dt_types_exclude)
+        _logger.info(dt_types_exclude)
 
         document_class_obj = self.env['sii.document_class']
         document_class_ids = document_class_obj.search([
