@@ -220,7 +220,7 @@
                                  <tr name="discount" t-if="display_discount" class="border-black" style="max-height:11px; font-size:12px !important;">
                                    <td><strong>Descuento</strong></td>
                                    <td class="text-right">
-                                       <span t-esc="o.getTotalDiscount()" t-esc-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/>
+                                       <span t-esc="o.get_total_discount()" t-esc-options='{"widget": "monetary", "display_currency": "o.currency_id"}'/>
                                    </td>
                                   </tr>
 	                              <t t-if="'tax_line_ids' in o">
