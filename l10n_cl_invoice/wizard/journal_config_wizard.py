@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 from odoo import models, fields, api
@@ -7,15 +8,15 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-class AccountJournalDocumentConfig(models.TransientModel):
 
+class AccountJournalDocumentConfig(models.TransientModel):
     _name = 'account.journal.document_config'
 
     debit_notes = fields.Selection(
-        [('dont_use','Do not use'), ('own_sequence','Use')],
+        [('dont_use', 'Do not use'), ('own_sequence', 'Use')],
         string='Debit Notes', required=True, default='own_sequence')
     credit_notes = fields.Selection(
-        [('own_sequence','Use')], string='Credit Notes', required=True,
+        [('own_sequence', 'Use')], string='Credit Notes', required=True,
         default='own_sequence')
     dte_register = fields.Boolean(
         'Register Electronic Documents?', default=True, help="""
@@ -50,7 +51,6 @@ Include unusual taxes documents, as transfer invoice, and reissue
     # def _get_journal_excempt(self):
     #     return True
 
-
     def confirm(self, context=None):
         """
         Confirm Configure button
@@ -60,10 +60,10 @@ Include unusual taxes documents, as transfer invoice, and reissue
 
         journal_ids = context.get('active_ids', False)
         wizard = self.browse()
-        self.create_journals(journal_ids, wizard)
+        # self.create_journals(journal_ids, wizard)
+        self.create_journals(journal_ids)
 
-    # def create_journals(self, cr, uid, journal_ids, wz, context=None):
-    def create_journals(self, journal_ids, wizard):
+    def create_journals(self, journal_ids):
         for journal in self.env['account.journal'].browse(journal_ids):
             responsability = journal.company_id.responsability_id
             if not responsability.id:
@@ -120,7 +120,8 @@ set your company responsability in the company partner before continue.'))
                 ('document_type', '=', document_type),
                 ('sii_code', 'not in', dt_types_exclude)])
         # raise UserError(
-        #     'letter_ids: {}, document_type: {}, sii_code not in: {}, document_class_ids: {}'.format(
+        #     'letter_ids: {}, document_type: {}, sii_code not in: {},
+        # document_class_ids: {}'.format(
         #     letter_ids,
         #     document_type,
         #     dt_types_exclude,
