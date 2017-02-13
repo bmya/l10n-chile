@@ -580,7 +580,8 @@ sequence on the journal related documents to this invoice.'))
         partner = partner.commercial_partner_id
 
         if operation_type == 'sale':
-            issuer_responsability_id = self.company_id.partner_id.responsability_id.id
+            issuer_responsability_id = self.company_id.partner_id.\
+                responsability_id.id
             receptor_responsability_id = partner.responsability_id.id
             if invoice_type == 'out_invoice':
                 if vat_affected == 'SI':
@@ -600,7 +601,8 @@ sequence on the journal related documents to this invoice.'))
                     ('receptor_ids', '=', receptor_responsability_id)]
         elif operation_type == 'purchase':
             issuer_responsability_id = partner.responsability_id.id
-            receptor_responsability_id = company.partner_id.responsability_id.id
+            receptor_responsability_id = self.company_id.partner_id.\
+                responsability_id.id
             if invoice_type == 'in_invoice':
                 _logger.info('responsabilidad del partner')
                 if issuer_responsability_id == self.env['ir.model.data'].\

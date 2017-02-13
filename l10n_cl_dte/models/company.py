@@ -15,8 +15,6 @@ class DteEmail(models.Model):
     dte_email = fields.Char('DTE Email', related='partner_id.dte_email')
     dte_service_provider = fields.Selection([
             ('', 'None'),
-            ('EFACTURADELSUR', 'efacturadelsur.cl'),
-            ('EFACTURADELSUR_TEST', 'efacturadelsur.cl (test mode)'),
             ('FACTURACION', 'facturacion.cl'),
             ('LIBREDTE', 'LibreDTE'),
             ('SIIHOMO', 'SII - Certification process'),

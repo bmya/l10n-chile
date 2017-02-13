@@ -28,40 +28,6 @@ try:
     from cStringIO import StringIO
 except:
     from StringIO import StringIO
-from .commonmethods import LibreDte as ld
-from .commonmethods import CommonMethods as cm
-from .commonmethods import PySIIDTE as si
-
-# timbre patrón. Permite parsear y formar el
-# ordered-dict patrón corespondiente al documento
-
-# Public vars definition
-timbre = """<TED version="1.0"><DD><RE>99999999-9</RE><TD>11</TD><F>1</F>\
-<FE>2000-01-01</FE><RR>99999999-9</RR><RSR>\
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</RSR><MNT>10000</MNT><IT1>IIIIIII\
-</IT1><CAF version="1.0"><DA><RE>99999999-9</RE><RS>YYYYYYYYYYYYYYY</RS>\
-<TD>10</TD><RNG><D>1</D><H>1000</H></RNG><FA>2000-01-01</FA><RSAPK><M>\
-DJKFFDJKJKDJFKDJFKDJFKDJKDnbUNTAi2IaDdtAndm2p5udoqFiw==</M><E>Aw==</E></RSAPK>\
-<IDK>300</IDK></DA><FRMA algoritmo="SHA1withRSA">\
-J1u5/1VbPF6ASXkKoMOF0Bb9EYGVzQ1AMawDNOy0xSuAMpkyQe3yoGFthdKVK4JaypQ/F8\
-afeqWjiRVMvV4+s4Q==</FRMA></CAF><TSTED>2014-04-24T12:02:20</TSTED></DD>\
-<FRMT algoritmo="SHA1withRSA">jiuOQHXXcuwdpj8c510EZrCCw+pfTVGTT7obWm/\
-fHlAa7j08Xff95Yb2zg31sJt6lMjSKdOK+PQp25clZuECig==</FRMT></TED>"""
-result = xmltodict.parse(timbre)
-
-server_url = {
-    'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
-    'SII': 'https://palena.sii.cl/DTEWS/'}
-
-BC = '''-----BEGIN CERTIFICATE-----\n'''
-EC = '''\n-----END CERTIFICATE-----\n'''
-
-try:
-    pool = urllib3.PoolManager()
-except:
-    pass
-
-import os
 
 normalize_tags = collections.OrderedDict()
 normalize_tags['RutEmisor'] = [10]
@@ -188,6 +154,36 @@ normalize_tags['RazonRef'] = [1]
 # todo: faltan comisiones y otros cargos
 pluralizeds = ['Actecos', 'Detalles', 'Referencias', 'ImptoRetens']
 
+# timbre patrón. Permite parsear y formar el
+# ordered-dict patrón corespondiente al documento
+
+# Public vars definition
+timbre = """<TED version="1.0"><DD><RE>99999999-9</RE><TD>11</TD><F>1</F>\
+<FE>2000-01-01</FE><RR>99999999-9</RR><RSR>\
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</RSR><MNT>10000</MNT><IT1>IIIIIII\
+</IT1><CAF version="1.0"><DA><RE>99999999-9</RE><RS>YYYYYYYYYYYYYYY</RS>\
+<TD>10</TD><RNG><D>1</D><H>1000</H></RNG><FA>2000-01-01</FA><RSAPK><M>\
+DJKFFDJKJKDJFKDJFKDJFKDJKDnbUNTAi2IaDdtAndm2p5udoqFiw==</M><E>Aw==</E></RSAPK>\
+<IDK>300</IDK></DA><FRMA algoritmo="SHA1withRSA">\
+J1u5/1VbPF6ASXkKoMOF0Bb9EYGVzQ1AMawDNOy0xSuAMpkyQe3yoGFthdKVK4JaypQ/F8\
+afeqWjiRVMvV4+s4Q==</FRMA></CAF><TSTED>2014-04-24T12:02:20</TSTED></DD>\
+<FRMT algoritmo="SHA1withRSA">jiuOQHXXcuwdpj8c510EZrCCw+pfTVGTT7obWm/\
+fHlAa7j08Xff95Yb2zg31sJt6lMjSKdOK+PQp25clZuECig==</FRMT></TED>"""
+result = xmltodict.parse(timbre)
+
+server_url = {
+    'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
+    'SII': 'https://palena.sii.cl/DTEWS/'}
+
+BC = '''-----BEGIN CERTIFICATE-----\n'''
+EC = '''\n-----END CERTIFICATE-----\n'''
+
+try:
+    pool = urllib3.PoolManager()
+except:
+    pass
+import os
+
 connection_status = {
     '0': 'Upload OK',
     '1': 'El Sender no tiene permiso para enviar',
@@ -202,6 +198,14 @@ connection_status = {
 }
 xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
     '/models', '/static/xsd/')
+host = 'https://libredte.cl/api'
+api_emitir = host + '/dte/documentos/emitir'
+api_generar = host + '/dte/documentos/generar'
+api_gen_pdf = host + '/dte/documentos/generar_pdf'
+api_get_xml = host + '/dte/dte_emitidos/xml/{0}/{1}/{2}'
+api_upd_status = host + '/dte/dte_emitidos/actualizar_estado/'
+no_product = False
+
 
 class Invoice(models.Model):
     """
@@ -212,6 +216,7 @@ class Invoice(models.Model):
     """
     _inherit = "account.invoice"
 
+    # metodos comunes
     @staticmethod
     def safe_variable(var, key):
         try:
@@ -222,6 +227,637 @@ class Invoice(models.Model):
             raise UserError(
                 u'La {} no está configurada.'.format(msg))
         return var
+
+    @staticmethod
+    def format_vat(value):
+        ''' Se Elimina el 0 para prevenir problemas con el sii, ya que las
+        muestras no las toma si va con
+        el 0 , y tambien internamente se generan problemas'''
+        if not value or value == '' or value == 0:
+            value ="CL666666666"
+            #@TODO opción de crear código de cliente en vez de rut genérico
+        rut = value[:10] + '-' + value[10:]
+        rut = rut.replace('CL0', '').replace('CL', '')
+        return rut
+
+    @staticmethod
+    def _calc_discount_vat(discount, sii_code):
+        """
+        Función provisoria para calcular el descuento:
+        TODO
+        @author: Daniel Blanco
+        @version: 2016-12-30
+        :return:
+        """
+        return discount
+
+    @staticmethod
+    def safe_date(date):
+        if not date:
+            date = datetime.now().strftime('%Y-%m-%d')
+        return date
+
+    def normalize_string(
+            self, var, key, control='truncate'):
+        if isinstance(key, (int, long, float, complex)):
+            size = key
+            control = 'truncate'
+        else:
+            size = normalize_tags[key][0]
+        if self.company_id.dte_service_provider in ['LIBREDTE']:
+            var = self.char_replace(var)
+            # var = unicodedata.normalize(
+            # 'NFKD', var).encode('ascii', 'ignore')
+        if control == 'truncate':
+            var = var[:size]
+        elif control == 'safe':
+            self.safe_variable(var, key)
+        return var
+
+    # metodos de libredte
+    @staticmethod
+    def remove_plurals_node(dte):
+        dte1 = collections.OrderedDict()
+        for k, v in dte.items():
+            if k in pluralizeds:
+                k = k[:-1]
+                vn = []
+                for v1 in v:
+                    vn.append(v1[k])
+                    v = vn
+            else:
+                k, v = k, v
+            dte1[k] = v
+        return dte1
+
+    # metodos sii
+    @staticmethod
+    def create_template_doc(doc):
+        """
+        Creacion de plantilla xml para envolver el DTE
+        Previo a realizar su firma (1)
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-06-01
+        """
+        xml = '''<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
+    <!-- Odoo Implementation Blanco Martin -->
+    {}</DTE>'''.format(doc)
+        return xml
+
+    @staticmethod
+    def split_cert(cert):
+        certf, j = '', 0
+        for i in range(0, 29):
+            certf += cert[76 * i:76 * (i + 1)] + '\n'
+        return certf
+
+    @staticmethod
+    def create_template_envio(RutEmisor, RutReceptor, FchResol, NroResol,
+                              TmstFirmaEnv, EnvioDTE, signature_d,
+                              SubTotDTE):
+        """
+        Funcion que permite crear una plantilla para el EnvioDTE
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-06-01
+        :param RutEmisor:
+        :param RutReceptor:
+        :param FchResol:
+        :param NroResol:
+        :param TmstFirmaEnv:
+        :param EnvioDTE:
+        :param signature_d:
+        :param SubTotDTE:
+        :return:
+        """
+        xml = '''<SetDTE ID="SetDoc">
+<Caratula version="1.0">
+<RutEmisor>{0}</RutEmisor>
+<RutEnvia>{1}</RutEnvia>
+<RutReceptor>{2}</RutReceptor>
+<FchResol>{3}</FchResol>
+<NroResol>{4}</NroResol>
+<TmstFirmaEnv>{5}</TmstFirmaEnv>
+{6}</Caratula>{7}
+</SetDTE>
+'''.format(RutEmisor, signature_d['subject_serial_number'], RutReceptor,
+           FchResol, NroResol, TmstFirmaEnv, SubTotDTE, EnvioDTE)
+        return xml
+
+    @staticmethod
+    def get_seed(company_id):
+        """
+        Funcion usada en autenticacion en SII
+        Obtencion de la semilla desde el SII.
+        Basada en función de ejemplo mostrada en el sitio edreams.cl
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2015-04-01
+        """
+        try:
+            import ssl
+            ssl._create_default_https_context = ssl._create_unverified_context
+        except:
+            pass
+        url = server_url[
+                  company_id.dte_service_provider] + 'CrSeed.jws?WSDL'
+        ns = 'urn:' + server_url[
+            company_id.dte_service_provider] + 'CrSeed.jws'
+        _server = SOAPProxy(url, ns)
+        root = etree.fromstring(_server.getSeed())
+        semilla = root[0][0].text
+        return semilla
+
+    @staticmethod
+    def create_template_seed(seed):
+        """
+        Funcion usada en autenticacion en SII
+        Creacion de plantilla xml para realizar el envio del token
+        Previo a realizar su firma
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-06-01
+        """
+        xml = u'''<getToken>
+<item>
+<Semilla>{}</Semilla>
+</item>
+</getToken>
+'''.format(seed)
+        return xml
+
+    @staticmethod
+    def create_template_env(doc, typedoc='DTE'):
+        """
+        Funcion usada en autenticacion en SII
+        Creacion de plantilla xml para envolver el Envio de DTEs
+        Previo a realizar su firma (2da)
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-06-01
+        """
+        xml = '''<?xml version="1.0" encoding="ISO-8859-1"?>
+<Envio{1} xmlns="http://www.sii.cl/SiiDte" \
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
+xsi:schemaLocation="http://www.sii.cl/SiiDte Envio{1}_v10.xsd" \
+version="1.0">
+{0}
+</EnvioDTE>'''.format(doc, typedoc)
+        return xml
+
+    @staticmethod
+    def create_template_doc1(doc, sign):
+        """
+        Funcion usada en autenticacion en SII
+        Insercion del nodo de firma (1ra) dentro del DTE
+        Una vez firmado.
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-06-01
+        """
+        xml = doc.replace('</DTE>', '') + sign + '</DTE>'
+        return xml
+
+    @staticmethod
+    def create_template_env1(doc, sign):
+        """
+        Funcion usada en autenticacion en SII
+        Insercion del nodo de firma (2da) dentro del DTE
+        Una vez firmado.
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-06-01
+        """
+        xml = doc.replace('</EnvioDTE>', '') + sign + '</EnvioDTE>'
+        return xml
+
+    @staticmethod
+    def append_sign_recep(doc, sign):
+        xml = doc.replace('</Recibo>', '') + sign + '</Recibo>'
+        return xml
+
+    @staticmethod
+    def append_sign_env_recep(doc, sign):
+        xml = doc.replace('</EnvioRecibos>', '') + sign + '</EnvioRecibos>'
+        return xml
+
+    @staticmethod
+    def append_sign_env_resp(doc, sign):
+        xml = doc.replace('</RespuestaDTE>', '') + sign + '</RespuestaDTE>'
+        return xml
+
+    @staticmethod
+    def append_sign_env_bol(doc, sign):
+        xml = doc.replace('</EnvioBOLETA>', '') + sign + '</EnvioBOLETA>'
+        return xml
+
+    @staticmethod
+    def sign_seed(message, privkey, cert):
+        """
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-06-01
+        """
+        doc = etree.fromstring(message)
+        signed_node = xmldsig(
+            doc, digest_algorithm=u'sha1').sign(
+            method=methods.enveloped, algorithm=u'rsa-sha1',
+            key=privkey.encode('ascii'),
+            cert=cert)
+        msg = etree.tostring(
+            signed_node, pretty_print=True).replace('ds:', '')
+        return msg
+
+    @staticmethod
+    def get_token(seed_file, company_id):
+        """
+        Funcion usada en autenticacion en SII
+        Obtencion del token a partir del envio de la semilla firmada
+        Basada en función de ejemplo mostrada en el sitio edreams.cl
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-06-01
+        """
+        url = server_url[
+                  company_id.dte_service_provider] + 'GetTokenFromSeed.jws?WSDL'
+        ns = 'urn:' + server_url[
+            company_id.dte_service_provider] + 'GetTokenFromSeed.jws'
+        _server = SOAPProxy(url, ns)
+        tree = etree.fromstring(seed_file)
+        ss = etree.tostring(tree, pretty_print=True, encoding='iso-8859-1')
+        respuesta = etree.fromstring(_server.getToken(ss))
+        token = respuesta[0][0].text
+        return token
+
+    @staticmethod
+    def long_to_bytes(n, blocksize=0):
+        """long_to_bytes(n:long, blocksize:int) : string
+        Convert a long integer to a byte string.
+        If optional blocksize is given and greater than zero, pad the front of
+        the byte string with binary zeros so that the length is a multiple of
+        blocksize.
+        """
+        # after much testing, this algorithm was deemed to be the fastest
+        s = b''
+        n = long(n)
+        # noqa
+        import struct
+        pack = struct.pack
+        while n > 0:
+            s = pack(b'>I', n & 0xffffffff) + s
+            n = n >> 32
+        # strip off leading zeros
+        for i in range(len(s)):
+            if s[i] != b'\000'[0]:
+                break
+        else:
+            # only happens when n == 0
+            s = b'\000'
+            i = 0
+        s = s[i:]
+        # add back some pad bytes.  this could be done more efficiently
+        # w.r.t. the
+        # de-padding being done above, but sigh...
+        if blocksize > 0 and len(s) % blocksize:
+            s = (blocksize - len(s) % blocksize) * b'\000' + s
+        return s
+
+    @staticmethod
+    def ensure_str(x, encoding="utf-8", none_ok=False):
+        if none_ok is True and x is None:
+            return x
+        if not isinstance(x, str):
+            x = x.decode(encoding)
+        return x
+
+    @staticmethod
+    def pdf417bc(ted):
+        """
+        Funcion creacion de imagen pdf417 basada en biblioteca elaphe
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-05-01
+        """
+        bc = barcode(
+            'pdf417',
+            ted,
+            options=dict(
+                compact=False,
+                eclevel=5,
+                columns=13,
+                rowmult=2,
+                rows=3
+            ),
+            margin=20,
+            scale=1
+        )
+        return bc
+
+    @staticmethod
+    def digest(data):
+        """
+        Funcion usada en SII
+        para firma del timbre (dio errores de firma para el resto de los doc)
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2015-03-01
+        """
+        sha1 = hashlib.new('sha1', data)
+        return sha1.digest()
+
+    @staticmethod
+    def xml_validator(some_xml_string, validacion='doc'):
+        """
+        Funcion para validar los xml generados contra el esquema que le
+        corresponda segun el tipo de documento.
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-06-01. Se agregó validación para boletas
+        Modificada por Daniel Santibañez 2016-08-01
+        """
+        if validacion == 'bol':
+            return True
+        validacion_type = {
+            'doc': 'DTE_v10.xsd',
+            'env': 'EnvioDTE_v10.xsd',
+            'env_boleta': 'EnvioBOLETA_v11.xsd',
+            'recep': 'Recibos_v10.xsd',
+            'env_recep': 'EnvioRecibos_v10.xsd',
+            'env_resp': 'RespuestaEnvioDTE_v10.xsd',
+            'sig': 'xmldsignature_v10.xsd'}
+        xsd_file = xsdpath + validacion_type[validacion]
+        try:
+            xmlschema_doc = etree.parse(xsd_file)
+            xmlschema = etree.XMLSchema(xmlschema_doc)
+            xml_doc = etree.fromstring(some_xml_string)
+            result = xmlschema.validate(xml_doc)
+            if not result:
+                xmlschema.assert_(xml_doc)
+            return result
+        except AssertionError as e:
+            _logger.info(etree.tostring(xml_doc))
+            raise UserError(_('XML Malformed Error: {}').format(e.args))
+
+    def send_xml_file(
+            self, envio_dte=None, file_name="envio", company_id=False,
+            sii_result='NoEnviado', doc_ids=''):
+        if not company_id.dte_service_provider:
+            raise UserError(_("Not Service provider selected!"))
+        # try:
+        signature_d = self.get_digital_signature_pem(
+            company_id)
+        seed = self.get_seed(company_id)
+        template_string = self.create_template_seed(seed)
+        seed_firmado = self.sign_seed(
+            template_string, signature_d['priv_key'],
+            signature_d['cert'])
+        token = self.get_token(seed_firmado, company_id)
+        # except:
+        #    _logger.info('error')
+        #    return
+
+        url = 'https://palena.sii.cl'
+        if company_id.dte_service_provider == 'SIIHOMO':
+            url = 'https://maullin.sii.cl'
+        post = '/cgi_dte/UPL/DTEUpload'
+        headers = {
+            'Accept': 'image/gif, image/x-xbitmap, image/jpeg, \
+image/pjpeg, application/vnd.ms-powerpoint, application/ms-excel, \
+application/msword, */*',
+            'Accept-Language': 'es-cl',
+            'Accept-Encoding': 'gzip, deflate',
+            'User-Agent': 'Mozilla/4.0 (compatible; PROG 1.0; Windows NT 5.0; \
+YComp 5.0.2.4)',
+            'Referer': '{}'.format(company_id.website),
+            'Connection': 'Keep-Alive',
+            'Cache-Control': 'no-cache',
+            'Cookie': 'TOKEN={}'.format(token),
+        }
+        params = collections.OrderedDict()
+        params['rutSender'] = signature_d['subject_serial_number'][:8]
+        params['dvSender'] = signature_d['subject_serial_number'][-1]
+        params['rutCompany'] = company_id.vat[2:-1]
+        params['dvCompany'] = company_id.vat[-1]
+        params['archivo'] = (file_name, envio_dte, "text/xml")
+        multi = urllib3.filepost.encode_multipart_formdata(params)
+        headers.update({'Content-Length': '{}'.format(len(multi[0]))})
+        response = pool.request_encode_body('POST', url + post, params,
+                                            headers)
+        retorno = {
+            'sii_xml_response': response.data,
+            'sii_result': 'NoEnviado',
+            'sii_send_ident': ''}
+        if response.status != 200:
+            return retorno
+        respuesta_dict = xmltodict.parse(response.data)
+        if respuesta_dict['RECEPCIONDTE']['STATUS'] != '0':
+            _logger.info(
+                connection_status[respuesta_dict['RECEPCIONDTE']['STATUS']])
+        else:
+            retorno.update(
+                {'sii_result': 'Enviado',
+                 'sii_send_ident': respuesta_dict['RECEPCIONDTE'][
+                     'TRACKID']})
+        return retorno
+
+    def sign_full_xml(self, message, privkey, cert, uri, type='doc'):
+        doc = etree.fromstring(message)
+        string = etree.tostring(doc[1])
+        # raise UserError('string sign: {}'.format(message))
+        mess = etree.tostring(etree.fromstring(string), method="c14n")
+        digest = base64.b64encode(self.digest(mess))
+        reference_uri = '#' + uri
+        signed_info = Element("SignedInfo")
+        c14n_method = SubElement(
+            signed_info, "CanonicalizationMethod",
+            Algorithm='http://www.w3.org/TR/2001/REC-xml-c14n-20010315')
+        sign_method = SubElement(
+            signed_info, "SignatureMethod",
+            Algorithm='http://www.w3.org/2000/09/xmldsig#rsa-sha1')
+        reference = SubElement(signed_info, "Reference", URI=reference_uri)
+        transforms = SubElement(reference, "Transforms")
+        SubElement(
+            transforms, "Transform",
+            Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315")
+        digest_method = SubElement(
+            reference, "DigestMethod",
+            Algorithm="http://www.w3.org/2000/09/xmldsig#sha1")
+        digest_value = SubElement(reference, "DigestValue")
+        digest_value.text = digest
+        signed_info_c14n = etree.tostring(
+            signed_info, method="c14n", exclusive=False,
+            with_comments=False, inclusive_ns_prefixes=None)
+        if type in ['doc', 'recep']:
+            att = 'xmlns="http://www.w3.org/2000/09/xmldsig#"'
+        else:
+            att = 'xmlns="http://www.w3.org/2000/09/xmldsig#" \
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
+        # @TODO Find better way to add xmlns:xsi attrib
+        signed_info_c14n = signed_info_c14n.replace(
+            "<SignedInfo>", "<SignedInfo " + att + ">")
+        sig_root = Element(
+            "Signature",
+            attrib={'xmlns': 'http://www.w3.org/2000/09/xmldsig#'})
+        sig_root.append(etree.fromstring(signed_info_c14n))
+        signature_value = SubElement(sig_root, "SignatureValue")
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.serialization \
+            import load_pem_private_key
+        import OpenSSL
+        from OpenSSL.crypto import *
+        type_ = FILETYPE_PEM
+        key = OpenSSL.crypto.load_privatekey(type_, privkey.encode('ascii'))
+        signature = OpenSSL.crypto.sign(key, signed_info_c14n, 'sha1')
+        signature_value.text = textwrap.fill(base64.b64encode(signature),
+                                             64)
+        key_info = SubElement(sig_root, "KeyInfo")
+        key_value = SubElement(key_info, "KeyValue")
+        rsa_key_value = SubElement(key_value, "RSAKeyValue")
+        modulus = SubElement(rsa_key_value, "Modulus")
+        key = load_pem_private_key(
+            privkey.encode('ascii'), password=None,
+            backend=default_backend())
+        modulus.text = textwrap.fill(
+            base64.b64encode(
+                self.long_to_bytes(key.public_key().public_numbers().n)),
+            64)
+        exponent = SubElement(rsa_key_value, "Exponent")
+        exponent.text = self.ensure_str(
+            base64.b64encode(self.long_to_bytes(
+                key.public_key().public_numbers().e)))
+        x509_data = SubElement(key_info, "X509Data")
+        x509_certificate = SubElement(x509_data, "X509Certificate")
+        x509_certificate.text = '\n' + textwrap.fill(cert, 64)
+        msg = etree.tostring(sig_root)
+        msg = msg if self.xml_validator(msg, 'sig') else ''
+        if type in ['doc', 'bol']:
+            fulldoc = self.create_template_doc1(message, msg)
+        if type == 'env':
+            fulldoc = self.create_template_env1(message, msg)
+        if type == 'recep':
+            fulldoc = self.append_sign_recep(message, msg)
+        if type == 'env_recep':
+            fulldoc = self.append_sign_env_recep(message, msg)
+        if type == 'env_resp':
+            fulldoc = self.append_sign_env_resp(message, msg)
+        if type == 'env_boleta':
+            fulldoc = self.append_sign_env_bol(message, msg)
+        fulldoc = fulldoc if self.xml_validator(fulldoc, type) else ''
+        return fulldoc
+
+    def signrsa(self, MESSAGE, KEY, digst=''):
+        """
+        Funcion usada en SII
+        para firma del timbre (dio errores de firma para el resto de los doc)
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2015-03-01
+        """
+        KEY = KEY.encode('ascii')
+        rsa = M2Crypto.EVP.load_key_string(KEY)
+        rsa.reset_context(md='sha1')
+        rsa_m = rsa.get_rsa()
+        rsa.sign_init()
+        rsa.sign_update(MESSAGE)
+        FRMT = base64.b64encode(rsa.sign_final())
+        if digst == '':
+            return {
+                'firma': FRMT, 'modulus': base64.b64encode(rsa_m.n),
+                'exponent': base64.b64eDigesncode(rsa_m.e)}
+        else:
+            return {
+                'firma': FRMT, 'modulus': base64.b64encode(rsa_m.n),
+                'exponent': base64.b64encode(rsa_m.e),
+                'digest': base64.b64encode(self.digest(MESSAGE))}
+
+    def signmessage(self, MESSAGE, KEY, pubk='', digst=''):
+        """
+        Funcion usada en SII
+        para firma del timbre (dio errores de firma para el resto de los doc)
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2015-03-01
+        """
+        rsa = M2Crypto.EVP.load_key_string(KEY)
+        rsa.reset_context(md='sha1')
+        rsa_m = rsa.get_rsa()
+        rsa.sign_init()
+        rsa.sign_update(MESSAGE)
+        FRMT = base64.b64encode(rsa.sign_final())
+        if digst == '':
+            return {
+                'firma': FRMT, 'modulus': base64.b64encode(rsa_m.n),
+                'exponent': base64.b64encode(rsa_m.e)}
+        else:
+            return {
+                'firma': FRMT, 'modulus': base64.b64encode(rsa_m.n),
+                'exponent': base64.b64encode(rsa_m.e),
+                'digest': base64.b64encode(self.digest(MESSAGE))}
+
+    # fin metodos independientes
+
+    @staticmethod
+    def char_replace(text):
+        """
+        Funcion para reemplazar caracteres especiales
+        Esta funcion sirve para salvar bug en libreDTE con los recortes de
+        giros que están codificados en utf8 (cuando trunca, trunca la
+        codificacion)
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-07-31
+        """
+        special_chars = [
+            [u'á', 'a'],
+            [u'é', 'e'],
+            [u'í', 'i'],
+            [u'ó', 'o'],
+            [u'ú', 'u'],
+            [u'ñ', 'n'],
+            [u'Á', 'A'],
+            [u'É', 'E'],
+            [u'Í', 'I'],
+            [u'Ó', 'O'],
+            [u'Ú', 'U'],
+            [u'Ñ', 'N']]
+        for char in special_chars:
+            try:
+                text = text.replace(char[0], char[1])
+            except:
+                pass
+        return text
+
+    def enviar_ldte(self, dte, headers):
+        """
+        Función para enviar el dte a libreDTE
+        @author: Daniel Blanco
+        @version: 2017-02-11
+        :param headers:
+        :param dte:
+        :return:
+        Notar que esta llama al bring_xml_ldte
+        """
+        dte['Encabezado']['Emisor'] = self.remove_plurals_node(
+            dte['Encabezado']['Emisor'])
+        dte = self.remove_plurals_node(dte)
+        dte['Encabezado']['Emisor']['Acteco'] = dte[
+            'Encabezado']['Emisor']['Acteco'][0]
+        _logger.info('despues de remover plurales {}'.format(json.dumps(dte)))
+        # raise UserError('enviar-ldte')
+        response_emitir = pool.urlopen(
+            'POST', api_emitir, headers=headers, body=json.dumps(dte))
+        if response_emitir.status != 200:
+            raise UserError(
+                'Error en conexión al emitir: {}, {}'.format(
+                    response_emitir.status, response_emitir.data))
+        _logger.info('response_emitir: {}'.format(
+            response_emitir.data))
+        _logger.info('response_emitir respuesta satisfactoria')
+        try:
+            self.sii_xml_response = response_emitir.data
+            _logger.info('response_xml: {}'.format(
+                response_emitir.data))
+            _logger.info('try positivo')
+        except:
+            _logger.warning(
+                'no pudo guardar la respuesta al ws de emision')
+            _logger.info('try negativo')
+        '''
+        {"emisor": ----, "receptor": -, "dte": --,
+         "codigo": "-----"}
+        '''
+        response_emitir_data = response_emitir.data
+        response_j = self.bring_xml_ldte(response_emitir_data, headers=headers)
+        _logger.info('vino de bring_xml_dte')
+        _logger.info('response_j')
+        _logger.info(response_j)
+        return response_j
 
     @staticmethod
     def get_object_record_id(inv, call_model):
@@ -304,20 +940,6 @@ class Invoice(models.Model):
             '\n{}\n</{}_ID>'.format(ted, tpo_dte))
         return xml
 
-    def normalize_string(self, var, key, control='truncate'):
-        if isinstance(key, (int, long, float, complex)):
-            size = key
-            control = 'truncate'
-        else:
-            size = normalize_tags[key][0]
-        if self.company_id.dte_service_provider in ['LIBREDTE']:
-            var = ld.char_replace(var)
-            # var = unicodedata.normalize('NFKD', var).encode('ascii', 'ignore')
-        if control == 'truncate':
-            var = var[:size]
-        elif control == 'safe':
-            self.safe_variable(var, key)
-        return var
 
     def get_digital_signature_pem(self, comp_id):
         obj = user = self[0].responsable_envio
@@ -443,7 +1065,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         IdDoc = collections.OrderedDict()
         IdDoc['TipoDTE'] = self.sii_document_class_id.sii_code
         IdDoc['Folio'] = self.get_folio()
-        IdDoc['FchEmis'] = cm.safe_date(self.date_invoice)
+        IdDoc['FchEmis'] = self.safe_date(self.date_invoice)
         if self._es_boleta():
             IdDoc['IndServicio'] = 3
             #@TODO agregar las otras opciones a la fichade producto servicio
@@ -469,7 +1091,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
 
     def _emisor(self):
         emisor= collections.OrderedDict()
-        emisor['RUTEmisor'] = cm.format_vat(self.company_id.vat)
+        emisor['RUTEmisor'] = self.format_vat(self.company_id.vat)
         if self._es_boleta():
             emisor['RznSocEmisor'] = self.normalize_string(
                 self.company_id.partner_id.name, 'RznSoc', 'safe')
@@ -509,7 +1131,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             raise UserError("Debe Ingresar RUT Receptor")
         # if self._es_boleta():
         #     receptor['CdgIntRecep']
-        receptor['RUTRecep'] = cm.format_vat(self.partner_id.vat)
+        receptor['RUTRecep'] = self.format_vat(self.partner_id.vat)
         receptor['RznSocRecep'] = self.normalize_string(
             self.partner_id.name, 'RznSocRecep', 'safe')
         if not self._es_boleta():
@@ -767,15 +1389,15 @@ signature.'''))
             '<' + tpo_dte + '_ID>', doc_id).replace(
             '</' + tpo_dte + '_ID>', '</' + tpo_dte + '>')
         envelope_efact = self.convert_encoding(xml_pret, 'ISO-8859-1')
-        envelope_efact = si.create_template_doc(envelope_efact)
+        envelope_efact = self.create_template_doc(envelope_efact)
         _logger.info('envelope_efact: {}'.format(envelope_efact))
         raise UserError('_timbrar: envelope_efact')
         # type = 'doc'
         type = 'bol' if self._es_boleta() else 'doc'
         #    type = 'bol'
-        einvoice = si.sign_full_xml(
+        einvoice = self.sign_full_xml(
             envelope_efact, signature_d['priv_key'],
-            si.split_cert(certp), doc_id_number, type)
+            self.split_cert(certp), doc_id_number, type)
         raise UserError('envelope_efact: {}'.format(envelope_efact))
         self.sii_xml_request = einvoice
 
@@ -785,7 +1407,7 @@ signature.'''))
         ns = 'urn:' + server_url[
             self.company_id.dte_service_provider] + 'QueryEstUp.jws'
         _server = SOAPProxy(url, ns)
-        rut = cm.format_vat(self.company_id.vat)
+        rut = self.format_vat(self.company_id.vat)
         respuesta = _server.getEstUp(rut[:8], str(rut[-1]), track_id, token)
         self.sii_receipt = respuesta
         resp = xmltodict.parse(respuesta)
@@ -823,7 +1445,7 @@ Algo a salido mal, revisar carátula''')}}
         ns = 'urn:' + server_url[
             self.company_id.dte_service_provider] + 'QueryEstDte.jws'
         _server = SOAPProxy(url, ns)
-        receptor = cm.format_vat(self.partner_id.vat)
+        receptor = self.format_vat(self.partner_id.vat)
         date_invoice = datetime.strptime(
             self.date_invoice, "%Y-%m-%d").strftime("%d-%m-%Y")
         rut = signature_d['subject_serial_number']
@@ -869,10 +1491,10 @@ Algo a salido mal, revisar carátula''')}}
             headers = self.create_headers_ldte(comp_id=self.company_id)
         metodo = 1
         response_status = pool.urlopen('GET', '{}{}/{}/{}'.format(
-            ld.api_upd_status,
+            api_upd_status,
             str(self.sii_document_class_id.sii_code),
             str(folio),
-            str(cm.format_vat(self.company_id.vat)).replace(
+            str(self.format_vat(self.company_id.vat)).replace(
                 '-', '')[:-1]), headers=headers)
         if response_status.status != 200:
             raise UserError(
@@ -951,8 +1573,9 @@ for you or make the signer to authorize you to use his signature.'''))
                 # Retimbrar con número de atención y envío
                 inv._timbrar(n_atencion)
             elif inv.company_id.dte_service_provider == 'LIBREDTE':
-                raise UserError(inv._dte(n_atencion))
-            # @TODO Mejarorar esto en lo posible
+                _logger.info(
+                    'desde do_dte_send, cola: {}'.format(inv._dte(n_atencion)))
+            # @TODO Mejorar esto en lo posible
             if not inv.sii_document_class_id.sii_code in clases:
                 clases[inv.sii_document_class_id.sii_code] = []
             clases[
@@ -974,7 +1597,7 @@ hacer eso en un envío')
         SubTotDTE = ''
         resol_data = self.get_resolution_data(company_id)
         signature_d = self.get_digital_signature(company_id)
-        RUTEmisor = cm.format_vat(company_id.vat)
+        RUTEmisor = self.format_vat(company_id.vat)
         for id_class_doc, classes in clases.iteritems():
             NroDte = 0
             for documento in classes:
@@ -1000,21 +1623,21 @@ hacer eso en un envío')
         # firma del sobre
         RUTRecep = "60803000-K"
         # RUT SII
-        dtes = si.create_template_envio(RUTEmisor, RUTRecep,
+        dtes = self.create_template_envio(RUTEmisor, RUTRecep,
                                         resol_data['dte_resolution_date'],
                                         resol_data['dte_resolution_number'],
                                         self.time_stamp(), documentos,
                                         signature_d, SubTotDTE)
         env = 'env'
         if es_boleta:
-            envio_dte = si.create_template_env(dtes, 'BOLETA')
+            envio_dte = self.create_template_env(dtes, 'BOLETA')
             env = 'env_boleta'
         else:
-            envio_dte = si.create_template_env(dtes)
-        envio_dte = si.sign_full_xml(
+            envio_dte = self.create_template_env(dtes)
+        envio_dte = self.sign_full_xml(
             envio_dte, signature_d['priv_key'], certp,
             'SetDoc', env)
-        result = si.send_xml_file(envio_dte, file_name, company_id)
+        result = self.send_xml_file(envio_dte, file_name, company_id)
         for inv in self:
             inv.write({'sii_xml_response': result['sii_xml_response'],
                        'sii_send_ident': result['sii_send_ident'],
@@ -1032,12 +1655,12 @@ hacer eso en un envío')
             try:
                 signature_d = self.get_digital_signature_pem(
                     self.company_id)
-                seed = si.get_seed(self.company_id)
-                template_string = si.create_template_seed(seed)
-                seed_firmado = si.sign_seed(
+                seed = self.get_seed(self.company_id)
+                template_string = self.create_template_seed(seed)
+                seed_firmado = self.sign_seed(
                     template_string, signature_d['priv_key'],
                     signature_d['cert'])
-                token = si.get_token(seed_firmado, self.company_id)
+                token = self.get_token(seed_firmado, self.company_id)
             except:
                 _logger.info('ask_for_dte_status: no se pudo enviar')
                 raise UserError('ask_for_dte_status: no se pudo enviar')
@@ -1126,6 +1749,16 @@ cola de envío interna en odoo''')
             default=False,
             readonly=True,
             states={'draft': [('readonly', False)]})
+    dte_service_provider = fields.Selection(
+        [('', 'None'),
+         ('FACTURACION', 'facturacion.cl'),
+         ('LIBREDTE', 'LibreDTE'),
+         ('SIIHOMO', 'SII - Certification process'),
+         ('SII', 'www.sii.cl'),
+         ('SII MiPyme', 'SII - Portal MiPyme'),
+         ], 'DTE Service Provider',
+        related='company_id.dte_service_provider',
+        readonly=True)
 
     @api.multi
     def get_related_invoices_data(self):
@@ -1148,12 +1781,13 @@ cola de envío interna en odoo''')
         @version: 2016-12-16
         :return:
         """
-        if call_model == 'stock.picking' or \
-                        self._context['active_model'] == 'stock.picking':
-            inv = self.env['stock.picking'].browse(
-                self._context['active_id'])
-            sii_code = 52
-        else:
+        # if call_model == 'stock.picking' or \
+        #                 self._context['active_model'] == 'stock.picking':
+        #     inv = self.env['stock.picking'].browse(
+        #         self._context['active_id'])
+        #     sii_code = 52
+        # else:
+        if True:
             self.ensure_one()
             inv = self
             sii_code = inv.sii_document_class_id.sii_code
@@ -1163,15 +1797,16 @@ cola de envío interna en odoo''')
                 folio = foliop
         except:
             folio = foliop
-        emisor = cm.format_vat(inv.company_id.vat)
+        emisor = self.format_vat(inv.company_id.vat)
         _logger.info('entrada a bring_generated_xml_ldte. Folio: {}'.format(
             folio))
         if headers == '':
             headers = self.create_headers_ldte()
         _logger.info('headers: {}'.format(headers))
-        _logger.info(ld.api_get_xml.format(sii_code, folio, emisor))
+        _logger.info(api_get_xml.format(sii_code, folio, emisor))
         response_xml = pool.urlopen(
-            'GET', ld.api_get_xml.format(sii_code, folio, emisor), headers=headers)
+            'GET', api_get_xml.format(sii_code, folio, emisor),
+            headers=headers)
         if response_xml.status != 200:
             raise UserError('Error: {}'.format(response_xml.data))
         _logger.info('response_generar: {}'.format(
@@ -1198,8 +1833,7 @@ cola de envío interna en odoo''')
             'Se ha generado factura en XML con el id {} para el id {}'.format(
             attachment_id, record_id))
 
-    @api.multi
-    def bring_xml_ldte(self, inv, response_emitir_data, headers=''):
+    def bring_xml_ldte(self, response_emitir_data, headers=''):
         """
         Función para tomar el XML generado en libreDTE y adjuntarlo al registro
         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
@@ -1209,15 +1843,15 @@ cola de envío interna en odoo''')
         if headers == '':
             headers = self.create_headers_ldte()
         _logger.info('api: {}, headers: {}, body: {}'.format(
-            ld.api_generar, headers, response_emitir_data))
+            api_generar, headers, response_emitir_data))
         response_generar = pool.urlopen(
-            'POST', ld.api_generar, headers=headers,
+            'POST', api_generar, headers=headers,
             body=response_emitir_data)
         if response_generar.status != 200:
             raise UserError('Error en conexión al generar: {}, {}'.format(
                 response_generar.status, response_generar.data))
         _logger.info('response_generar: {}'.format(response_generar.data))
-        inv.sii_xml_response = response_emitir_data
+        self.sii_xml_response = response_emitir_data
         try:
             response_j = json.loads(response_generar.data)
         except:
@@ -1244,17 +1878,17 @@ TRACKID antes de revalidar, reintente la validación.')
         else:
             attachment_obj = self.env['ir.attachment']
             _logger.info('Attachment')
-            _logger.info(inv.sii_document_class_id.name)
+            _logger.info(self.sii_document_class_id.name)
             _logger.info(response_j['folio'])
             attachment_id = attachment_obj.create(
                 {
-                    'name': 'DTE_'+inv.sii_document_class_id.name+'-'+str(
+                    'name': 'DTE_'+self.sii_document_class_id.name+'-'+str(
                         response_j['folio'])+'.xml',
                     'datas': response_j['xml'],
-                    'datas_fname': 'DTE_'+inv.sii_document_class_id.name+'-'+str(
+                    'datas_fname': 'DTE_'+self.sii_document_class_id.name+'-'+str(
                         response_j['folio'])+'.xml',
-                    'res_model': inv._name,
-                    'res_id': inv.id,
+                    'res_model': self._name,
+                    'res_id': self.id,
                     'type': 'binary'
                 })
             _logger.info('Se ha generado factura en XML con el id {}'.format(
@@ -1341,17 +1975,15 @@ TRACKID antes de revalidar, reintente la validación.')
                  'compress': False})
             _logger.info(generar_pdf_request)
             response_pdf = pool.urlopen(
-                'POST', ld.api_gen_pdf, headers=headers,
+                'POST', api_gen_pdf, headers=headers,
                 body=generar_pdf_request)
             if response_pdf.status != 200:
                 raise UserError('Error en conexión al generar: {}, {}'.format(
                     response_pdf.status, response_pdf.data))
             invoice_pdf = base64.b64encode(response_pdf.data)
-            # raise UserError(inv._name)
             attachment_name = self.get_attachment_name(
                 inv, call_model=str(inv._name))
             attachment_obj = self.env['ir.attachment']
-            # raise UserError(inv._name, inv.id, inv._context)
             record_id = self.get_object_record_id(
                 inv, call_model=str(inv._name))
             attachment_id = attachment_obj.create(
@@ -1371,7 +2003,16 @@ TRACKID antes de revalidar, reintente la validación.')
 
     @api.multi
     def action_invoice_open(self):
-        for inv in self:
+        for inv in self.with_context(lang='es_CL'):
+            if inv.type[:2] == 'in':
+                continue
+            if inv.sii_send_ident:
+                _logger.info(
+                    'Track id existente. No se validará documento: {}'.format(
+                        inv.sii_send_ident))
+                if not inv.sii_xml_request:
+                    inv.sii_result = 'NoEnviado'
+                continue
             inv.sii_result = 'NoEnviado'
             inv.responsable_envio = self.env.user.id
             if inv.type in ['out_invoice', 'out_refund'] and \
@@ -1379,57 +2020,52 @@ TRACKID antes de revalidar, reintente la validación.')
                 inv._timbrar()
             else:
                 tpo_dte = inv._tpo_dte()
+                # dte = collections.OrderedDict()
+                # dte[tpo_dte + ' ID'] = inv._dte()
                 dte = inv._dte()
-                dte[(tpo_dte + ' ID')] = dte
-                _logger.info('dte desde action_invoice_open'.format(dte))
-                raise UserError('ver dte a enviar')
+                _logger.info(
+                    'DTE desde action inv open {}'.format(json.dumps(dte)))
+                headers = self.create_headers_ldte()
+                response_j = self.enviar_ldte(dte, headers)
+                inv.write(
+                    {
+                        'sii_result': 'Enviado',
+                        'sii_send_ident': response_j['track_id']})
+                _logger.info('se guardó xml con la factura')
+                inv.set_folio(inv, response_j['folio'])
+
         super(Invoice, self).action_invoice_open()
 
     @api.multi
-    def do_dte_send_invoice(self, n_atencion=None):
-        if self.company_id.dte_service_provider not in ['LIBREDTE']:
-            for inv in self:
-                if inv.sii_result not in ['', 'NoEnviado', 'Rechazado']:
-                    raise UserError(
-                        u"El documento {} ya ha sido enviado o está en cola de \
-    envío".format(inv.sii_document_number))
+    def do_dte_send_invoice(self, n_atencion=None, dte=False):
+        ids = []
+        for inv in self.with_context(lang='es_CL'):
+            if inv.sii_result in ['', 'NoEnviado', 'Rechazado']:
                 if inv.sii_result in ['Rechazado']:
                     inv._timbrar()
-                inv.responsable_envio = self.env.user.id
                 inv.sii_result = 'EnCola'
-            if not isinstance(n_atencion, unicode):
-                n_atencion = ''
+                ids.append(inv.id)
+        if not isinstance(n_atencion, unicode):
+            n_atencion = ''
+        if ids:
             self.env['sii.cola_envio'].create({
-                                        'doc_ids': self.ids,
-                                        'model': 'account.invoice',
-                                        'user_id': self.env.user.id,
-                                        'tipo_trabajo': 'envio',
-                                        'n_atencion': n_atencion})
-        else:
-            self.ensure_one()
-            headers = self.create_headers_ldte()
-            _logger.info('Headers: {}'.format(headers))
-            _logger.info('DTE enviado json:'.format(json.dumps(dte)))
-            raise UserError('do_dte_send_invoice sale por ldte')
-            response_j = ld.enviar_ldte(inv, dte, headers)
-            inv.write(
-                {
-                    'sii_result': 'Enviado',
-                    'sii_send_ident': response_j['track_id']})
-            _logger.info('se guardó xml con la factura')
-            self.set_folio(inv, response_j['folio'])
+                'doc_ids': ids,
+                'model': 'account.invoice',
+                'user_id': self.env.user.id,
+                'tipo_trabajo': 'envio',
+                'n_atencion': n_atencion})
 
     @api.multi
     def get_barcode(self, no_product=False):
         ted = False
         folio = self.get_folio()
-        result['TED']['DD']['RE'] = cm.format_vat(self.company_id.vat)
+        result['TED']['DD']['RE'] = self.format_vat(self.company_id.vat)
         result['TED']['DD']['TD'] = self.sii_document_class_id.sii_code
         result['TED']['DD']['F']  = folio
         result['TED']['DD']['FE'] = self.date_invoice
         if not self.partner_id.vat:
             raise UserError(_("Fill Partner VAT"))
-        result['TED']['DD']['RR'] = cm.format_vat(self.partner_id.vat)
+        result['TED']['DD']['RR'] = self.format_vat(self.partner_id.vat)
         result['TED']['DD']['RSR'] = self.normalize_string(
             self.partner_id.name, 40)
         result['TED']['DD']['MNT'] = int(round(self.amount_total))
@@ -1462,15 +2098,13 @@ TRACKID antes de revalidar, reintente la validación.')
             'latin-1').replace('\t', '')
         keypub = (resultcaf['AUTORIZACION']['RSAPUBK']).encode(
             'latin-1').replace('\t', '')
-        #####
-        ## antes de firmar, formatear
+        # antes de firmar, formatear
         root = etree.XML(ddxml)
-        ##
         # formateo sin remover indents
         ddxml = etree.tostring(root)
         timestamp = self.time_stamp()
         ddxml = ddxml.replace('2014-04-24T12:02:20', timestamp)
-        frmt = si.signmessage(ddxml, keypriv, keypub)['firma']
+        frmt = self.signmessage(ddxml, keypriv, keypub)['firma']
         ted = (
             '''<TED version="1.0">{}<FRMT algoritmo="SHA1withRSA">{}\
 </FRMT></TED>''').format(ddxml, frmt)
@@ -1478,7 +2112,7 @@ TRACKID antes de revalidar, reintente la validación.')
         self.sii_barcode = ted
         if ted:
             barcodefile = StringIO()
-            image = si.pdf417bc(ted)
+            image = self.pdf417bc(ted)
             image.save(barcodefile, 'PNG')
             data = barcodefile.getvalue()
             self.sii_barcode_img = base64.b64encode(data)
