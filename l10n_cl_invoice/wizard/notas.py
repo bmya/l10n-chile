@@ -74,22 +74,23 @@ class AccountInvoiceRefund(models.TransientModel):
                     refund = inv_obj.create(invoice)
                     if refund.payment_term_id.id:
                         refund._onchange_payment_term_date_invoice()
-                if mode in ['1','3']:
+                if mode in ['1', '3']:
                     refund = inv.refund(form.date_invoice, date, description, inv.journal_id.id)
                     refund.compute_taxes()
                 type = inv.type
-                if inv.type in [ 'out_invoice','out_refund']:
+                if inv.type in ['out_invoice', 'out_refund']:
                     refund.type = 'out_refund'
-                elif inv.type in ['in_invoice','in_refund']:
+                elif inv.type in ['in_invoice', 'in_refund']:
                     refund.type = 'in_refund'
-                refund._get_available_journal_document_class(tipo_nota.id)
+                # refund._get_available_journal_document_class(tipo_nota.id)
+                refund._get_available_journal_document_class()
                 created_inv.append(refund.id)
                 refund.update({
                     'turn_issuer': inv.turn_issuer.id,
                 })
-                if inv.type in ['out_invoice','out_refund']:
+                if inv.type in ['out_invoice', 'out_refund']:
                     refund.update({
-                        'referencias':[[5,],[0,0, {
+                        'referencias': [[5, ], [0, 0, {
                                                     'origen': int(inv.sii_document_number),
                                                     'sii_referencia_TpoDocRef': inv.sii_document_class_id.id,
                                                     'sii_referencia_CodRef': mode,
