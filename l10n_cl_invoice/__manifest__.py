@@ -45,6 +45,7 @@
         'data/partner.xml',
         'data/country.xml',
         'data/sii.concept_type.csv',
+        'data/account.fiscal.position.csv',
         'views/partner_view.xml',
         'views/company_view.xml',
         'views/country_view.xml',

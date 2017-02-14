@@ -18,16 +18,21 @@
             <field name="name">account.invoice.sii.form</field>
             <field name="inherit_id" ref="account.invoice_form" />
             <field name="arch" type="xml">
-               <button name="invoice_print" position="after">
-                <button string="Imprimir Cedible" type="object" name="print_cedible" />
-              </button>
-                <!-- TODO ver si es necesario cambiar este contexto o no -->
-                <!-- TODO cambiar color del boton de envio una vez enviado -->
+                <button name="invoice_print" position="after">
+                    <button string="Imprimir Cedible" type="object"
+                            name="print_cedible" invisible="True"/>
+                </button>
                 <field name="journal_id" position="after">
-                  <field name="ticket" />
+                    <field name="ticket" invisible="True"/>
                 </field>
                 <field name="invoice_line_ids" position="attributes">
-                    <attribute name="context">{'partner_id': partner_id, 'price_type': context.get('price_type') or False, 'type': type}" name="invoice_line_ids" on_change="onchange_invoice_line(invoice_line_ids)</attribute>
+                    <attribute name="context">
+                        {'partner_id': partner_id,
+                        'price_type': context.get('price_type') or False,
+                        'type': type}"
+                        name="invoice_line_ids"
+                        on_change="onchange_invoice_line(invoice_line_ids)
+                    </attribute>
                 </field>
                 <notebook>
                     <page string="Electronic Invoice" name="electronic_invoice" >
@@ -84,21 +89,23 @@
                 </field>
                 <notebook>
                     <page string="Electronic Invoice" name="electronic_invoice" >
-                      <header>
-                        <button string="Subir XML" type="object"  name="wizard_upload"  attrs="{'invisible':[('state', 'in', ['paid']), '|', ('sii_xml_request','!=', False)]}"/>
-                        <button string="Validar DTE" type="object" class="oe_highlight" name="wizard_validar" attrs="{
-                              'readonly':[('estado_recep_dte','in',['','NoEnviado','Proceso'])],
-                              'invisible':[('state', 'in', ['draft']),('estado_recep_dte','in',['','NoEnviado'])]}"/>
-                        <field name='estado_recep_dte' widget="statusbar"/>
-                      </header>
-                      <group>
-                        <field name="estado_recep_glosa" />
-                        <field name='sii_send_file_name' readonly="1"/>
-                        <field name="sii_xml_response" string="XML de Validación Envío"  readonly="1" />
-                        <field name='sii_receipt' string="XML de Recepción de mercaderías" readonly="1"/>
-                        <field name='sii_message' string="XML de Validación Comercial" readonly="1"/>
-                        <field name="sii_xml_request"  readonly="1" />
-                      </group>
+                        <header>
+                            <button string="Subir XML" type="object"
+                                    name="wizard_upload"
+                                    attrs="{'invisible':[('state', 'in', ['paid']), '|', ('sii_xml_request','!=', False)]}"/>
+                            <button string="Validar DTE" type="object" class="oe_highlight" name="wizard_validar" attrs="{
+                                  'readonly':[('estado_recep_dte', 'in', ['','NoEnviado','Proceso'])],
+                                  'invisible':[('state', 'in', ['draft']), ('estado_recep_dte','in',['','NoEnviado'])]}"/>
+                            <field name='estado_recep_dte' widget="statusbar"/>
+                        </header>
+                        <group>
+                            <field name="estado_recep_glosa" />
+                            <field name='sii_send_file_name' readonly="1"/>
+                            <field name="sii_xml_response" string="XML de Validación Envío"  readonly="1" />
+                            <field name='sii_receipt' string="XML de Recepción de mercaderías" readonly="1"/>
+                            <field name='sii_message' string="XML de Validación Comercial" readonly="1"/>
+                            <field name="sii_xml_request"  readonly="1" />
+                        </group>
                     </page>
                 </notebook>
             </field>

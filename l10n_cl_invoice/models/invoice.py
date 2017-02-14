@@ -377,6 +377,18 @@ class AccountInvoice(models.Model):
         self.available_journal_document_class_ids = document_class_ids
         self.journal_document_class_id = document_class_id
 
+    @api.onchange('journal_document_class_id')
+    def _select_fiscal_position(self):
+        exempt_ids = [
+            self.env.ref('l10n_cl_invoice.dc_y_f_dtn').id,
+            self.env.ref('l10n_cl_invoice.dc_y_f_dte').id,
+            self.env.ref('l10n_cl_invoice.dc_b_e_dtn').id,
+            self.env.ref('l10n_cl_invoice.dc_b_e_dte').id]
+        if self.journal_document_class_id.sii_document_class_id.id in \
+                exempt_ids:
+            self.fiscal_position_id = self.env.ref(
+                'l10n_cl_invoice.exempt_fp')
+
     @api.onchange('sii_document_class_id')
     def _check_vat(self):
         boleta_ids = [

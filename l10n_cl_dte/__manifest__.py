@@ -43,6 +43,7 @@ Chile: API and GUI to access Electronic Invoicing webservices.
         'views/company_view.xml',
         'views/payment_t_view.xml',
         'views/layout.xml',
+        #'views/invoice_template.xml',
         'wizard/masive_send_dte.xml',
         'wizard/upload_xml.xml',
         'wizard/validar.xml',
