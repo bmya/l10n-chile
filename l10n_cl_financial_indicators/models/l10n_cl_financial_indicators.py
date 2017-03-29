@@ -61,6 +61,7 @@ class L10nClFinancialIndicators(models.Model):
             print "se actualizó la moneda"
             print indicadores[self.name][1]
 
+    @api.model
     def currency_schedule_update(self):
         for indic in indicadores.iteritems():
             _logger.info(
