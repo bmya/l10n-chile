@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 from datetime import datetime, time
-from dateutil.relativedelta import relativedelta
 import logging
-from odoo.tools.translate import _
-import json
-# import odoo.addons.decimal_precision as dp
 
 indicadores = {
     'SBIFUSD': ['dolar', 'Dolares', 'sbif_usd', 'USD'],
@@ -14,6 +10,7 @@ indicadores = {
     'SBIFUTM': ['utm', 'UTMs', 'sbif_utm', 'UTM']}
 
 _logger = logging.getLogger(__name__)
+
 
 class L10nClFinancialIndicators(models.Model):
     _inherit = "webservices.server"
@@ -63,14 +60,14 @@ class L10nClFinancialIndicators(models.Model):
             rates = self.env['res.currency.rate'].create(values)
             print "se actualizó la moneda"
             print indicadores[self.name][1]
-    
 
     def currency_schedule_update(self):
         for indic in indicadores.iteritems():
             _logger.info(
                 'Iterando la moneda "{}" por proceso planificado'.format(
                     indic[0]))
-            webservice_rec = self.env['webservices.server'].search([('name','=',indic[0])])
+            webservice_rec = self.env['webservices.server'].search(
+                [('name', '=', indic[0])])
             if webservice_rec:
                 webservice_rec.action_update_currency()
         return True

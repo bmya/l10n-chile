@@ -60,7 +60,7 @@
                     <field name="sii_document_number" invisible="1"/>
                     <field name="move_name" invisible="1"/>
                 </form>
-                <field name="user_id" position="after">
+                <field name="payment_term_id" position="after">
                   <field name="forma_pago" />
                   <field name="contact_id" domain="[
                   ('parent_id', '=', partner_id)]" />
