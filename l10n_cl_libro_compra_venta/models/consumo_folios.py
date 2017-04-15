@@ -181,7 +181,9 @@ class ConsumoFolios(models.Model):
             certf += cert[76 * i:76 * (i + 1)] + '\n'
         return certf
 
-    def create_template_envio(self, RutEmisor, FchResol, NroResol, FchInicio, FchFinal, Correlativo, SecEnvio, EnvioDTE, signature_d, IdEnvio='SetDoc'):
+    def create_template_envio(
+            self, RutEmisor, FchResol, NroResol, FchInicio, FchFinal,
+            Correlativo, SecEnvio, EnvioDTE, signature_d, IdEnvio='SetDoc'):
         if Correlativo != 0:
             Correlativo = "<Correlativo>"+Correlativo+"</Correlativo>"
         else:

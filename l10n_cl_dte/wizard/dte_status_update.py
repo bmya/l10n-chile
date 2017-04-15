@@ -95,7 +95,9 @@ class accountInvoiceDTEStatus(models.TransientModel):
             dte_username = self.company_id.dte_username
             dte_password = self.company_id.dte_password
             envio_check = '''<?xml version="1.0" encoding="utf-8"?>
-<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
+xmlns:xsd="http://www.w3.org/2001/XMLSchema" \
+xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
   <soap12:Body>
     <ActualizarEstadoDTE xmlns="https://www.efacturadelsur.cl">
       <usuario>{0}</usuario>
@@ -137,7 +139,8 @@ class accountInvoiceDTEStatus(models.TransientModel):
                     'The Transmission Has Failed. Error: %s' % response.status)
 
             setenvio = {
-                # 'sii_result': 'Enviado' if self.dte_service_provider == 'EFACTURADELSUR' else self.sii_result,
+                # 'sii_result': 'Enviado' if self.dte_service_provider ==
+                # 'EFACTURADELSUR' else self.sii_result,
                 'sii_xml_response': response.data}
             self.write(setenvio)
             x = xmltodict.parse(response.data)
@@ -225,8 +228,10 @@ You can not Modify an    d Cancel if the invoice is already reconciled',
             #     {
             #         'origin': self.description,
             #         'reference': active_id.document_number,
-            #         'sii_referencia_FolioRef': self.get_folio_current(active_id),
-            #         'sii_referencia_TpoDocRef': active_id.sii_document_class_id.sii_code,
+            #         'sii_referencia_FolioRef':
+            # self.get_folio_current(active_id),
+            #         'sii_referencia_TpoDocRef':
+            # active_id.sii_document_class_id.sii_code,
             #         'sii_referencia_FchRef': active_id.date_invoice,
             #         'sii_referencia_CodRef': self.sii_selection
             # })

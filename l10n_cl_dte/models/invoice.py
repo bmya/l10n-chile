@@ -9,15 +9,21 @@ from datetime import datetime, timedelta
 import logging
 import json
 from lxml import etree
+from lxml.etree import Element, SubElement
 import pytz
 import collections
 import urllib3
 import xmltodict
 import dicttoxml
 import base64
+import M2Crypto
+from elaphe import barcode
+import hashlib
+import textwrap
 import cchardet
 from SOAPpy import SOAPProxy
-from signxml import *
+from signxml import XMLSigner, XMLVerifier, methods
+# from signxml import xmldsig, methods
 from xml.dom.minidom import parseString
 try:
     urllib3.disable_warnings()
@@ -173,7 +179,7 @@ result = xmltodict.parse(timbre)
 
 server_url = {
     'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
-    'SII': 'https://palena.sii.cl/DTEWS/'}
+    'SII': 'https://palena.sii.cl/DTEWS/', }
 
 BC = '''-----BEGIN CERTIFICATE-----\n'''
 EC = '''\n-----END CERTIFICATE-----\n'''
@@ -186,7 +192,7 @@ import os
 
 connection_status = {
     '0': 'Upload OK',
-    '1': 'El Sender no tiene permiso para enviar',
+    '1': 'El remitente no tiene permiso para enviar',
     '2': 'Error en tamaño del archivo (muy grande o muy chico)',
     '3': 'Archivo cortado (tamaño <> al parámetro size)',
     '5': 'No está autenticado',
@@ -194,8 +200,8 @@ connection_status = {
     '7': 'Esquema Invalido',
     '8': 'Firma del Documento',
     '9': 'Sistema Bloqueado',
-    'Otro': 'Error Interno.',
-}
+    'Otro': 'Error Interno.', }
+
 xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
     '/models', '/static/xsd/')
 host = 'https://libredte.cl/api'
@@ -234,8 +240,8 @@ class Invoice(models.Model):
         muestras no las toma si va con
         el 0 , y tambien internamente se generan problemas'''
         if not value or value == '' or value == 0:
-            value ="CL666666666"
-            #@TODO opción de crear código de cliente en vez de rut genérico
+            value = "CL666666666"
+            #TODO: opción de crear código de cliente en vez de rut genérico
         rut = value[:10] + '-' + value[10:]
         rut = rut.replace('CL0', '').replace('CL', '')
         return rut
@@ -290,7 +296,21 @@ class Invoice(models.Model):
             dte1[k] = v
         return dte1
 
-    # metodos sii
+    @api.model
+    def check_if_not_sent(self, ids, model, job):
+        queue_obj = self.env['sii.cola_envio']
+        item_ids = queue_obj.search(
+            [('doc_ids', 'like', ids), ('model', '=', model),
+             ('tipo_trabajo', '=', job)])
+        return len(item_ids) <= 0
+
+    @staticmethod
+    def remove_plurals_xml(xml):
+        for k in pluralizeds:
+            print k
+            xml = xml.replace('<%s>' % k, '').replace('</%s>' % k, '')
+        return xml
+
     @staticmethod
     def create_template_doc(doc):
         """
@@ -300,7 +320,6 @@ class Invoice(models.Model):
         @version: 2016-06-01
         """
         xml = '''<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
-    <!-- Odoo Implementation Blanco Martin -->
     {}</DTE>'''.format(doc)
         return xml
 
@@ -312,9 +331,9 @@ class Invoice(models.Model):
         return certf
 
     @staticmethod
-    def create_template_envio(RutEmisor, RutReceptor, FchResol, NroResol,
-                              TmstFirmaEnv, EnvioDTE, signature_d,
-                              SubTotDTE):
+    def create_template_envelope(
+            RutEmisor, RutReceptor, FchResol, NroResol, TmstFirmaEnv, EnvioDTE,
+            signature_d, SubTotDTE):
         """
         Funcion que permite crear una plantilla para el EnvioDTE
          @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
@@ -329,7 +348,7 @@ class Invoice(models.Model):
         :param SubTotDTE:
         :return:
         """
-        xml = '''<SetDTE ID="SetDoc">
+        xml = '''<SetDTE ID="BMyA_Odoo_SetDoc">
 <Caratula version="1.0">
 <RutEmisor>{0}</RutEmisor>
 <RutEnvia>{1}</RutEnvia>
@@ -338,9 +357,9 @@ class Invoice(models.Model):
 <NroResol>{4}</NroResol>
 <TmstFirmaEnv>{5}</TmstFirmaEnv>
 {6}</Caratula>{7}
-</SetDTE>
-'''.format(RutEmisor, signature_d['subject_serial_number'], RutReceptor,
-           FchResol, NroResol, TmstFirmaEnv, SubTotDTE, EnvioDTE)
+</SetDTE>'''.format(RutEmisor, signature_d['subject_serial_number'],
+                    RutReceptor, FchResol, NroResol, TmstFirmaEnv, SubTotDTE,
+                    EnvioDTE)
         return xml
 
     @staticmethod
@@ -452,11 +471,11 @@ version="1.0">
         @version: 2016-06-01
         """
         doc = etree.fromstring(message)
-        signed_node = xmldsig(
-            doc, digest_algorithm=u'sha1').sign(
-            method=methods.enveloped, algorithm=u'rsa-sha1',
-            key=privkey.encode('ascii'),
-            cert=cert)
+        signed_node = XMLSigner(
+            method=methods.enveloped, signature_algorithm=u'rsa-sha1',
+            digest_algorithm=u'sha1').sign(
+            doc, key=privkey.encode('ascii'), passphrase=None, cert=cert,
+            key_name=None, key_info=None, id_attribute=None)
         msg = etree.tostring(
             signed_node, pretty_print=True).replace('ds:', '')
         return msg
@@ -605,9 +624,12 @@ version="1.0">
         #    _logger.info('error')
         #    return
 
-        url = 'https://palena.sii.cl'
+        # better explicit than implicit...
         if company_id.dte_service_provider == 'SIIHOMO':
             url = 'https://maullin.sii.cl'
+        else:
+            url = 'https://palena.sii.cl'
+
         post = '/cgi_dte/UPL/DTEUpload'
         headers = {
             'Accept': 'image/gif, image/x-xbitmap, image/jpeg, \
@@ -651,7 +673,12 @@ YComp 5.0.2.4)',
 
     def sign_full_xml(self, message, privkey, cert, uri, type='doc'):
         doc = etree.fromstring(message)
-        string = etree.tostring(doc[1])
+        print '############message############'
+        print message
+        print '############ doc ############'
+        print doc
+        print '############ doc[1] ############'
+        string = etree.tostring(doc[0])
         # raise UserError('string sign: {}'.format(message))
         mess = etree.tostring(etree.fromstring(string), method="c14n")
         digest = base64.b64encode(self.digest(mess))
@@ -1140,7 +1167,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             # receptor['GiroRecep'] = self.normalize_string(
             #     self.activity_description.name, 'GiroRecep', 'safe')
             receptor['GiroRecep'] = self.normalize_string(
-                self.invoice_turn.name, 'GiroRecep', 'safe')
+                self.invoice_turn.name, 'GiroRecep', 'truncate')
         if self.partner_id.phone:
             receptor['Contacto'] = self.normalize_string(
                 self.partner_id.phone, 'Contacto', 'truncate')
@@ -1304,7 +1331,7 @@ Linux/3.13.0-88-generic'
             'no_product': no_product,
             'tax_include': tax_include}
 
-    def _dte(self, n_atencion=None):
+    def _dte(self, att_number=None):
         dte = collections.OrderedDict()
         invoice_lines = self._invoice_lines()
         dte['Encabezado'] = self._encabezado(
@@ -1313,7 +1340,7 @@ Linux/3.13.0-88-generic'
         lin_ref = 1
         ref_lines = []
         if self.company_id.dte_service_provider == 'SIIHOMO' and isinstance(
-                n_atencion, unicode) and n_atencion != '' and \
+                att_number, unicode) and att_number != '' and \
                 not self._es_boleta():
             ref_line = collections.OrderedDict()
             ref_line['NroLinRef'] = lin_ref
@@ -1321,7 +1348,7 @@ Linux/3.13.0-88-generic'
             ref_line['FolioRef'] = self.get_folio()
             ref_line['FchRef'] = datetime.strftime(datetime.now(),
                                                    '%Y-%m-%d')
-            ref_line['RazonRef'] = "CASO " + n_atencion + "-" + str(
+            ref_line['RazonRef'] = "CASO " + att_number + "-" + str(
                 self.sii_batch_number)
             lin_ref += 1
             # ref_lines.extend([ref_line])
@@ -1364,7 +1391,7 @@ Linux/3.13.0-88-generic'
             tpo_dte = 'Liquidacion'
         return tpo_dte
 
-    def _timbrar(self, n_atencion=None):
+    def _do_stamp(self, att_number=None):
         try:
             signature_d = self.get_digital_signature(self.company_id)
         except:
@@ -1381,24 +1408,22 @@ signature.'''))
             folio, self.sii_document_class_id.sii_code)
         doc_id = '<' + tpo_dte + ' ID="{}">'.format(doc_id_number)
         dte = collections.OrderedDict()
-        dte[(tpo_dte + ' ID')] = self._dte(n_atencion)
-        # raise UserError('dte timbrado: {}'.format(json.dumps(dte)))
+        dte[(tpo_dte + ' ID')] = self._dte(att_number)
         xml = self._dte_to_xml(dte, tpo_dte)
         root = etree.XML(xml)
         xml_pret = etree.tostring(root, pretty_print=True).replace(
             '<' + tpo_dte + '_ID>', doc_id).replace(
             '</' + tpo_dte + '_ID>', '</' + tpo_dte + '>')
+        xml_pret = self.remove_plurals_xml(xml_pret)
         envelope_efact = self.convert_encoding(xml_pret, 'ISO-8859-1')
         envelope_efact = self.create_template_doc(envelope_efact)
         _logger.info('envelope_efact: {}'.format(envelope_efact))
-        raise UserError('_timbrar: envelope_efact')
-        # type = 'doc'
         type = 'bol' if self._es_boleta() else 'doc'
         #    type = 'bol'
         einvoice = self.sign_full_xml(
             envelope_efact, signature_d['priv_key'],
             self.split_cert(certp), doc_id_number, type)
-        raise UserError('envelope_efact: {}'.format(envelope_efact))
+        # raise UserError('envelope_efact: {}'.format(envelope_efact))
         self.sii_xml_request = einvoice
 
     def _get_send_status(self, track_id, signature_d, token):
@@ -1538,10 +1563,10 @@ Algo a salido mal, revisar carátula''')}}
         _logger.info(response_status_j['revision_estado'])
 
     @api.multi
-    def do_dte_send(self, n_atencion=None):
+    def do_dte_send(self, att_number=None):
         """
         Este proceso sirve para manejar los envíos desde la cola de envíos
-        :param n_atencion:
+        :param att_number:
         :return:
         """
         dicttoxml.set_debug(False)
@@ -1560,7 +1585,7 @@ Algo a salido mal, revisar carátula''')}}
                 # factura primero
             es_boleta = inv._es_boleta()
             if inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
-                raise UserError(inv.company_id.dte_service_provider)
+                # raise UserError(inv.company_id.dte_service_provider)
                 try:
                     signature_d = self.get_digital_signature(inv.company_id)
                 except:
@@ -1571,10 +1596,10 @@ for you or make the signer to authorize you to use his signature.'''))
                 certp = signature_d['cert'].replace(
                     BC, '').replace(EC, '').replace('\n', '')
                 # Retimbrar con número de atención y envío
-                inv._timbrar(n_atencion)
+                inv._do_stamp(att_number)
             elif inv.company_id.dte_service_provider == 'LIBREDTE':
                 _logger.info(
-                    'desde do_dte_send, cola: {}'.format(inv._dte(n_atencion)))
+                    'desde do_dte_send, cola: {}'.format(inv._dte(att_number)))
             # @TODO Mejorar esto en lo posible
             if not inv.sii_document_class_id.sii_code in clases:
                 clases[inv.sii_document_class_id.sii_code] = []
@@ -1613,17 +1638,19 @@ hacer eso en un envío')
                     id_class_doc)
             SubTotDTE += '<SubTotDTE>\n<TpoDTE>' + str(
                 id_class_doc) + '''</TpoDTE>
-<NroDTE>'+str(NroDte)+'</NroDTE>
+<NroDTE>{}</NroDTE>
 </SubTotDTE>
-'''
+'''.format(NroDte)
         file_name += '.xml'
         documentos = ''
         for key in sorted(dtes.iterkeys()):
             documentos += '\n' + dtes[key]
         # firma del sobre
-        RUTRecep = "60803000-K"
+        # RUTRecep = "60803000-K"
+        RUTRecep = self.format_vat(inv.partner_id.vat)
+        RUTRecep = '23841194-7'  # hardcodeado para pruebas
         # RUT SII
-        dtes = self.create_template_envio(RUTEmisor, RUTRecep,
+        dtes = self.create_template_envelope(RUTEmisor, RUTRecep,
                                         resol_data['dte_resolution_date'],
                                         resol_data['dte_resolution_number'],
                                         self.time_stamp(), documentos,
@@ -1636,7 +1663,7 @@ hacer eso en un envío')
             envio_dte = self.create_template_env(dtes)
         envio_dte = self.sign_full_xml(
             envio_dte, signature_d['priv_key'], certp,
-            'SetDoc', env)
+            'BMyA_Odoo_SetDoc', env)
         result = self.send_xml_file(envio_dte, file_name, company_id)
         for inv in self:
             inv.write({'sii_xml_response': result['sii_xml_response'],
@@ -1652,7 +1679,7 @@ hacer eso en un envío')
         :return:
         """
         if self.company_id.dte_service_provider not in ['LIBREDTE']:
-            try:
+            if True:  # try:
                 signature_d = self.get_digital_signature_pem(
                     self.company_id)
                 seed = self.get_seed(self.company_id)
@@ -1661,19 +1688,25 @@ hacer eso en un envío')
                     template_string, signature_d['priv_key'],
                     signature_d['cert'])
                 token = self.get_token(seed_firmado, self.company_id)
-            except:
-                _logger.info('ask_for_dte_status: no se pudo enviar')
-                raise UserError('ask_for_dte_status: no se pudo enviar')
+            else:  # except:
+                _logger.info(connection_status)
+                raise UserError(connection_status)
+            if not self.sii_send_ident:
+                raise UserError(
+                    'No se ha enviado aún el documento, aún está en cola de \
+envío interna en odoo')
             if self.sii_result == 'Enviado':
-                status = self._get_send_status(
-                    self.sii_send_ident, signature_d, token)
+                status = self._get_send_status(self.sii_send_ident,
+                                               signature_d, token)
                 if self.sii_result != 'Proceso':
                     return status
             return self._get_dte_status(signature_d, token)
+
         else:
             self._check_ldte_status()
             _logger.info(
                 'ask_for_dte_status: (check) intento para LibreDTE')
+
         if not self.sii_send_ident:
             raise UserError('''No se ha enviado aún el documento, aún está en \
 cola de envío interna en odoo''')
@@ -2017,7 +2050,7 @@ TRACKID antes de revalidar, reintente la validación.')
             inv.responsable_envio = self.env.user.id
             if inv.type in ['out_invoice', 'out_refund'] and \
                     inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
-                inv._timbrar()
+                inv._do_stamp()
             else:
                 tpo_dte = inv._tpo_dte()
                 # dte = collections.OrderedDict()
@@ -2037,23 +2070,23 @@ TRACKID antes de revalidar, reintente la validación.')
         super(Invoice, self).action_invoice_open()
 
     @api.multi
-    def do_dte_send_invoice(self, n_atencion=None, dte=False):
+    def do_dte_send_invoice(self, att_number=None, dte=False):
         ids = []
         for inv in self.with_context(lang='es_CL'):
             if inv.sii_result in ['', 'NoEnviado', 'Rechazado']:
                 if inv.sii_result in ['Rechazado']:
-                    inv._timbrar()
+                    inv._do_stamp()
                 inv.sii_result = 'EnCola'
                 ids.append(inv.id)
-        if not isinstance(n_atencion, unicode):
-            n_atencion = ''
-        if ids:
+        if not isinstance(att_number, unicode):
+            att_number = ''
+        if ids and self.check_if_not_sent(ids, 'account.invoice', 'envio'):
             self.env['sii.cola_envio'].create({
                 'doc_ids': ids,
                 'model': 'account.invoice',
                 'user_id': self.env.user.id,
                 'tipo_trabajo': 'envio',
-                'n_atencion': n_atencion})
+                'att_number': att_number})
 
     @api.multi
     def get_barcode(self, no_product=False):

@@ -27,10 +27,10 @@
             </field>
         </record>
 
-        <act_window id="action_account_invoice_send"
+        <!--<act_window id="action_account_invoice_send"
             multi="True"
             key2="client_action_multi" name="Enviar Documentos al SII"
             res_model="sii.dte.masive_send.wizard" src_model="account.invoice"
-view_mode="form" target="new" view_type="form" />
+view_mode="form" target="new" view_type="form" />-->
     </data>
 </odoo>
