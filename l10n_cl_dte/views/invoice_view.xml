@@ -64,7 +64,18 @@
                             <field name='dte_service_provider'/>
                             <field name="responsable_envio" invisible="True" readonly="True"/>
                             <field name='sii_batch_number' readonly="1"/>
-                            <field name='sii_barcode_img' widget="image" attrs="{'invisible':[('sii_result', '=', '')]}" readonly="1"/>
+                        </group>
+                        <group>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <field name='sii_barcode_img' widget="image" attrs="{'invisible':[('sii_result', '=', '')]}" readonly="1"/>
+                                </div>
+                                <div class="col-md-6" attrs="{'invisible':[('sii_result', 'not in', ['Aceptado'])]}">
+                                    <img src="/l10n_cl_dte/static/description/timbre_sii.gif"/>
+                                </div>
+                            </div>
+                        </group>
+                        <group>
                             <field name='sii_message' attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
                             <field name='sii_receipt' attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
                             <field name='sii_send_ident'/>

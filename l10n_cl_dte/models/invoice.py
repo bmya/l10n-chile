@@ -23,8 +23,6 @@ import textwrap
 import cchardet
 from SOAPpy import SOAPProxy
 from signxml import XMLSigner, XMLVerifier, methods
-# from signxml import xmldsig, methods
-from xml.dom.minidom import parseString
 try:
     urllib3.disable_warnings()
 except:
@@ -34,7 +32,6 @@ try:
     from cStringIO import StringIO
 except:
     from StringIO import StringIO
-
 normalize_tags = collections.OrderedDict()
 normalize_tags['RutEmisor'] = [10]
 normalize_tags['RznSoc'] = [100]
@@ -159,10 +156,8 @@ normalize_tags['CodRef'] = [1]
 normalize_tags['RazonRef'] = [1]
 # todo: faltan comisiones y otros cargos
 pluralizeds = ['Actecos', 'Detalles', 'Referencias', 'ImptoRetens']
-
 # timbre patrón. Permite parsear y formar el
 # ordered-dict patrón corespondiente al documento
-
 # Public vars definition
 timbre = """<TED version="1.0"><DD><RE>99999999-9</RE><TD>11</TD><F>1</F>\
 <FE>2000-01-01</FE><RR>99999999-9</RR><RSR>\
@@ -176,20 +171,16 @@ afeqWjiRVMvV4+s4Q==</FRMA></CAF><TSTED>2014-04-24T12:02:20</TSTED></DD>\
 <FRMT algoritmo="SHA1withRSA">jiuOQHXXcuwdpj8c510EZrCCw+pfTVGTT7obWm/\
 fHlAa7j08Xff95Yb2zg31sJt6lMjSKdOK+PQp25clZuECig==</FRMT></TED>"""
 result = xmltodict.parse(timbre)
-
 server_url = {
     'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
     'SII': 'https://palena.sii.cl/DTEWS/', }
-
 BC = '''-----BEGIN CERTIFICATE-----\n'''
 EC = '''\n-----END CERTIFICATE-----\n'''
-
 try:
     pool = urllib3.PoolManager()
 except:
     pass
 import os
-
 connection_status = {
     '0': 'Upload OK',
     '1': 'El remitente no tiene permiso para enviar',
@@ -201,7 +192,6 @@ connection_status = {
     '8': 'Firma del Documento',
     '9': 'Sistema Bloqueado',
     'Otro': 'Error Interno.', }
-
 xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
     '/models', '/static/xsd/')
 host = 'https://libredte.cl/api'
@@ -296,6 +286,7 @@ class Invoice(models.Model):
             dte1[k] = v
         return dte1
 
+    # metodos de sii
     @api.model
     def check_if_not_sent(self, ids, model, job):
         queue_obj = self.env['sii.cola_envio']
@@ -470,6 +461,7 @@ version="1.0">
         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
         @version: 2016-06-01
         """
+        _logger.info('SIGNING WITH SIGN_SEED ##### ------ #####')
         doc = etree.fromstring(message)
         signed_node = XMLSigner(
             method=methods.enveloped, signature_algorithm=u'rsa-sha1',
@@ -478,6 +470,7 @@ version="1.0">
             key_name=None, key_info=None, id_attribute=None)
         msg = etree.tostring(
             signed_node, pretty_print=True).replace('ds:', '')
+        _logger.info('message: {}'.format(msg))
         return msg
 
     @staticmethod
@@ -620,6 +613,7 @@ version="1.0">
             template_string, signature_d['priv_key'],
             signature_d['cert'])
         token = self.get_token(seed_firmado, company_id)
+        # raise UserError(token)
         # except:
         #    _logger.info('error')
         #    return
@@ -807,6 +801,20 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
                 'firma': FRMT, 'modulus': base64.b64encode(rsa_m.n),
                 'exponent': base64.b64encode(rsa_m.e),
                 'digest': base64.b64encode(self.digest(MESSAGE))}
+
+    def clean_relationships(self, model='invoice.reference'):
+        """
+        Limpia relaciones
+        todo: retomar un modelo de datos de relaciones de documentos
+        más acorde, en lugar de account.invoice.referencias.
+        #
+        @author: Daniel Blanco daniel[at]blancomartin.cl
+        @version: 2016-09-29
+        :return:
+        """
+        invoice_id = self.id
+        ref_obj = self.env[model]
+        ref_obj.search([('invoice_id', '=', invoice_id)]).unlink()
 
     # fin metodos independientes
 
@@ -1022,15 +1030,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
             'target': 'self',
         }
 
-    def get_folio(self):
-        """
-        Funcion para descargar el folio tomando el valor desde la secuencia
-        correspondiente al tipo de documento.
-         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-         @version: 2016-05-01
-        """
-        return int(self.next_invoice_number)
-
     def get_folio_current(self):
         """
         Funcion para obtener el folio ya registrado en el dato
@@ -1045,6 +1044,18 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         except:
             folio = self.sii_document_number
         return int(folio)
+
+    def get_folio(self):
+        """
+        Funcion para descargar el folio tomando el valor desde la secuencia
+        correspondiente al tipo de documento.
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-05-01
+        """
+        if self.state in ['draft']:
+            return int(self.next_invoice_number)
+        else:
+            return self.get_folio_current()
 
     def get_caf_file(self):
         """
@@ -1081,12 +1092,12 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             return True
         return False
 
-    def _giros_emisor(self):
-        giros_emisor = []
+    def _giros_sender(self):
+        giros_sender = []
         for turn in self.company_id.company_activities_ids:
-            giros_emisor.extend([{'Acteco': turn.code}])
-            # giros_emisor.extend([turn.code])
-        return giros_emisor
+            giros_sender.extend([{'Acteco': turn.code}])
+            # giros_sender.extend([turn.code])
+        return giros_sender
 
     def _id_doc(self, tax_include=False, MntExe=0):
         IdDoc = collections.OrderedDict()
@@ -1095,10 +1106,10 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         IdDoc['FchEmis'] = self.safe_date(self.date_invoice)
         if self._es_boleta():
             IdDoc['IndServicio'] = 3
-            #@TODO agregar las otras opciones a la fichade producto servicio
+            # TODO agregar las otras opciones a la fichade producto servicio
         if self.ticket:
             IdDoc['TpoImpresion'] = "T"
-        #if self.tipo_servicio:
+        # if self.tipo_servicio:
         #    Encabezado['IdDoc']['IndServicio'] = 1,2,3,4
         # todo: forma de pago y fecha de vencimiento - opcional
         if tax_include and MntExe == 0 and not self._es_boleta():
@@ -1116,7 +1127,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 datetime.now(), '%Y-%m-%d')
         return IdDoc
 
-    def _emisor(self):
+    def _sender(self):
         emisor= collections.OrderedDict()
         emisor['RUTEmisor'] = self.format_vat(self.company_id.vat)
         if self._es_boleta():
@@ -1137,7 +1148,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 self.company_id.phone or '', 'Telefono', 'truncate')
             emisor['CorreoEmisor'] = self.normalize_string(
                 self.company_id.dte_email, 'CorreoEmisor', 'safe')
-            emisor['Actecos'] = self._giros_emisor()
+            emisor['Actecos'] = self._giros_sender()
         if self.journal_id.sii_code:
             emisor['Sucursal'] = self.normalize_string(
                 self.journal_id.sucursal.name, 'Sucursal', 'truncate')
@@ -1229,7 +1240,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
     def _encabezado(self, MntExe=0, no_product=False, tax_include=False):
         encabezado = collections.OrderedDict()
         encabezado['IdDoc'] = self._id_doc(tax_include, MntExe)
-        encabezado['Emisor'] = self._emisor()
+        encabezado['Emisor'] = self._sender()
         encabezado['Receptor'] = self._receptor()
         if self.company_id.dte_service_provider not in ['LIBREDTE']:
             encabezado['Totales'] = self._totales(MntExe, no_product)
@@ -1433,7 +1444,12 @@ signature.'''))
             self.company_id.dte_service_provider] + 'QueryEstUp.jws'
         _server = SOAPProxy(url, ns)
         rut = self.format_vat(self.company_id.vat)
-        respuesta = _server.getEstUp(rut[:8], str(rut[-1]), track_id, token)
+        try:
+            respuesta = _server.getEstUp(rut[:8], str(rut[-1]), track_id, token)
+        except:
+            raise UserError('Proceso: Obtener estado envío (get_send_status): \
+No se pudo obtener una respuesta del servidor SII. RUT: {} DV: {} TrackID: \
+{}, Token: {}'.format(rut[:8], str(rut[-1]), track_id, token))
         self.sii_receipt = respuesta
         resp = xmltodict.parse(respuesta)
         status = False
@@ -1455,7 +1471,7 @@ Algo a salido mal, revisar carátula''')}}
             _logger.info(resp)
             status = {
                 'warning': {'title': _('Error RCT'),
-                            'message': _(resp['SII:RESPUESTA']['GLOSA'])}}
+                            'message': _(resp)}}
         return status
 
     def _get_dte_status(self, signature_d, token):
@@ -1474,29 +1490,50 @@ Algo a salido mal, revisar carátula''')}}
         date_invoice = datetime.strptime(
             self.date_invoice, "%Y-%m-%d").strftime("%d-%m-%Y")
         rut = signature_d['subject_serial_number']
-        respuesta = _server.getEstDte(
-            rut[:8], str(rut[-1]), self.company_id.vat[2:-1],
-            self.company_id.vat[-1], receptor[:8], receptor[2:-1],
-            str(self.sii_document_class_id.sii_code),
-            str(self.sii_document_number), date_invoice,
-            str(self.amount_total), token)
-        self.sii_message = respuesta
-        resp = xmltodict.parse(respuesta)
-        if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == '2':
-            status = {
-                'warning': {
-                    'title': _("Error code: 2"),
-                    'message': _(
-                        resp['SII:RESPUESTA']['SII:RESP_HDR']['GLOSA'])}}
-            return status
-        if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == "EPR":
-            self.sii_result = "Proceso"
-            if resp['SII:RESPUESTA']['SII:RESP_BODY']['RECHAZADOS'] == "1":
-                self.sii_result = "Rechazado"
-            if resp['SII:RESPUESTA']['SII:RESP_BODY']['REPARO'] == "1":
-                self.sii_result = "Reparo"
-        elif resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == "RCT":
-            self.sii_result = "Rechazado"
+        try:
+            respuesta = _server.getEstDte(
+                rut[:8], str(rut[-1]), self.company_id.vat[2:-1],
+                self.company_id.vat[-1], receptor[:8], receptor[2:-1],
+                str(self.sii_document_class_id.sii_code),
+                str(self.sii_document_number), date_invoice,
+                str(self.amount_total), token)
+            self.sii_message = respuesta
+        except:
+            _logger.info('Get Estado DTE: no se pudo obtener una respuesta \
+del servidor. Se toma el varlor preexistente en el mensaje')
+            # UserError('Get Estado DTE: no se pudo obtener una respuesta \
+            # del servidor. intente nuevamente')
+        if self.sii_message:
+            resp = xmltodict.parse(self.sii_message)
+            try:
+                if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == '2':
+                    status = {
+                        'warning': {
+                            'title': _("Error code: 2"),
+                            'message': _(
+                                resp['SII:RESPUESTA']['SII:RESP_HDR']['GLOSA'])}}
+                    return status
+                if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] in \
+                        ['SOK', 'CRT', 'PDR', 'FOK', '-11']:
+                    self.sii_result = 'Proceso'
+                elif resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] in \
+                        ['RCH', 'RFR', 'RSC', 'RCT']:
+                    self.sii_result = 'Rechazado'
+                elif resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] in ['RLV']:
+                    self.sii_result = 'Reparo'
+                elif resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == 'EPR':
+                    if resp['SII:RESPUESTA']['SII:RESP_BODY'][
+                    'ACEPTADOS'] == '1':
+                        self.sii_result = 'Aceptado'
+                    if resp['SII:RESPUESTA']['SII:RESP_BODY'][
+                    'REPARO'] == '1':
+                        self.sii_result = 'Reparo'
+                    if resp['SII:RESPUESTA']['SII:RESP_BODY'][
+                    'RECHAZADOS'] == '1':
+                        self.sii_result = 'Rechazado'
+            except:
+                raise UserError('_get_dte_status: no se pudo obtener una \
+respuesta satisfactoria por conexión ni de respuesta previa.')
 
     def _check_ldte_status(self, inv='', foliop='', headers=''):
         """
@@ -1646,9 +1683,9 @@ hacer eso en un envío')
         for key in sorted(dtes.iterkeys()):
             documentos += '\n' + dtes[key]
         # firma del sobre
-        # RUTRecep = "60803000-K"
-        RUTRecep = self.format_vat(inv.partner_id.vat)
-        RUTRecep = '23841194-7'  # hardcodeado para pruebas
+        RUTRecep = "60803000-K"
+        # RUTRecep = self.format_vat(inv.company_id.vat)
+        # RUTRecep = '23841194-7'  # hardcodeado para pruebas
         # RUT SII
         dtes = self.create_template_envelope(RUTEmisor, RUTRecep,
                                         resol_data['dte_resolution_date'],
@@ -1688,6 +1725,7 @@ hacer eso en un envío')
                     template_string, signature_d['priv_key'],
                     signature_d['cert'])
                 token = self.get_token(seed_firmado, self.company_id)
+                _logger.info('$$$$$$$$$$$$$$$$-token: {}'.format(token))
             else:  # except:
                 _logger.info(connection_status)
                 raise UserError(connection_status)
@@ -2051,7 +2089,9 @@ TRACKID antes de revalidar, reintente la validación.')
             if inv.type in ['out_invoice', 'out_refund'] and \
                     inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
                 inv._do_stamp()
-            else:
+            elif inv.type in ['out_invoice', 'out_refund'] and \
+                    inv.company_id.dte_service_provider not in [
+                        'SII', 'SIIHOMO']:
                 tpo_dte = inv._tpo_dte()
                 # dte = collections.OrderedDict()
                 # dte[tpo_dte + ' ID'] = inv._dte()
@@ -2094,7 +2134,7 @@ TRACKID antes de revalidar, reintente la validación.')
         folio = self.get_folio()
         result['TED']['DD']['RE'] = self.format_vat(self.company_id.vat)
         result['TED']['DD']['TD'] = self.sii_document_class_id.sii_code
-        result['TED']['DD']['F']  = folio
+        result['TED']['DD']['F'] = folio
         result['TED']['DD']['FE'] = self.date_invoice
         if not self.partner_id.vat:
             raise UserError(_("Fill Partner VAT"))
