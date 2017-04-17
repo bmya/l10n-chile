@@ -18,9 +18,9 @@ class SendDteWizardMulti(models.TransientModel):
     documentos = fields.Many2many(
         'account.invoice', string="Movimientos", default=_get_ids)
 
-    numero_atencion = fields.Char(string="Número de atención")
+    att_number = fields.Char(string="Número de atención")
 
     @api.multi
     def confirm(self):
-        self.documentos.do_dte_send_invoice(self.numero_atencion)
+        self.documentos.do_dte_send_invoice(self.att_number)
         return UserError("Enviado")

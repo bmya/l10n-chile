@@ -7,7 +7,7 @@
             <field name="interval_type">minutes</field>
             <field name="numbercall">-1</field>
             <field name="model">sii.cola_envio</field>
-            <field name="function">_cron_procesar_cola</field>
+            <field name="function">_cron_process_queue</field>
             <field name="active" eval="True" />
         </record>
     </data>

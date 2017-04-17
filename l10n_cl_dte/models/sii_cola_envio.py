@@ -15,13 +15,14 @@ class ColaEnvio(models.Model):
     att_number = fields.Char(string="Número de atención")
 
     @api.model
-    def _cron_procesar_cola(self):
+    def _cron_process_queue(self):
         ids = self.search([('active', '=', True)])
         if ids:
             for c in ids:
                 docs = self.env[c.model].browse(ast.literal_eval(c.doc_ids))
                 if docs[0].sii_send_ident and docs[0].sii_message and \
-                                docs[0].sii_result in ['Proceso', 'Rechazado']:
+                        docs[0].sii_result in [
+                            'Proceso', 'Rechazado', 'Aceptado']:
                     c.unlink()
                     return
                 else:

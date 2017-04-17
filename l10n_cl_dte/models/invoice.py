@@ -23,6 +23,7 @@ import textwrap
 import cchardet
 from SOAPpy import SOAPProxy
 from signxml import XMLSigner, XMLVerifier, methods
+from bs4 import BeautifulSoup as bs
 try:
     urllib3.disable_warnings()
 except:
@@ -32,6 +33,8 @@ try:
     from cStringIO import StringIO
 except:
     from StringIO import StringIO
+import requests
+
 normalize_tags = collections.OrderedDict()
 normalize_tags['RutEmisor'] = [10]
 normalize_tags['RznSoc'] = [100]
@@ -217,11 +220,13 @@ class Invoice(models.Model):
     def safe_variable(var, key):
         try:
             msg = normalize_tags[key][1]
+            len = normalize_tags[key][0]
+            var = var[:len]
         except:
             msg = u'variable'
         if not var:
             raise UserError(
-                u'La {} no está configurada.'.format(msg))
+                u'{} no está configurada.'.format(msg))
         return var
 
     @staticmethod
@@ -235,6 +240,35 @@ class Invoice(models.Model):
         rut = value[:10] + '-' + value[10:]
         rut = rut.replace('CL0', '').replace('CL', '')
         return rut
+
+    @staticmethod
+    def analyze_sii_result(sii_result, sii_message, sii_receipt):
+        _logger.info(
+            'analizando sii result: {} - message: {} - receipt: {}'.format(
+                sii_result, sii_message, sii_receipt))
+        if not sii_result or not sii_message or not sii_receipt:
+            return sii_result
+        soup_message = bs(sii_message, 'xml')
+        soup_receipt = bs(sii_receipt, 'xml')
+        _logger.info(soup_message)
+        _logger.info(soup_receipt)
+        if soup_message.ESTADO.text == '2':
+            raise UserError(
+                'Error code: 2: {}'.format(soup_message.GLOSA_ERR.text))
+        if soup_message.ESTADO.text in ['SOK', 'CRT', 'PDR', 'FOK', '-11']:
+            return 'Proceso'
+        elif soup_message.ESTADO.text in ['RCH', 'RFR', 'RSC', 'RCT']:
+            return 'Rechazado'
+        elif soup_message.ESTADO.text in ['RLV']:
+            return 'Reparo'
+        elif soup_message.ESTADO.text in ['EPR', 'DNK']:
+            if soup_receipt.ACEPTADOS.text == soup_receipt.INFORMADOS.text:
+                return 'Aceptado'
+            if soup_receipt.REPAROS.text >= '1':
+                return 'Reparo'
+            if soup_receipt.RECHAZADOS.text >= '1':
+                return 'Rechazado'
+        return sii_result
 
     @staticmethod
     def _calc_discount_vat(discount, sii_code):
@@ -255,6 +289,7 @@ class Invoice(models.Model):
 
     def normalize_string(
             self, var, key, control='truncate'):
+        _logger.info('var: {}, key: {}, control: {}')
         if isinstance(key, (int, long, float, complex)):
             size = key
             control = 'truncate'
@@ -597,7 +632,9 @@ version="1.0">
             return result
         except AssertionError as e:
             _logger.info(etree.tostring(xml_doc))
-            raise UserError(_('XML Malformed Error: {}').format(e.args))
+            raise UserError(
+                _('XML Malformed Error: {} - Validation: {}').format(
+                    e.args, validacion))
 
     def send_xml_file(
             self, envio_dte=None, file_name="envio", company_id=False,
@@ -623,7 +660,6 @@ version="1.0">
             url = 'https://maullin.sii.cl'
         else:
             url = 'https://palena.sii.cl'
-
         post = '/cgi_dte/UPL/DTEUpload'
         headers = {
             'Accept': 'image/gif, image/x-xbitmap, image/jpeg, \
@@ -636,8 +672,7 @@ YComp 5.0.2.4)',
             'Referer': '{}'.format(company_id.website),
             'Connection': 'Keep-Alive',
             'Cache-Control': 'no-cache',
-            'Cookie': 'TOKEN={}'.format(token),
-        }
+            'Cookie': 'TOKEN={}'.format(token), }
         params = collections.OrderedDict()
         params['rutSender'] = signature_d['subject_serial_number'][:8]
         params['dvSender'] = signature_d['subject_serial_number'][-1]
@@ -646,12 +681,11 @@ YComp 5.0.2.4)',
         params['archivo'] = (file_name, envio_dte, "text/xml")
         multi = urllib3.filepost.encode_multipart_formdata(params)
         headers.update({'Content-Length': '{}'.format(len(multi[0]))})
-        response = pool.request_encode_body('POST', url + post, params,
-                                            headers)
+        response = pool.request_encode_body('POST', url + post, params, headers)
         retorno = {
             'sii_xml_response': response.data,
             'sii_result': 'NoEnviado',
-            'sii_send_ident': ''}
+            'sii_send_ident': '', }
         if response.status != 200:
             return retorno
         respuesta_dict = xmltodict.parse(response.data)
@@ -975,7 +1009,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
             '\n{}\n</{}_ID>'.format(ted, tpo_dte))
         return xml
 
-
     def get_digital_signature_pem(self, comp_id):
         obj = user = self[0].responsable_envio
         if not obj:
@@ -1104,6 +1137,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         IdDoc['TipoDTE'] = self.sii_document_class_id.sii_code
         IdDoc['Folio'] = self.get_folio()
         IdDoc['FchEmis'] = self.safe_date(self.date_invoice)
+        self.date_invoice = self.safe_date(self.date_invoice)
         if self._es_boleta():
             IdDoc['IndServicio'] = 3
             # TODO agregar las otras opciones a la fichade producto servicio
@@ -1178,7 +1212,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             # receptor['GiroRecep'] = self.normalize_string(
             #     self.activity_description.name, 'GiroRecep', 'safe')
             receptor['GiroRecep'] = self.normalize_string(
-                self.invoice_turn.name, 'GiroRecep', 'truncate')
+                self.invoice_turn.name, 'GiroRecep', 'safe')
         if self.partner_id.phone:
             receptor['Contacto'] = self.normalize_string(
                 self.partner_id.phone, 'Contacto', 'truncate')
@@ -1488,15 +1522,15 @@ Algo a salido mal, revisar carátula''')}}
         _server = SOAPProxy(url, ns)
         receptor = self.format_vat(self.partner_id.vat)
         date_invoice = datetime.strptime(
-            self.date_invoice, "%Y-%m-%d").strftime("%d-%m-%Y")
+            self.date_invoice, "%Y-%m-%d").strftime("%d%m%Y")
         rut = signature_d['subject_serial_number']
         try:
             respuesta = _server.getEstDte(
                 rut[:8], str(rut[-1]), self.company_id.vat[2:-1],
                 self.company_id.vat[-1], receptor[:8], receptor[2:-1],
                 str(self.sii_document_class_id.sii_code),
-                str(self.sii_document_number), date_invoice,
-                str(self.amount_total), token)
+                str(int(self.sii_document_number)), date_invoice,
+                str(int(self.amount_total)), token)
             self.sii_message = respuesta
         except:
             _logger.info('Get Estado DTE: no se pudo obtener una respuesta \
@@ -1504,6 +1538,7 @@ del servidor. Se toma el varlor preexistente en el mensaje')
             # UserError('Get Estado DTE: no se pudo obtener una respuesta \
             # del servidor. intente nuevamente')
         if self.sii_message:
+            # cambiar esto para hacerlo desde la funcion de "analyze"
             resp = xmltodict.parse(self.sii_message)
             try:
                 if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == '2':
@@ -1511,7 +1546,8 @@ del servidor. Se toma el varlor preexistente en el mensaje')
                         'warning': {
                             'title': _("Error code: 2"),
                             'message': _(
-                                resp['SII:RESPUESTA']['SII:RESP_HDR']['GLOSA'])}}
+                                resp['SII:RESPUESTA']['SII:RESP_HDR']['GLOSA'])
+                        }}
                     return status
                 if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] in \
                         ['SOK', 'CRT', 'PDR', 'FOK', '-11']:
@@ -1599,6 +1635,139 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
             'resultado_status grabado: {}'.format(self.sii_result))
         _logger.info(response_status_j['revision_estado'])
 
+    def save_xml_record(self, result, envio_dte, file_name):
+        """
+        Guarda el registro XML de las respuestas, pero no así el xml, el cual
+        queda solamente con el DTE
+        :param result:
+        :param envio_dte:
+        :param file_name:
+        :return:
+        """
+        self.write(
+            {'sii_xml_response': result['sii_xml_response'],
+             'sii_send_ident': result['sii_send_ident'],
+             'sii_result': result['sii_result'],
+             # 'sii_xml_request': envio_dte,
+             'sii_send_file_name': file_name, })
+
+    # @send_recipient
+    # def send_envelope_recipient(self):
+    #     pass
+    #
+    # @send_sii
+    # def send_envelope_sii(self):
+    #     pass
+
+    def save_xml_knowledge(self, result, envio_dte, file_name):
+        attachment_obj = self.env['ir.attachment']
+        _logger.info('Attachment')
+        for inv in self:
+            _logger.info(inv.sii_document_class_id.name)
+            attachment_id = attachment_obj.create(
+                {
+                    'name': 'DTE_{}_{}.xml'.format(
+                        inv.document_number, file_name).replace(' ', '_'),
+                    'datas': base64.b64encode(envio_dte),
+                    'datas_fname': 'DTE_{}-{}.xml'.format(
+                        inv.document_number, file_name).replace(' ', '_'),
+                    'res_model': inv._name,
+                    'res_id': inv.id,
+                    'type': 'binary', })
+            _logger.info('Se ha generado factura en XML con el id {}'.format(
+                attachment_id))
+
+    def send_envelope_sii(
+            self, RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
+            file_name, company_id, certp):
+        dtes = self.create_template_envelope(
+            RUTEmisor, "60803000-K", resol_data['dte_resolution_date'],
+            resol_data['dte_resolution_number'], self.time_stamp(), documentos,
+            signature_d, SubTotDTE)
+        env = 'env'
+        envio_dte = self.create_template_env(dtes)
+        envio_dte = self.sign_full_xml(
+            envio_dte, signature_d['priv_key'], certp, 'BMyA_Odoo_SetDoc', env)
+        result = self.send_xml_file(envio_dte, file_name, company_id)
+        for inv in self:
+            inv.save_xml_record(result, envio_dte, file_name)
+        _logger.info('fin de preparacion y envio sii')
+
+    def send_envelope_recipient(
+            self, RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
+            es_boleta, file_name, company_id, certp):
+        dtes = self.create_template_envelope(
+            RUTEmisor, self.format_vat(self.partner_id.vat),
+            resol_data['dte_resolution_date'],
+            resol_data['dte_resolution_number'], self.time_stamp(), documentos,
+            signature_d, SubTotDTE)
+        env = 'env'
+        if es_boleta:
+            envio_dte = self.create_template_env(dtes, 'BOLETA')
+            env = 'env_boleta'
+        else:
+            envio_dte = self.create_template_env(dtes)
+        envio_dte = self.sign_full_xml(
+            envio_dte, signature_d['priv_key'], certp, 'BMyA_Odoo_SetDoc', env)
+        result = self.send_xml_file(envio_dte, file_name, company_id)
+        _logger.info('fin de preparacion y envio sii')
+        for inv in self:
+            inv.save_xml_knowledge(result, envio_dte, file_name)
+            inv.get_pdf_docsonline(envio_dte)
+
+    def get_pdf_docsonline(self, file_upload):
+        host = 'https://www.documentosonline.cl'
+        headers = {}
+        headers['Accept'] = u'*/*'
+        headers['Accept-Encoding'] = u'gzip, deflate, compress'
+        headers['Connection'] = u'close'
+        headers[
+            'Content-Type'] = u'multipart/form-data; \
+boundary=33b4531a79be4b278de5f5688fab7701'
+        headers[
+            'User-Agent'] = u'python-requests/2.2.1 CPython/2.7.6 Darwin/13.2.0'
+        r = requests.post(host + '/dte/hgen/token',
+                          files=dict(file_upload=file_upload))
+        print r
+        print r.text
+        if r.status_code == 200:
+            print json.loads(r.text)['token']
+            self.docs_online_token = 'https://www.documentosonline.cl/\
+dte/hgen/html/{}'.format(json.loads(r.text)['token'])
+            headers['Connection'] = 'keep-alive'
+            headers['Content-Type'] = 'application/json'
+            data = {
+                'params': json.loads(r.text)
+            }
+            print data
+            r = requests.post(
+                host + '/dte/jget',
+                headers=headers,
+                data=json.dumps(data))
+            if r.status_code == 200:
+                print r.json()
+                invoice_pdf = json.loads(r.json()['result'])['pdf']
+                attachment_name = self.get_attachment_name(
+                    self, call_model=str(self._name))
+                attachment_obj = self.env['ir.attachment']
+                # raise UserError(self._name, self.id, self._context)
+                record_id = self.get_object_record_id(
+                    self, call_model=str(self._name))
+                attachment_id = attachment_obj.create(
+                    {
+                        'name': 'DTE_' + attachment_name +
+                                '-' + self.sii_document_number + '.pdf',
+                        'datas': invoice_pdf,
+                        'datas_fname': 'DTE_' + attachment_name +
+                                       '-' + self.sii_document_number + '.pdf',
+                        'res_model': self._name,
+                        'res_id': record_id,
+                        'type': 'binary'})
+                _logger.info('attachment pdf')
+                _logger.info(attachment_name)
+                _logger.info(attachment_id)
+                _logger.info(record_id)
+
     @api.multi
     def do_dte_send(self, att_number=None):
         """
@@ -1618,7 +1787,7 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
                 inv.sii_batch_number = batch
                 # si viene una guía/nota regferenciando una factura,
                 # que por numeración viene a continuación de la guia/nota,
-                # será recahazada laguía porque debe estar declarada la
+                # será rechazada la guía porque debe estar declarada la
                 # factura primero
             es_boleta = inv._es_boleta()
             if inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
@@ -1637,7 +1806,6 @@ for you or make the signer to authorize you to use his signature.'''))
             elif inv.company_id.dte_service_provider == 'LIBREDTE':
                 _logger.info(
                     'desde do_dte_send, cola: {}'.format(inv._dte(att_number)))
-            # @TODO Mejorar esto en lo posible
             if not inv.sii_document_class_id.sii_code in clases:
                 clases[inv.sii_document_class_id.sii_code] = []
             clases[
@@ -1682,32 +1850,18 @@ hacer eso en un envío')
         documentos = ''
         for key in sorted(dtes.iterkeys()):
             documentos += '\n' + dtes[key]
-        # firma del sobre
-        RUTRecep = "60803000-K"
-        # RUTRecep = self.format_vat(inv.company_id.vat)
-        # RUTRecep = '23841194-7'  # hardcodeado para pruebas
-        # RUT SII
-        dtes = self.create_template_envelope(RUTEmisor, RUTRecep,
-                                        resol_data['dte_resolution_date'],
-                                        resol_data['dte_resolution_number'],
-                                        self.time_stamp(), documentos,
-                                        signature_d, SubTotDTE)
-        env = 'env'
-        if es_boleta:
-            envio_dte = self.create_template_env(dtes, 'BOLETA')
-            env = 'env_boleta'
-        else:
-            envio_dte = self.create_template_env(dtes)
-        envio_dte = self.sign_full_xml(
-            envio_dte, signature_d['priv_key'], certp,
-            'BMyA_Odoo_SetDoc', env)
-        result = self.send_xml_file(envio_dte, file_name, company_id)
+        if not es_boleta:
+            self.send_envelope_sii(
+                RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
+                file_name, company_id, certp)
         for inv in self:
-            inv.write({'sii_xml_response': result['sii_xml_response'],
-                       'sii_send_ident': result['sii_send_ident'],
-                       'sii_result': result['sii_result'],
-                       'sii_xml_request': envio_dte,
-                       'sii_send_file_name': file_name})
+            inv.sii_result = inv.analyze_sii_result(
+                inv.sii_result, inv.sii_message, inv.sii_receipt)
+            if inv.sii_result == 'Aceptado':
+                inv.send_envelope_recipient(
+                    RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
+                    es_boleta, file_name, company_id, certp)
+                inv.get_pdf_docsonline()
 
     @api.multi
     def ask_for_dte_status(self):
@@ -1716,6 +1870,27 @@ hacer eso en un envío')
         :return:
         """
         if self.company_id.dte_service_provider not in ['LIBREDTE']:
+            if self.sii_message and self.sii_receipt:
+                _logger.info('ask_for_dte_status %%%%%%%%%% ya hay estado....')
+                self.sii_result = self.analyze_sii_result(
+                    self.sii_result, self.sii_message, self.sii_receipt)
+                # aca hacer los procesos nuevos
+                SubTotDTE = '''<SubTotDTE>
+   <TpoDTE>{}</TpoDTE>
+   <NroDTE>1</NroDTE>
+</SubTotDTE>'''.format(self.sii_document_class_id.sii_code)
+                signature_d = self.get_digital_signature_pem(self.company_id)
+                certp = signature_d['cert'].replace(BC, '').replace(
+                    EC, '').replace('\n', '')
+                if self.sii_result == 'Aceptado':
+                    self.send_envelope_recipient(
+                        self.format_vat(self.company_id.vat),
+                        self.get_resolution_data(self.company_id),
+                        self.sii_xml_request, signature_d, SubTotDTE, False,
+                        self.sii_send_file_name, self.company_id, certp)
+                    # prepara para poder enviar los archivos.
+                return
+
             if True:  # try:
                 signature_d = self.get_digital_signature_pem(
                     self.company_id)
@@ -1734,8 +1909,8 @@ hacer eso en un envío')
                     'No se ha enviado aún el documento, aún está en cola de \
 envío interna en odoo')
             if self.sii_result == 'Enviado':
-                status = self._get_send_status(self.sii_send_ident,
-                                               signature_d, token)
+                status = self._get_send_status(
+                    self.sii_send_ident, signature_d, token)
                 if self.sii_result != 'Proceso':
                     return status
             return self._get_dte_status(signature_d, token)
@@ -1787,12 +1962,12 @@ cola de envío interna en odoo''')
     sii_result = fields.Selection([
         ('', 'n/a'),
         ('NoEnviado', 'No Enviado'),
-        ('EnCola','En cola de envío'),
+        ('EnCola', 'En cola de envío'),
         ('Enviado', 'Enviado'),
+        ('Proceso', 'Proceso'),
+        ('Reparo', 'Reparo'),
         ('Aceptado', 'Aceptado'),
         ('Rechazado', 'Rechazado'),
-        ('Reparo', 'Reparo'),
-        ('Proceso', 'Proceso'),
         ('Reenviar', 'Reenviar'),
         ('Anulado', 'Anulado')],
         'Resultado',
@@ -1800,26 +1975,25 @@ cola de envío interna en odoo''')
         states={'draft': [('readonly', False)]},
         copy=False,
         help="SII request result",
-        default = '')
+        default='')
     canceled = fields.Boolean(string="Canceled?")
     estado_recep_dte = fields.Selection(
-        [
-            ('no_revisado','No Revisado'),
-            ('0','Conforme'),
-            ('1','Error de Schema'),
-            ('2','Error de Firma'),
-            ('3','RUT Receptor No Corresponde'),
-            ('90','Archivo Repetido'),
-            ('91','Archivo Ilegible'),
-            ('99','Envio Rechazado - Otros')
-        ],string="Estado de Recepcion del Envio")
-    estado_recep_glosa = fields.Char(string="Información Adicional del Estado de Recepción")
+        [('no_revisado', 'No Revisado'),
+            ('0', 'Conforme'),
+            ('1', 'Error de Schema'),
+            ('2', 'Error de Firma'),
+            ('3', 'RUT Receptor No Corresponde'),
+            ('90', 'Archivo Repetido'),
+            ('91', 'Archivo Ilegible'),
+            ('99', 'Envio Rechazado - Otros')],
+        string="Estado de Recepcion del Envio")
+    estado_recep_glosa = fields.Char(
+        string="Información Adicional del Estado de Recepción")
     sii_send_file_name = fields.Char(string="Send File Name")
-    responsable_envio = fields.Many2one('res.users')
-    ticket = fields.Boolean(string="Formato Ticket",
-            default=False,
-            readonly=True,
-            states={'draft': [('readonly', False)]})
+    responsable_envio = fields.Many2one('res.users', string='Responsable Envío')
+    ticket = fields.Boolean(
+        string="Formato Ticket", default=False, readonly=True,
+        states={'draft': [('readonly', False)]})
     dte_service_provider = fields.Selection(
         [('', 'None'),
          ('FACTURACION', 'facturacion.cl'),
@@ -1830,6 +2004,7 @@ cola de envío interna en odoo''')
          ], 'DTE Service Provider',
         related='company_id.dte_service_provider',
         readonly=True)
+    docs_online_token = fields.Char('Documentos Online')
 
     @api.multi
     def get_related_invoices_data(self):
@@ -2079,7 +2254,7 @@ TRACKID antes de revalidar, reintente la validación.')
                 continue
             if inv.sii_send_ident:
                 _logger.info(
-                    'Track id existente. No se validará documento: {}'.format(
+                    'Track id existente. No se enviará documento: {}'.format(
                         inv.sii_send_ident))
                 if not inv.sii_xml_request:
                     inv.sii_result = 'NoEnviado'
@@ -2120,6 +2295,8 @@ TRACKID antes de revalidar, reintente la validación.')
                 ids.append(inv.id)
         if not isinstance(att_number, unicode):
             att_number = ''
+        # explicit better than implicit
+        # (antes ponia all en cola)
         if ids and self.check_if_not_sent(ids, 'account.invoice', 'envio'):
             self.env['sii.cola_envio'].create({
                 'doc_ids': ids,

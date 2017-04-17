@@ -18,6 +18,9 @@
             <field name="name">account.invoice.sii.form</field>
             <field name="inherit_id" ref="account.invoice_form" />
             <field name="arch" type="xml">
+                <button name="action_invoice_cancel" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
                 <button name="invoice_print" position="after">
                     <button string="Imprimir Cedible" type="object"
                             name="print_cedible" invisible="True"/>
@@ -76,13 +79,20 @@
                             </div>
                         </group>
                         <group>
-                            <field name='sii_message' attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
-                            <field name='sii_receipt' attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
-                            <field name='sii_send_ident'/>
+                            <field name="sii_message"
+                                   group="account.group_account_manager"
+                                   attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
+                            <field name="sii_receipt"
+                                   group="account.group_account_manager"
+                                   attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
+                            <field name="sii_send_ident"/>
                                    <!--attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}"-->
-                            <field name='sii_xml_response' attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
-                            <field name='sii_send_file_name' attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
-                            <field name='sii_xml_request' attrs="{'invisible':[('sii_result', '=', '')]}" readonly="1"/>
+                            <field name="sii_xml_response"
+                                   attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
+                            <field name="sii_send_file_name"
+                                   attrs="{'invisible':[('sii_result', 'in', ['','NoEnviado'])]}" readonly="1"/>
+                            <field name="sii_xml_request"
+                                   attrs="{'invisible':[('sii_result', '=', '')]}" readonly="1"/>
                         </group>
                     </page>
                 </notebook>
