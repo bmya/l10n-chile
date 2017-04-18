@@ -1692,6 +1692,7 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
         for inv in self:
             inv.save_xml_record(result, envio_dte, file_name)
         _logger.info('fin de preparacion y envio sii')
+        return envio_dte
 
     def send_envelope_recipient(
             self, RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
@@ -1781,6 +1782,9 @@ dte/hgen/html/{}'.format(json.loads(r.text)['token'])
         company_id = False
         es_boleta = False
         batch = 0
+        # ACA ES DONDE SE DETERMINA EL ORDEN
+        # DEBERÍA TENER ALGUNA MANERA DE ORDENAR EL SET DE DATOS QUE
+        # VIENE EN SELF.
         for inv in self.with_context(lang='es_CL'):
             if not inv.sii_batch_number or inv.sii_batch_number == 0:
                 batch += 1
@@ -1790,6 +1794,7 @@ dte/hgen/html/{}'.format(json.loads(r.text)['token'])
                 # será rechazada la guía porque debe estar declarada la
                 # factura primero
             es_boleta = inv._es_boleta()
+            # <- el boleta soy yo con estos nombres de funcion
             if inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
                 # raise UserError(inv.company_id.dte_service_provider)
                 try:
@@ -1802,11 +1807,19 @@ for you or make the signer to authorize you to use his signature.'''))
                 certp = signature_d['cert'].replace(
                     BC, '').replace(EC, '').replace('\n', '')
                 # Retimbrar con número de atención y envío
+                # otra culiadez... retimbrar de vuelta porque sí
+                # si va a retimbrar para qué guardo antes el xml
                 inv._do_stamp(att_number)
             elif inv.company_id.dte_service_provider == 'LIBREDTE':
+                # sacar a la mierda del nuevo código
                 _logger.info(
                     'desde do_dte_send, cola: {}'.format(inv._dte(att_number)))
             if not inv.sii_document_class_id.sii_code in clases:
+                # en la  primera vuelta no hay nada en clases
+                # aparentemente lo que quiere hacer, es ordenar por codigo de
+                # documento, lo cual hace que se desordene el set de pruebas
+                # esto va a haber que cambiarlo. está creando una lista de
+                # documentos embebida en un diccionario de clases de documento
                 clases[inv.sii_document_class_id.sii_code] = []
             clases[
                 inv.sii_document_class_id.sii_code].extend(
@@ -1814,6 +1827,8 @@ for you or make the signer to authorize you to use his signature.'''))
                   'envio': inv.sii_xml_request,
                   'sii_batch_number': inv.sii_batch_number,
                   'sii_document_number': inv.sii_document_number}])
+            # y aca copia las clases en DTEs... ya veremos en que se diferencia
+            # clases de DTEs...
             DTEs.update(clases)
             if not company_id:
                 company_id = inv.company_id
@@ -1821,9 +1836,11 @@ for you or make the signer to authorize you to use his signature.'''))
                 raise UserError('Está combinando compañías, no está permitido \
 hacer eso en un envío')
             company_id = inv.company_id
-            # @TODO hacer autoreconciliación
+            # @TODO hacer autoreconciliación <--- WHATAFUCK!!!! eso que carajo
+            # tiene que ver, reconciliar los documentos con la factura
+            # electronica?????? eso lo hace otro componente!
         file_name = ""
-        dtes = {}
+        dtes = {}  #  otro diccionario mas y van 3
         SubTotDTE = ''
         resol_data = self.get_resolution_data(company_id)
         signature_d = self.get_digital_signature(company_id)
@@ -1850,6 +1867,7 @@ hacer eso en un envío')
         documentos = ''
         for key in sorted(dtes.iterkeys()):
             documentos += '\n' + dtes[key]
+        # raise UserError(documentos)
         if not es_boleta:
             self.send_envelope_sii(
                 RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
@@ -2295,15 +2313,15 @@ TRACKID antes de revalidar, reintente la validación.')
                 ids.append(inv.id)
         if not isinstance(att_number, unicode):
             att_number = ''
-        # explicit better than implicit
-        # (antes ponia all en cola)
         if ids and self.check_if_not_sent(ids, 'account.invoice', 'envio'):
+            # ordenas los ids.sort()
+            # preparar el envio sii
             self.env['sii.cola_envio'].create({
                 'doc_ids': ids,
                 'model': 'account.invoice',
                 'user_id': self.env.user.id,
                 'tipo_trabajo': 'envio',
-                'att_number': att_number})
+                'att_number': att_number, })
 
     @api.multi
     def get_barcode(self, no_product=False):

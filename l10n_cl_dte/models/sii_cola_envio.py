@@ -10,9 +10,10 @@ class ColaEnvio(models.Model):
     user_id = fields.Many2one('res.users')
     tipo_trabajo = fields.Selection(
         [('envio', 'Envío'), ('consulta', 'Consulta')],
-        string="Tipo de trabajo")
+        string='Tipo de trabajo')
     active = fields.Boolean(string="Active", default=True)
     att_number = fields.Char(string="Número de atención")
+    xml_sending = fields.Text(string="XML Sending SII")
 
     @api.model
     def _cron_process_queue(self):
@@ -23,13 +24,14 @@ class ColaEnvio(models.Model):
                 if docs[0].sii_send_ident and docs[0].sii_message and \
                         docs[0].sii_result in [
                             'Proceso', 'Rechazado', 'Aceptado']:
-                    c.unlink()
+                    # docs.active = False
+                    # c.unlink()
                     return
                 else:
                     for doc in docs:
                         doc.responsable_envio = c.user_id
                     if c.tipo_trabajo == 'envio':
-                        docs.do_dte_send(c.att_number)
+                        c.xml_sending = docs.do_dte_send(c.att_number)
                         c.tipo_trabajo = 'consulta'
                     else:
                         docs[0].ask_for_dte_status()

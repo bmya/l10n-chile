@@ -2,6 +2,7 @@
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError
 from datetime import datetime, timedelta
+import dateutil.relativedelta as relativedelta
 import logging
 from lxml import etree
 from lxml.etree import Element, SubElement
@@ -47,6 +48,7 @@ except ImportError:
 
 try:
     import dicttoxml
+    dicttoxml.set_debug(False)
 except ImportError:
     _logger.info('Cannot import dicttoxml library')
 
@@ -150,6 +152,7 @@ class Libro(models.Model):
     tipo_libro = fields.Selection([
                 ('ESPECIAL','Especial'),
                 ('MENSUAL','Mensual'),
+                ('RECTIFICA', 'Rectifica'),
                 ],
                 string="Tipo de Libro",
                 default='MENSUAL',
@@ -184,24 +187,44 @@ class Libro(models.Model):
         string="Folio de Notificación",
         readonly=True,
         states={'draft': [('readonly', False)]})
-    #total_afecto = fields.Monetary(
-    #    string="Total Afecto",
-    #    readonly=True,)
-    #total_exento = fields.Monetary(
-    #    string="Total Exento",
-    #    readonly=True,)
-    #total_iva = fields.Monetary(
-    #    string="Total IVA",
-    #    readonly=True,)
-    #total_otros_imp = fields.Monetary(
-    #    string="Total Otros Impuestos",
-    #    readonly=True,)
+    impuestos = fields.One2many('account.move.book.tax',
+        'book_id',
+        string="Detalle Impuestos")
+    currency_id = fields.Many2one('res.currency',
+        string='Moneda',
+        default=lambda self: self.env.user.company_id.currency_id,
+        required=True,
+        track_visibility='always')
+    total_afecto = fields.Monetary(
+        string="Total Afecto",
+        readonly=True,
+        compute="set_resumen",
+        store=True,)
+    total_exento = fields.Monetary(
+        string="Total Exento",
+        readonly=True,
+        compute='set_resumen',
+        store=True,)
+    total_iva = fields.Monetary(
+        string="Total IVA",
+        readonly=True,
+        compute='set_resumen',
+        store=True,)
+    total_otros_imps = fields.Monetary(
+        string="Total Otros Impuestos",
+        readonly=True,
+        compute='set_resumen',
+        store=True,)
+    total = fields.Monetary(
+        string="Total Otros Impuestos",
+        readonly=True,
+        compute='set_resumen',
+        store=True,)
     periodo_tributario = fields.Char(
         string='Periodo Tributario',
         required=True,
         readonly=True,
-        states={'draft': [('readonly', False)]},
-        default=datetime.now().strftime('%Y-%m'))
+        states={'draft': [('readonly', False)]})
     company_id = fields.Many2one('res.company',
         string="Compañía",
         required=True,
@@ -225,14 +248,107 @@ class Libro(models.Model):
         string="Fecha",
         required=True,
         readonly=True,
-        states={'draft': [('readonly', False)]},
-        default=datetime.now())
-
+        states={'draft': [('readonly', False)]})
     boletas = fields.One2many('account.move.book.boletas',
         'book_id',
         string="Boletas",
         readonly=True,
         states={'draft': [('readonly', False)]})
+    codigo_rectificacion = fields.Char(string="Código de Rectificación")
+
+    _defaults = {
+        'date' : datetime.now(),
+        'periodo_tributario': datetime.now().strftime('%Y-%m'),
+    }
+
+    @api.onchange('periodo_tributario', 'tipo_operacion', 'company_id')
+    def set_movimientos(self):
+        current = datetime.strptime( self.periodo_tributario + '-01', '%Y-%m-%d' )
+        next_month = current + relativedelta.relativedelta(months=1)
+        docs = [False, 70, 71]
+        operator = 'not in'
+        query = [
+            ('company_id', '=', self.company_id.id),
+            ('sended', '=', False),
+            ('date' , '>=', current.strftime('%Y-%m-%d')),
+            ('date' , '<', next_month.strftime('%Y-%m-%d')),
+            ]
+        domain = 'sale'
+        if self.tipo_operacion in [ 'COMPRA' ]:
+            two_month = current + relativedelta.relativedelta(months=-2)
+            query.append(('date' , '>=', two_month.strftime('%Y-%m-%d')))
+            domain = 'purchase'
+        query.append(('journal_id.type', '=', domain))
+        if self.tipo_operacion in [ 'VENTA' ]:
+            docs.extend([35, 38, 39, 41])
+            libro_boletas = self.env['account.move.consumo_folios'].search([
+                ('state','not in', ['draft']),
+                ('fecha_inicio','>=', current),
+                ('fecha_inicio','<', next_month),
+            ])
+            if libro_boletas:
+                lines = [[5,],]
+                for det in libro_boletas.detalles:
+                    line = {
+                        'currency_id' : self.env.user.company_id.currency_id,
+                        'tipo_boleta' : det.tpo_doc,
+                        'cantidad_boletas' : det.cantidad ,
+                        'neto' : det.monto_neto,
+                        'impuesto' : self.env['account.tax'].search([('sii_code','=', 14), ('type_tax_use','=','sale'),('company','=',self.company_id.id)],limit=1).id,
+                        'monto_impuesto' : det.monto_iva,
+                        'monto_exento': det.monto_exento,
+                        }
+                    lines.append([0,0, line])
+                self.detalles = lines
+        if self.tipo_operacion in [ 'VENTA' ]:
+            operator = 'in'
+        query.append(('document_class_id.sii_code', operator, docs))
+        self.move_ids = self.env['account.move'].search(query)
+
+
+    def _get_imps(self):
+        imp = {}
+        for move in self.move_ids:
+            move_imps = move._get_move_imps()
+            for key, i in move_imps.items():
+                if not key in imp:
+                    imp[key] = i
+                else:
+                    imp[key]['credit'] += i['credit']
+                    imp[key]['debit'] += i['debit']
+        return imp
+
+    @api.onchange('move_ids')
+    def set_resumen(self):
+        for mov in self.move_ids:
+            totales = mov.totales_por_movimiento()
+            self.total_afecto += totales['neto']
+            self.total_exento += totales['exento']
+            self.total_iva += totales['iva']
+            self.total_otros_imps += totales['otros_imps']
+            self.total += mov.amount
+
+    @api.onchange('move_ids')
+    def compute_taxes(self):
+        imp = self._get_imps()
+        if self.boletas:
+            for bol in self.boletas:
+                imp[bol.impuesto.id]['debit'] += bol.monto_impuesto
+        if self.impuestos and isinstance(self.id, int):
+            self._cr.execute("DELETE FROM account_move_book_tax WHERE book_id=%s", (self.id,))
+            self.invalidate_cache()
+        lines = [[5,],]
+        for key, i in imp.items():
+            i['currency_id'] = self.env.user.company_id.currency_id.id
+            lines.append([0,0, i])
+        self.impuestos = lines
+
+    @api.multi
+    def unlink(self):
+        for libro in self:
+            if libro.state not in ('draft', 'cancel'):
+                raise UserError(_('You cannot delete a Validated book.'))
+        return super(Libro, self).unlink()
 
     def split_cert(self, cert):
         certf, j = '', 0
@@ -241,17 +357,20 @@ class Libro(models.Model):
         return certf
 
     def create_template_envio(self, RutEmisor, PeriodoTributario, FchResol, NroResol, EnvioDTE,signature_d,TipoOperacion='VENTA',TipoLibro='MENSUAL',TipoEnvio='TOTAL',FolioNotificacion="123", IdEnvio='SetDoc'):
-        if TipoOperacion == 'BOLETA' and TipoLibro != 'ESPECIAL':
+        if TipoOperacion == 'BOLETA' and TipoLibro not in ['ESPECIAL', 'RECTIFICA']:
             raise UserError("Boletas debe ser solamente Tipo Operación ESPECIAL")
+        CodigoRectificacion = ''
         if TipoLibro in ['ESPECIAL'] or TipoOperacion in ['BOLETA']:
-            FolioNotificacion = '<FolioNotificacion>{0}</FolioNotificacion>'.format(FolioNotificacion)
+            FolioNotificacion = '\n<FolioNotificacion>' + FolioNotificacion + '</FolioNotificacion>'
         else:
-            FolioNotificacion = ''
+            FolioNotificacion =''
+        if TipoLibro == 'RECTIFICA':
+            CodigoRectificacion = '\n<CodAutRec>' + self.codigo_rectificacion + '</CodAutRec>'
 
         if TipoOperacion in ['BOLETA']:
             TipoOperacion = ''
         else:
-            TipoOperacion = '<TipoOperacion>'+TipoOperacion+'</TipoOperacion>'
+            TipoOperacion = '\n<TipoOperacion>'+TipoOperacion+'</TipoOperacion>'
         xml = '''<EnvioLibro ID="{10}">
 <Caratula>
 <RutEmisorLibro>{0}</RutEmisorLibro>
@@ -260,13 +379,23 @@ class Libro(models.Model):
 <FchResol>{3}</FchResol>
 <NroResol>{4}</NroResol>{5}
 <TipoLibro>{6}</TipoLibro>
-<TipoEnvio>{7}</TipoEnvio>
-{8}
+<TipoEnvio>{7}</TipoEnvio>{8}{11}
 </Caratula>
 {9}
 </EnvioLibro>
-'''.format(RutEmisor, signature_d['subject_serial_number'], PeriodoTributario,
-           FchResol, NroResol,TipoOperacion, TipoLibro,TipoEnvio,FolioNotificacion, EnvioDTE,IdEnvio)
+'''.format(RutEmisor,
+           signature_d['subject_serial_number'],
+           PeriodoTributario,
+           FchResol,
+           NroResol,
+           TipoOperacion,
+           TipoLibro,
+           TipoEnvio,
+           FolioNotificacion,
+           EnvioDTE,
+           IdEnvio,
+           CodigoRectificacion,
+       )
         return xml
 
     def time_stamp(self, formato='%Y-%m-%dT%H:%M:%S'):
@@ -496,13 +625,17 @@ version="1.0">
         return fulldoc
 
     def get_digital_signature_pem(self, comp_id):
-        obj = self.env['res.users'].browse([self.env.user.id])
+        obj = user = False
+        if 'responsable_envio' in self and self._ids:
+            obj = user = self[0].responsable_envio
+        if not obj:
+            obj = user = self.env.user
         if not obj.cert:
-            obj = self.env['res.company'].browse([comp_id.id])
-            if not obj.cert:
-                obj = self.env['res.users'].search(domain=[("authorized_users_ids","=", self.env.user.id)])
-            if not obj.cert or not self.env.user.id in obj.authorized_users_ids.ids:
-                return False
+            obj = self.env['res.users'].search([("authorized_users_ids","=", user.id)])
+            if not obj or not obj.cert:
+                obj = self.env['res.company'].browse([comp_id.id])
+                if not obj.cert or not user.id in obj.authorized_users_ids.ids:
+                    return False
         signature_data = {
             'subject_name': obj.name,
             'subject_serial_number': obj.subject_serial_number,
@@ -513,13 +646,18 @@ version="1.0">
         return signature_data
 
     def get_digital_signature(self, comp_id):
-        obj = self.env['res.users'].browse([self.env.user.id])
+        obj = user = False
+        if 'responsable_envio' in self and self._ids:
+            obj = user = self[0].responsable_envio
+        if not obj:
+            obj = user = self.env.user
+        _logger.info(obj.name)
         if not obj.cert:
-            obj = self.env['res.company'].browse([comp_id.id])
-            if not obj.cert:
-                obj = self.env['res.users'].search(domain=[("authorized_users_ids","=", self.env.user.id)])
-            if not obj.cert or not self.env.user.id in obj.authorized_users_ids.ids:
-                return False
+            obj = self.env['res.users'].search([("authorized_users_ids","=", user.id)])
+            if not obj or not obj.cert:
+                obj = self.env['res.company'].browse([comp_id.id])
+                if not obj.cert or not user.id in obj.authorized_users_ids.ids:
+                    return False
         signature_data = {
             'subject_name': obj.name,
             'subject_serial_number': obj.subject_serial_number,
@@ -587,7 +725,7 @@ version="1.0">
         respuesta_dict = xmltodict.parse(response.data)
         if respuesta_dict['RECEPCIONDTE']['STATUS'] != '0':
             _logger.info('l736-status no es 0')
-            _logger.info(connection_status[respuesta_dict['RECEPCIONDTE']['STATUS']])
+            _logger.info(connection_status)
         else:
             retorno.update({'sii_result': 'Enviado','sii_send_ident':respuesta_dict['RECEPCIONDTE']['TRACKID']})
         return retorno
@@ -655,18 +793,10 @@ version="1.0">
 
     def getResumen(self, rec):
         no_product = False
-        if rec.document_class_id.sii_code in [56, 64] or self.tipo_operacion in ['COMPRA']:
-            ob = self.env['account.invoice']
-            ref = ob.search([('number','=',rec.document_number)])
-            referencia = self.env['account.move'].search([
-                            ('document_number','=',ref.origin),
-                            ('company_id','=', ref.company_id.id),
-                            ])
-        else:
-            referencia = self.env['account.invoice'].search([
-                            ('number','=',rec.document_number),
-                            ('company_id','=', ref.company_id.id),
-                            ])
+        ob = self.env['account.invoice']
+        inv = ob.search([
+                        ('move_id','=',rec.id),
+                        ])
         det = collections.OrderedDict()
         det['TpoDoc'] = rec.document_class_id.sii_code
         #det['Emisor']
@@ -675,23 +805,31 @@ version="1.0">
             det['NroDoc'] = int(rec.ref)
         else:
             det['NroDoc'] = int(rec.sii_document_number)
-        #if rec.is_anulation:
-        #    det['Anulado'] = 'A'
+        if rec.canceled:
+            det['Anulado'] = 'A'
         #det['Operacion']
         #det['TotalesServicio']
         imp = {}
-        TaxMnt = MntExe = MntIVA = Neto = 0
+        TaxMnt = 0
+        MntExe = 0
+        MntIVA = 0
+        Neto = 0
+        ActivoFijo = [0,0]
         ivas = {}
         for l in rec.line_ids:
             if l.tax_line_id:
-                if l.tax_line_id and l.tax_line_id.amount > 0: #supuesto iva único
+                if l.tax_line_id and l.tax_line_id.amount > 0:
                     if l.tax_line_id.sii_code in [14, 15, 17, 18, 19, 30,31, 32 ,33, 34, 36, 37, 38, 39, 41, 47, 48]: # diferentes tipos de IVA retenidos o no
                         if not l.tax_line_id.id in ivas:
                             ivas[l.tax_line_id.id] = {'det': l.tax_line_id, 'TaxMnt': 0}
                         if l.credit > 0:
                             ivas[l.tax_line_id.id]['TaxMnt'] += l.credit
+                            if l.tax_line_id.activo_fijo:
+                                ActivoFijo[1] += l.credit
                         else:
                             ivas[l.tax_line_id.id]['TaxMnt'] += l.debit
+                            if l.tax_line_id.activo_fijo:
+                                ActivoFijo[1] += l.debit
                     else:
                         if not l.tax_line_id.id in imp:
                             imp[l.tax_line_id.id] = {'imp':l.tax_line_id, 'Mnt':0}
@@ -701,11 +839,24 @@ version="1.0">
                         else:
                             imp[l.tax_line_id.id]['Mnt'] += l.debit
                             TaxMnt += l.debit
+            elif l.tax_ids and l.tax_ids[0].no_rec:
+                if not l.tax_ids[0].id in imp:
+                    imp[l.tax_ids[0].id] = {'imp':l.tax_ids[0], 'Mnt':0}
+                if l.credit > 0:
+                    imp[l.tax_ids[0].id]['Mnt'] += l.credit
+                    TaxMnt += l.credit
+                else:
+                    imp[l.tax_ids[0].id]['Mnt'] += l.debit
+                    TaxMnt += l.debit
             elif l.tax_ids and l.tax_ids[0].amount > 0:
                 if l.credit > 0:
                     Neto += l.credit
+                    if l.tax_ids[0].activo_fijo:
+                        ActivoFijo[0] += l.credit
                 else:
                     Neto += l.debit
+                    if l.tax_ids[0].activo_fijo:
+                        ActivoFijo[0] += l.debit
             elif l.tax_ids and l.tax_ids[0].amount == 0: #caso monto exento
                 if l.credit > 0:
                     MntExe += l.credit
@@ -723,13 +874,9 @@ version="1.0">
             det['CdgSIISucur'] = rec.journal_id.sii_code
         det['RUTDoc'] = self.format_vat(rec.partner_id.vat)
         det['RznSoc'] = rec.partner_id.name[:50]
-        if referencia:
-            if self.tipo_operacion in ['COMPRA']:
-                det['TpoDocRef'] = referencia.document_class_id.sii_code
-                det['FolioDocRef'] = referencia.ref
-            else:
-                det['TpoDocRef'] = referencia.journal_document_class_id.sii_code
-                det['FolioDocRef'] = referencia.origin
+        if inv.referencias and inv.referencias[0].sii_referencia_CodRef:
+            det['TpoDocRef'] = inv.referencias[0].sii_referencia_TpoDocRef.sii_code
+            det['FolioDocRef'] = inv.referencias[0].origen
         if MntExe > 0 :
             det['MntExe'] = int(round(MntExe,0))
         elif self.tipo_operacion in ['VENTA'] and not Neto > 0:
@@ -744,6 +891,9 @@ version="1.0">
                     MntIVA += int(round(i['TaxMnt']))
                 if not rec.no_rec_code and not rec.iva_uso_comun:
                     det['MntIVA'] = MntIVA
+                if ActivoFijo != [0,0]:
+                    det['MntActivoFijo'] = Activofijo[0]
+                    det['MntIVAActivoFijo'] = Activofijo[1]
                 if rec.no_rec_code:
                     det['IVANoRec'] = collections.OrderedDict()
                     det['IVANoRec']['CodIVANoRec'] = rec.no_rec_code
@@ -754,10 +904,13 @@ version="1.0">
             imps = []
             for key, t in imp.items():
                 otro = {}
-                otro['OtrosImp'] = collections.OrderedDict()
-                otro['OtrosImp']['CodImp'] = str(t['imp'].sii_code) + ('_no_rec' if t['imp'].no_rec else '')
-                otro['OtrosImp']['TasaImp'] = round(t['imp'].amount,2)
-                otro['OtrosImp']['MntImp'] = int(round(t['Mnt']))
+                if t['imp'].no_rec:
+                    otro['MntSinCred'] = int(round(t['Mnt']))
+                else:
+                    otro['OtrosImp'] = collections.OrderedDict()
+                    otro['OtrosImp']['CodImp'] = t['imp'].sii_code
+                    otro['OtrosImp']['TasaImp'] = round(t['imp'].amount,2)
+                    otro['OtrosImp']['MntImp'] = int(round(t['Mnt']))
                 imps.append(otro)
             det['itemOtrosImp'] = imps
         if ivas:
@@ -782,7 +935,7 @@ version="1.0">
         det['TpoDoc'] = rec.tipo_boleta.sii_code
         det['TotDoc'] = det['NroDoc'] = rec.cantidad_boletas
         if rec.impuesto.amount > 0:
-            det['TpoImp'] = self._TpoImp(rec.impuesto)
+            #det['TpoImp'] = self._TpoImp(rec.impuesto)
             det['TasaImp'] = round(rec.impuesto.amount,2)
             det['MntNeto'] = int(round(rec.neto))
             det['MntIVA'] = int(round(rec.monto_impuesto))
@@ -791,15 +944,47 @@ version="1.0">
         det['MntTotal'] = int(round(rec.monto_total))
         return det
 
+    def _process_imps(self, tax_line_id, totales=0, currency=None, Neto=0, TaxMnt=0, MntExe=0, ivas={}, imp={}):
+        mnt = tax_line_id.compute_all(totales,  currency, 1)['taxes'][0]
+        if mnt['amount'] < 0:
+            mnt['amount'] *= -1
+            mnt['base'] *= -1
+        if tax_line_id.sii_code in [14, 15, 17, 18, 19, 30,31, 32 ,33, 34, 36, 37, 38, 39, 41, 47, 48]: # diferentes tipos de IVA retenidos o no
+            ivas.setdefault(tax_line_id.id, [ tax_line_id, 0])
+            ivas[tax_line_id.id][1] += mnt['amount']
+            TaxMnt += mnt['amount']
+            Neto += mnt['base']
+        else:
+            imp.setdefault(tax_line_id.id, [tax_line_id, 0])
+            imp[tax_line_id.id][1] += mnt['amount']
+            if tax_line_id.amount == 0:
+                MntExe += mnt['base']
+        return Neto, TaxMnt, MntExe, ivas, imp
+
     def getResumenBoleta(self, rec):
         det = collections.OrderedDict()
         det['TpoDoc'] = rec.document_class_id.sii_code
         det['FolioDoc'] = int(rec.sii_document_number)
-        if self.env['account.invoice.referencias'].search([('origen','=',det['FolioDoc']), ('sii_referencia_TpoDocRef','=', rec.document_class_id.id), ('sii_referencia_CodRef','=','1')]):
-            det['Anulado'] = 'A'
+        #if self.env['account.invoice.referencias'].search(
+        #        [('origen', '=', det['FolioDoc']),
+        #         ('sii_referencia_TpoDocRef', '=', rec.document_class_id.id),
+        #         ('sii_referencia_CodRef', '=', '1')
+        #        ]) or  \
+        #    (rec.document_class_id.sii_code in [39, 41] and
+        #     self.env['pos.order.referencias'].search([
+        #         ('origen', '=', det['FolioDoc']),
+        #         ('sii_referencia_TpoDocRef', '=', rec.document_class_id.id),
+        #         ('sii_referencia_CodRef', '=', '1')
+        #        ])
+        #    ):
+        #    det['Anulado'] = 'A'
         det['TpoServ'] = 3
-        det['FchEmiDoc'] = rec.date
-        det['FchVencDoc'] = rec.date
+        try:
+            det['FchEmiDoc'] = rec.date
+            det['FchVencDoc'] = rec.date
+        except:
+            det['FchEmiDoc'] = rec.date_order[:10]
+            det['FchVencDoc'] = rec.date_order[:10]
         #det['PeriodoDesde']
         #det['PeriodoHasta']
         #det['CdgSIISucur']
@@ -807,28 +992,54 @@ version="1.0">
         MntExe = 0
         TaxMnt = 0
         tasa = False
-        for l in rec.line_ids:
-            if l.tax_line_id:
-                if l.tax_line_id and l.tax_line_id.amount > 0: #supuesto iva único
-                    tasa = l.tax_line_id
+        ivas = {}
+        imp = {}
+        impuestos = {}
+        if 'lines' in rec:
+            for line in rec.lines:
+                if line.tax_ids:
+                    for t in line.tax_ids:
+                        impuestos.setdefault(t.id, [t, 0])
+                        impuestos[t.id][1] += line.price_subtotal_incl
+            for key, t in impuestos.iteritems():
+                Neto, TaxMnt, MntExe, ivas, imp = self._process_imps(t[0], t[1], rec.pricelist_id.currency_id, Neto, TaxMnt, MntExe, ivas, imp)
+        else:  # si la boleta fue hecha por contabilidad
+            for l in rec.line_ids:
+                if l.tax_line_id:
+                    if l.tax_line_id and l.tax_line_id.amount > 0: #supuesto iva único
+                        if l.tax_line_id.sii_code in [14, 15, 17, 18, 19, 30,31, 32 ,33, 34, 36, 37, 38, 39, 41, 47, 48]: # diferentes tipos de IVA retenidos o no
+                            if not l.tax_line_id.id in ivas:
+                                ivas[l.tax_line_id.id] = [l.tax_line_id, 0]
+                            if l.credit > 0:
+                                ivas[l.tax_line_id.id][1] += l.credit
+                            else:
+                                ivas[l.tax_line_id.id][1] += l.debit
+                        else:
+                            if not l.tax_line_id.id in imp:
+                                imp[l.tax_line_id.id] = [l.tax_line_id, 0]
+                            if l.credit > 0:
+                                imp[l.tax_line_id.id][1] += l.credit
+                                TaxMnt += l.credit
+                            else:
+                                imp[l.tax_line_id.id][1] += l.debit
+                                TaxMnt += l.debit
+                elif l.tax_ids and l.tax_ids[0].amount > 0:
                     if l.credit > 0:
-                        TaxMnt += l.credit
+                        Neto += l.credit
                     else:
-                        TaxMnt += l.debit
-            elif l.tax_ids and l.tax_ids.amount > 0:
-                if l.credit > 0:
-                    Neto += l.credit
-                else:
-                    Neto += l.debit
-            elif l.tax_ids and l.tax_ids.amount == 0: #caso monto exento
-                if l.credit > 0:
-                    MntExe += l.credit
-                else:
-                    MntExe += l.debit
+                        Neto += l.debit
+                elif l.tax_ids and l.tax_ids[0].amount == 0: #caso monto exento
+                    if l.credit > 0:
+                        MntExe += l.credit
+                    else:
+                        MntExe += l.debit
         #det['IndServicio']
         #det['IndSinCosto']
         det['RUTCliente'] = self.format_vat(rec.partner_id.vat)
-        det['TasaIVA'] = tasa.amount
+        if TaxMnt > 0:
+            det['MntIVA'] = int(round(TaxMnt))
+            for key, t in ivas.iteritems():
+                det['TasaIVA'] = t[0].amount
         #det['CodIntCLi']
         if MntExe > 0 :
             det['MntExe'] = int(round(MntExe,0))
@@ -844,17 +1055,20 @@ version="1.0">
             tots = []
             for o in resumen['itemOtrosImp']:
                 tot = {}
-                tot['TotOtrosImp'] = collections.OrderedDict()
-                cod = o['OtrosImp']['CodImp'].replace('_no_rec','')
-                tot['TotOtrosImp']['CodImp']  = cod
-                tot['TotOtrosImp']['TotMntImp']  = o['OtrosImp']['MntImp']
-                #tot['FctImpAdic']
-                if cod == o['OtrosImp']['CodImp']:
+                if 'MntSinCred' not in o:
+                    cod = o['OtrosImp']['CodImp']
+                    tot['TotOtrosImp'] = collections.OrderedDict()
+                    tot['TotOtrosImp']['CodImp']  = cod
+                    tot['TotOtrosImp']['TotMntImp']  = o['OtrosImp']['MntImp']
+                    #tot['FctImpAdic']
                     tot['TotOtrosImp']['TotCredImp']  = o['OtrosImp']['MntImp']
+                    tots.append(tot)
                 else:
-                    no_rec += o['OtrosImp']['MntImp']
-                tots.append(tot)
-            resumenP['itemOtrosImp'] = tots
+                    no_rec += o['MntSinCred']
+            if tots:
+                resumenP['itemOtrosImp'] = tots
+            if no_rec > 0:
+                resumenP['TotImpSinCredito'] = no_rec
             return resumenP
         seted = False
         itemOtrosImp = []
@@ -867,21 +1081,22 @@ version="1.0">
                         o['TotOtrosImp']['TotCredImp'] = r['OtrosImp']['MntImp']
                     elif cod == r['OtrosImp']['CodImp']:
                         o['TotOtrosImp']['TotCredImp'] += r['OtrosImp']['MntImp']
-                    else:
-                        no_rec += o['OtrosImp']['MntImp']
                     seted = True
                     itemOtrosImp.append(o)
-            if not seted:
-                tot = {}
-                tot['TotOtrosImp'] = collections.OrderedDict()
-                tot['TotOtrosImp']['CodImp']  = cod
-                tot['TotOtrosImp']['TotMntImp']  = r['OtrosImp']['MntImp']
-                #tot['FctImpAdic']
-                if cod == o['OtrosImp']['CodImp']:
-                    tot['TotOtrosImp']['TotCredImp'] += o['OtrosImp']['MntImp']
                 else:
                     no_rec += o['OtrosImp']['MntImp']
-                itemOtrosImp.append(tot)
+            if not seted:
+                if cod == o['OtrosImp']['CodImp']:
+                    tot = {}
+                    tot['TotOtrosImp'] = collections.OrderedDict()
+                    tot['TotOtrosImp']['CodImp']  = cod
+                    tot['TotOtrosImp']['TotMntImp']  = r['OtrosImp']['MntImp']
+                    #tot['FctImpAdic']
+                    tot['TotOtrosImp']['TotCredImp'] += o['OtrosImp']['MntImp']
+                    itemOtrosImp.append(tot)
+                else:
+                    no_rec += o['OtrosImp']['MntImp']
+
         resumenP['itemOtrosImp'] = itemOtrosImp
         if not 'TotImpSinCredito' in resumenP and no_rec > 0:
             resumenP['TotImpSinCredito'] += no_rec
@@ -925,8 +1140,12 @@ version="1.0">
             resumenP['TotMntIVA'] += resumen['MntIVA']
         elif not 'TotMntIVA' in resumenP:
             resumenP['TotMntIVA'] = 0
-        #resumenP['TotOpActivoFijo'] = resumen['TotOpActivoFijo']
-        #resumenP['TotMntIVAActivoFijo'] = resumen['TotMntIVAActivoFijo']
+        if 'MntActivoFijo' in resumen and not 'TotOpActivoFijo'in resumenP:
+            resumenP['TotOpActivoFijo'] = resumen['MntActivoFijo']
+            resumenP['TotMntIVAActivoFijo'] = resumen['MntIVAActivoFijo']
+        elif 'MntActivoFijo' in resumen:
+            resumenP['TotOpActivoFijo'] += resumen['MntActivoFijo']
+            resumenP['TotMntIVAActivoFijo'] += resumen['MntIVAActivoFijo']
         if 'IVANoRec' in resumen and not 'itemNoRec' in resumenP:
             tot = {}
             tot['TotIVANoRec'] = collections.OrderedDict()
@@ -1039,20 +1258,37 @@ version="1.0">
         resumenesPeriodo = {}
         for rec in self.with_context(lang='es_CL').move_ids:
             rec.sended = True
-            if self.tipo_operacion == 'BOLETA':
-                resumen = self.getResumenBoleta(rec)
-            else:
-                resumen = self.getResumen(rec)
-            resumenes.extend([{'Detalle':resumen}])
-            TpoDoc= resumen['TpoDoc']
+            TpoDoc = rec.document_class_id.sii_code
             if not TpoDoc in resumenesPeriodo:
                 resumenesPeriodo[TpoDoc] = {}
-            if self.tipo_operacion == 'BOLETA':
-                resumenesPeriodo[TpoDoc] = self._setResumenPeriodoBoleta(resumen, resumenesPeriodo[TpoDoc])
-                del(resumen['MntNeto'])
-                del(resumen['MntIVA'])
-                del(resumen['TasaIVA'])
+            if self.tipo_operacion == 'BOLETA' and rec.document_class_id not in [False, 0] and rec.sii_document_number in [False, 0]:
+                if not rec.sii_document_number:
+                    orders = sorted(self.env['pos.order'].search(
+                            [('account_move', '=', rec.id),
+                             ('invoice_id' , '=', False),
+                             ('sii_document_number', 'not in', [False, '0']),
+                             ('document_class_id.sii_code', 'in', [39, 41]),
+                            ]).with_context(lang='es_CL'), key=lambda r: r.sii_document_number)
+                    for order in orders:
+                        TpoDoc = order.document_class_id.sii_code
+                        if not TpoDoc in resumenesPeriodo:
+                            resumenesPeriodo[TpoDoc] = {}
+                        resumen = self.getResumenBoleta(order)
+                        resumenesPeriodo[TpoDoc] = self._setResumenPeriodoBoleta(resumen, resumenesPeriodo[TpoDoc])
+                        del(resumen['MntNeto'])
+                        del(resumen['MntIVA'])
+                        del(resumen['TasaIVA'])
+                        resumenes.extend([{'Detalle':resumen}])
+                else:
+                    resumen = self.getResumenBoleta(rec)
+                    resumenesPeriodo[TpoDoc] = self._setResumenPeriodoBoleta(resumen, resumenesPeriodo[TpoDoc])
+                    del(resumen['MntNeto'])
+                    del(resumen['MntIVA'])
+                    del(resumen['TasaIVA'])
             else:
+                resumen = self.getResumen(rec)
+                resumenes.extend([{'Detalle':resumen}])
+            if self.tipo_operacion != 'BOLETA':
                 resumenesPeriodo[TpoDoc] = self._setResumenPeriodo(resumen, resumenesPeriodo[TpoDoc])
         if self.boletas:#no es el libro de boletas especial
             for boletas in self.boletas:
@@ -1104,10 +1340,13 @@ version="1.0">
         envio_dte = self.sign_full_xml(
             envio_dte, signature_d['priv_key'], certp,
             doc_id, env)
+        self.sii_xml_request = envio_dte
         return envio_dte, doc_id
 
     @api.multi
     def do_dte_send_book(self):
+        if self.state not in ['NoEnviado', 'Rechazado']:
+            raise UserError("El Libro  ya ha sido enviado")
         envio_dte, doc_id =  self._validar()
         company_id = self.company_id
         result = self.send_xml_file(envio_dte, doc_id+'.xml', company_id)
@@ -1219,10 +1458,11 @@ class Boletas(models.Model):
 
     @api.onchange( 'neto', 'impuesto')
     def _monto_total(self):
-        monto_impuesto = 0
-        if self.impuesto and self.impuesto.amount > 0:
-            monto_impuesto = self. monto_impuesto = self.neto * (self.impuesto.amount / 100)
-        self.monto_total = self.neto + monto_impuesto
+        for b in self:
+            monto_impuesto = 0
+            if b.impuesto and b.impuesto.amount > 0:
+                monto_impuesto = b.monto_impuesto = b.neto * (b.impuesto.amount / 100)
+            b.monto_total = b.neto + monto_impuesto
 
     @api.onchange('rango_inicial', 'rango_final')
     def get_cantidad(self):
@@ -1231,3 +1471,23 @@ class Boletas(models.Model):
         if self.rango_final < self.rango_inicial:
             raise UserError("¡El rango Final no puede ser menor al inicial")
         self.cantidad_boletas = self.rango_final - self.rango_inicial +1
+
+class ImpuestosLibro(models.Model):
+    _name="account.move.book.tax"
+
+    def get_monto(self):
+        for t in self:
+            t.amount = t.debit - t.credit
+            if t.book_id.tipo_operacion in [ 'VENTA' ]:
+                t.amount = t.credit - t.debit
+
+    tax_id = fields.Many2one('account.tax', string="Impuesto")
+    credit = fields.Monetary(string="Créditos", default=0.00)
+    debit = fields.Monetary(string="Débitos", default=0.00)
+    amount = fields.Monetary(compute="get_monto", string="Monto")
+    currency_id = fields.Many2one('res.currency',
+        string='Moneda',
+        default=lambda self: self.env.user.company_id.currency_id,
+        required=True,
+        track_visibility='always')
+    book_id = fields.Many2one('account.move.book', string="Libro")

@@ -23,10 +23,11 @@ Chile - Libros mensuales de Compra y Venta
     'test': [],
     'data': [
         'views/libro_compra_venta.xml',
+        'views/libro_honorarios.xml',
         'views/consumo_folios.xml',
         'views/export.xml',
         'wizard/build_and_send_moves.xml',
-        'security/ir.model.access.csv',
+        #'security/ir.model.access.csv',
         ],
     'version': '10.0.3.1.0',
 }

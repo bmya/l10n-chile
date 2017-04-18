@@ -17,7 +17,7 @@
             <field name="name">l10n_cl.libro_compra_venta.tree</field>
             <field name="model">account.move.book</field>
             <field name="arch" type="xml">
-              <tree>
+              <tree decoration-info="state == 'draft'" decoration-muted="state == 'cancel'">
                 <field name="name" />
                 <field name="periodo_tributario" />
                 <field name="date" />
@@ -43,12 +43,31 @@
                   <field name="name" />
                   <field name="date" />
                   <field name="company_id" />
+                  <field name="currency_id" invisible="True"/>
+                  <field name="total_afecto" invisible="True"/>
+                  <field name="total_iva" invisible="True"/>
+                  <field name="total_exento" invisible="True"/>
+                  <field name="total_otros_imps" invisible="True"/>
+                  <field name="total" invisible="True"/>
                   <field name="periodo_tributario" />
                   <field name="tipo_operacion"/>
                   <field name="tipo_libro" />
                   <field name="tipo_envio" />
                   <field name="folio_notificacion" attrs="{'invisible':[('tipo_libro','not in',['ESPECIAL'])],'required':[('tipo_libro','in',['ESPECIAL'])]}" />
+                  <field name="codigo_rectificacion" attrs="{'invisible':[('tipo_libro','not in',['RECTIFICA'])],'required':[('tipo_libro','in',['RECTIFICA'])]}" />
                   <field name="fact_prop" />
+                </group>
+                <group>
+                  <field name="impuestos" options="{'no_edit': True}" context="{'tipo_operacion': tipo_operacion}">
+                    <tree>
+                      <field name="tax_id" />
+                      <field name="debit" />
+                      <field name="credit" />
+                      <field name="amount" />
+                      <field name="currency_id" invisible="True"/>
+                      <field name="book_id" invisible="True" />
+                    </tree>
+                  </field>
                 </group>
                 <notebook>
                   <page string="Movimientos">
@@ -86,7 +105,7 @@
                       <field name='sii_receipt' attrs="{'invisible':[('state', 'in', ['','NoEnviado'])]}" readonly="1"/>
                       <field name='sii_send_ident' attrs="{'invisible':[('state', 'in', ['','NoEnviado'])]}" readonly="1"/>
                       <field name='sii_xml_response' attrs="{'invisible':[('state', 'in', ['','NoEnviado'])]}" readonly="1"/>
-                      <field name='sii_xml_request' attrs="{'invisible':[('state', 'in', ['','NoEnviado'])]}" readonly="1"/>
+                      <field name='sii_xml_request' readonly="1"/>
                     </group>
                   </page>
                 </notebook>
