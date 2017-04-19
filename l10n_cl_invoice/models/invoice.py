@@ -426,6 +426,30 @@ class AccountInvoice(models.Model):
             self.fiscal_position_id = self.env.ref(
                 'l10n_cl_invoice.exempt_fp')
 
+    @api.onchange('journal_id',  'turn_issuer', 'invoice_turn')
+    def update_domain_journal(self):
+        document_classes = self._get_available_journal_document_class()
+        result = {'domain':{
+            'journal_document_class_id' : [('id', 'in', document_classes)],
+        }}
+        return result
+
+    def _default_journal_document_class_id(self, default=None):
+        ids = self._get_available_journal_document_class()
+        document_classes = self.env['account.journal.sii_document_class'].browse(ids)
+        if default:
+            for dc in document_classes:
+                if dc.sii_document_class_id.id == default:
+                    self.journal_document_class_id = dc.id
+        elif document_classes:
+            default = self.get_document_class_default(document_classes)
+        return default
+
+    @api.onchange('journal_id', 'partner_id', 'turn_issuer', 'invoice_turn')
+    def set_default_journal(self, default=None):
+        if not self.journal_document_class_id or self.journal_document_class_id.journal_id != self.journal_id:
+            self.journal_document_class_id = self._default_journal_document_class_id(default)
+
     @api.onchange('sii_document_class_id')
     def _check_vat(self):
         boleta_ids = [
