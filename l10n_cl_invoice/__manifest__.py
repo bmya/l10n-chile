@@ -10,6 +10,7 @@
     'depends': [
         'account',
         'account_accountant',
+        'l10n_cl_base',
         'l10n_cl_base_rut',
         'l10n_cl_partner_activities'
         ],
@@ -45,7 +46,7 @@
         'data/partner.xml',
         'data/country.xml',
         'data/sii.concept_type.csv',
-#        'data/account.fiscal.position.csv',
+        'data/account.fiscal.position.csv',
         'views/partner_view.xml',
         'views/company_view.xml',
         'views/country_view.xml',
