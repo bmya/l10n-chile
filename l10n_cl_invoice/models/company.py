@@ -2,7 +2,7 @@
 from odoo import fields, models
 
 
-class ResCompany(models.Model):
+class res_company(models.Model):
     _inherit = "res.company"
 
     responsability_id = fields.Many2one(

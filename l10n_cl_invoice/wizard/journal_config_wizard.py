@@ -49,15 +49,16 @@ Include unusual taxes documents, as transfer invoice, and reissue
     # def _get_journal_excempt(self):
     #     return True
 
-#    _defaults= {
-#        'debit_notes': 'own_sequence',
-#        'credit_notes': 'own_sequence',
-#    }
+    def confirm(self, context=None):
+        """
+        Confirm Configure button
+        """
+        if context is None:
+            context = {}
 
-    @api.multi
-    def confirm(self):
-        context = dict(self._context or {})
         journal_ids = context.get('active_ids', False)
+        wizard = self.browse()
+        # self.create_journals(journal_ids, wizard)
         self.create_journals(journal_ids)
 
     def create_journals(self, journal_ids):
@@ -109,11 +110,23 @@ set your company responsability in the company partner before continue.'))
             journal_id)
         if_na = [] if journal.excempt_documents else [32, 34]
         dt_types_exclude = if_zf + if_lf + if_tr + if_na
+        _logger.info(dt_types_exclude)
+
         document_class_obj = self.env['sii.document_class']
         document_class_ids = document_class_obj.search([
                 ('document_letter_id', 'in', letter_ids),
                 ('document_type', '=', document_type),
                 ('sii_code', 'not in', dt_types_exclude)])
+        # raise UserError(
+        #     'letter_ids: {}, document_type: {}, sii_code not in: {},
+        # document_class_ids: {}'.format(
+        #     letter_ids,
+        #     document_type,
+        #     dt_types_exclude,
+        #     document_class_ids))
+
+        # raise UserError(document_class_obj.browse(document_class_ids))
+
         journal_document_obj = self.env['account.journal.sii_document_class']
         sequence = 10
         for document_class_id in document_class_ids:

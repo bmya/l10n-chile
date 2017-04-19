@@ -6,4 +6,3 @@ from . import country
 from . import currency
 from . import company
 from . import invoice
-from . import sale_order

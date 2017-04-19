@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from odoo import fields, models, api, _
+from odoo.exceptions import Warning
+import logging
 
-class PaymentTerm(models.Model):
+class paymentTerm(models.Model):
     _inherit = 'account.payment.term'
 
     dte_sii_code = fields.Selection((

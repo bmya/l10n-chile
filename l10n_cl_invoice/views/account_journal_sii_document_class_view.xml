@@ -22,7 +22,6 @@
                     <sheet>
                         <group>
                             <group>
-                                <field name="name" readonly="True"/>
                                 <field name="sequence"/>
                                 <field name="journal_id"/>
                                 <field name="sii_document_class_id"/>

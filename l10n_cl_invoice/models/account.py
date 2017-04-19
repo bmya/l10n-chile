@@ -1,26 +1,19 @@
 # -*- coding: utf-8 -*-
-from odoo import api, models, fields, _
+# from odoo.osv import fields
+from odoo import fields as new_fields
+from odoo import api, models, _
 from odoo.exceptions import Warning
 import logging
 _logger = logging.getLogger(__name__)
 
-class SiiTaxTemplate(models.Model):
-    _inherit = 'account.tax.template'
 
-    sii_code = fields.Integer('SII Code')
-    sii_type = fields.Selection([ ('A','Anticipado'),('R','Retención')], string="Tipo de impuesto para el SII")
-    retencion = fields.Float(string="Valor retención", default=0.00)
-    no_rec = fields.Boolean(string="Es No Recuperable")#esto es distinto al código no recuperable, depende del manejo de recuperación de impuesto
-    activo_fijo = fields.Boolean(string="Activo Fijo", default=False)
-
-class SiiTax(models.Model):
+class SiiTaxCode(models.Model):
     _inherit = 'account.tax'
 
-    sii_code = fields.Integer('SII Code')
-    sii_type = fields.Selection([ ('A','Anticipado'),('R','Retención')], string="Tipo de impuesto para el SII")
-    retencion = fields.Float(string="Valor retención", default=0.00)
-    no_rec = fields.Boolean(string="Es No Recuperable")#esto es distinto al código no recuperable, depende del manejo de recuperación de impuesto
-    activo_fijo = fields.Boolean(string="Activo Fijo", default=False)
+    sii_code = new_fields.Integer('SII Code')
+    sii_type = new_fields.Selection([ ('A','Anticipado'),('R','Retención')], string="Tipo de impuesto para el SII")
+    retencion = new_fields.Float(string="Valor retención", default=0.00)
+    no_rec = new_fields.Boolean(string="Es No Recuperable")#esto es distinto al código no recuperable, depende del manejo de recuperación de impuesto
 
     @api.v8
     def compute_all(self, price_unit, currency=None, quantity=1.0, product=None, partner=None, discount=None):
@@ -58,12 +51,10 @@ class SiiTax(models.Model):
         # the 'Account' decimal precision + 5), and that way it's like
         # rounding after the sum of the tax amounts of each line
         prec = currency.decimal_places
-        base = round(price_unit * quantity, prec+2)
-        base = round(base, prec)
+        base = round(price_unit * quantity, prec)
         tot_discount = round(base * ((discount or 0.0) /100))
         base -= tot_discount
-        total_excluded = base
-        total_included = base
+        total_excluded = total_included = base
 
         if company_id.tax_calculation_rounding_method == 'round_globally' or not bool(self.env.context.get("round", True)):
             prec += 5
@@ -78,8 +69,7 @@ class SiiTax(models.Model):
                 total_excluded = ret['total_excluded']
                 base = ret['base']
                 total_included = ret['total_included']
-                tax_amount_retencion = ret['retencion']
-                tax_amount = total_included - total_excluded + tax_amount_retencion
+                tax_amount = total_included - total_excluded
                 taxes += ret['taxes']
                 continue
 
@@ -88,23 +78,13 @@ class SiiTax(models.Model):
                 tax_amount = round(tax_amount, prec)
             else:
                 tax_amount = currency.round(tax_amount)
-            tax_amount_retencion = 0
-            if tax.sii_type in ['R']:
-                tax_amount_retencion = tax._compute_amount_ret(base, price_unit, quantity, product, partner)
-                if company_id.tax_calculation_rounding_method == 'round_globally' or not bool(self.env.context.get("round", True)):
-                    tax_amount_retencion = round(tax_amount_retencion, prec)
-                if tax.price_include:
-                    total_excluded -= (tax_amount - tax_amount_retencion )
-                    total_included -= (tax_amount_retencion)
-                    base -= (tax_amount - tax_amount_retencion )
-                else:
-                    total_included += (tax_amount - tax_amount_retencion)
+
+            if tax.price_include:
+                total_excluded -= tax_amount
+                base -= tax_amount
             else:
-                if tax.price_include:
-                    total_excluded -= tax_amount
-                    base -= tax_amount
-                else:
-                    total_included += tax_amount
+                total_included += tax_amount
+
             # Keep base amount used for the current tax
             tax_base = base
 
@@ -115,7 +95,6 @@ class SiiTax(models.Model):
                 'id': tax.id,
                 'name': tax.with_context(**{'lang': partner.lang} if partner else {}).name,
                 'amount': tax_amount,
-                'retencion': tax_amount_retencion,
                 'base': tax_base,
                 'sequence': tax.sequence,
                 'account_id': tax.account_id.id,
@@ -134,17 +113,9 @@ class SiiTax(models.Model):
     def _compute_amount(self, base_amount, price_unit, quantity=1.0, product=None, partner=None):
         if self.amount_type == 'percent' and self.price_include:
             neto = base_amount / (1 + self.amount / 100)
-            tax = base_amount - neto
-            return tax
-        return super(SiiTax,self)._compute_amount(base_amount, price_unit, quantity, product, partner)
-
-    def _compute_amount_ret(self, base_amount, price_unit, quantity=1.0, product=None, partner=None):
-        if self.amount_type == 'percent' and self.price_include:
-            neto = base_amount / (1 + self.retencion / 100)
-            tax = base_amount - neto
-            return tax
-        if (self.amount_type == 'percent' and not self.price_include) or (self.amount_type == 'division' and self.price_include):
-            return base_amount * self.retencion / 100
+            iva = base_amount - neto
+            return iva
+        return super(SiiTaxCode,self)._compute_amount(base_amount, price_unit, quantity, product, partner)
 
 class account_move(models.Model):
     _inherit = "account.move"
@@ -174,19 +145,19 @@ class account_move(models.Model):
             document_number = self.name
         self.document_number = document_number
 
-    document_class_id = fields.Many2one(
+    document_class_id = new_fields.Many2one(
         'sii.document_class',
         'Document Type',
         copy=False,
         readonly=True, states={'draft': [('readonly', False)]}
     )
-    sii_document_number = fields.Char(
+    sii_document_number = new_fields.Char(
         string='Document Number',
         copy=False,readonly=True, states={'draft': [('readonly', False)]})
 
-    canceled = fields.Boolean(string="Canceled?", readonly=True, states={'draft': [('readonly', False)]})
-    iva_uso_comun = fields.Boolean(string="Iva Uso Común", readonly=True, states={'draft': [('readonly', False)]})
-    no_rec_code = fields.Selection([
+    canceled = new_fields.Boolean(string="Canceled?", readonly=True, states={'draft': [('readonly', False)]})
+    iva_uso_comun = new_fields.Boolean(string="Iva Uso Común", readonly=True, states={'draft': [('readonly', False)]})
+    no_rec_code = new_fields.Selection([
                     ('1','Compras destinadas a IVA a generar operaciones no gravados o exentas.'),
                     ('2','Facturas de proveedores registrados fuera de plazo.'),
                     ('3','Gastos rechazados.'),
@@ -195,60 +166,26 @@ class account_move(models.Model):
                     string="Código No recuperable",
                     readonly=True, states={'draft': [('readonly', False)]})# @TODO select 1 automático si es emisor 2Categoría
 
-    document_number = fields.Char(
+    document_number = new_fields.Char(
         compute='_get_document_number',
         string='Document Number',
         store=True,
         readonly=True, states={'draft': [('readonly', False)]})
-    sended = fields.Boolean(string="Enviado al SII", default=False,readonly=True, states={'draft': [('readonly', False)]})
-    factor_proporcionalidad = fields.Float(string="Factor proporcionalidad", default=0.00, readonly=True, states={'draft': [('readonly', False)]})
-
-    def _get_move_imps(self):
-        imps = {}
-        for l in self.line_ids:
-            if l.tax_line_id:
-                if l.tax_line_id:
-                    if not l.tax_line_id.id in imps:
-                        imps[l.tax_line_id.id] = {'tax_id':l.tax_line_id.id, 'credit':0 , 'debit': 0, 'code':l.tax_line_id.sii_code}
-                    imps[l.tax_line_id.id]['credit'] += l.credit
-                    imps[l.tax_line_id.id]['debit'] += l.debit
-                    if l.tax_line_id.activo_fijo:
-                        ActivoFijo[1] += l.credit
-            elif l.tax_ids and l.tax_ids[0].amount == 0: #caso monto exento
-                if not l.tax_ids[0].id in imps:
-                    imps[l.tax_ids[0].id] = {'tax_id':l.tax_ids[0].id, 'credit':0 , 'debit': 0, 'code':l.tax_ids[0].sii_code}
-                imps[l.tax_ids[0].id]['credit'] += l.credit
-                imps[l.tax_ids[0].id]['debit'] += l.debit
-        return imps
-
-    def totales_por_movimiento(self):
-        move_imps = self._get_move_imps()
-        imps = {'iva':0,
-                'exento':0,
-                'otros_imps':0,
-                }
-        for key, i in move_imps.items():
-            if i['code'] in [14]:
-                imps['iva'] += (i['credit'] or i['debit'])
-            elif i['code'] == 0:
-                imps['exento'] += (i['credit'] or i['debit'])
-            else:
-                imps['otros_imps'] += (i['credit'] or i['debit'])
-        imps['neto'] = self.amount - imps['otros_imps'] - imps['exento'] - imps['iva']
-        return imps
+    sended = new_fields.Boolean(string="Enviado al SII", default=False,readonly=True, states={'draft': [('readonly', False)]})
+    factor_proporcionalidad = new_fields.Float(string="Factor proporcionalidad", default=0.00, readonly=True, states={'draft': [('readonly', False)]})
 
 
 class account_move_line(models.Model):
     _inherit = "account.move.line"
 
-    document_class_id = fields.Many2one(
+    document_class_id = new_fields.Many2one(
         'sii.document_class',
         'Document Type',
         related='move_id.document_class_id',
         store=True,
         readonly=True,
     )
-    document_number = fields.Char(
+    document_number = new_fields.Char(
         string='Document Number',
         related='move_id.document_number',
         store=True,
@@ -258,61 +195,68 @@ class account_move_line(models.Model):
 class account_journal_sii_document_class(models.Model):
     _name = "account.journal.sii_document_class"
     _description = "Journal SII Documents"
-    _order = 'sequence'
+    _order = 'journal_id desc, sequence, id'
+    # _rec_name = 'short_name'
 
-    name = fields.Char(related='sii_document_class_id.name')
-    sii_document_class_id = fields.Many2one('sii.document_class',
+    @api.model
+    def name_get(self):
+        result = []
+        for record in self:
+            result.append((record.id, record.sii_document_class_id.name))
+        return result
+
+
+    sii_document_class_id = new_fields.Many2one('sii.document_class',
                                                 'Document Type', required=True)
-    sequence_id = fields.Many2one(
+    sequence_id = new_fields.Many2one(
         'ir.sequence', 'Entry Sequence', required=False,
         help="""This field contains the information related to the numbering \
         of the documents entries of this document type.""")
-    journal_id = fields.Many2one(
+    journal_id = new_fields.Many2one(
         'account.journal', 'Journal', required=True)
-    sequence = fields.Integer('Sequence',)
+    sequence = new_fields.Integer('Sequence',)
+    # short_name = new_fields.Char('Short Title')
 
 
-class account_journal(models.Model):
+class AccountJournal(models.Model):
     _inherit = "account.journal"
 
-    sucursal_id = fields.Many2one(
+    sucursal_id = new_fields.Many2one(
         'sii.sucursal',
         string="Sucursal")
 
-    sii_code = fields.Char(
+    sii_code = new_fields.Char(
         related='sucursal_id.name',
         string="Código SII Sucursal",
         readonly=True)
 
-    journal_document_class_ids = fields.One2many(
+    journal_document_class_ids = new_fields.One2many(
             'account.journal.sii_document_class', 'journal_id',
             'Documents Class',)
 
-    point_of_sale_id = fields.Many2one('sii.point_of_sale','Point of sale')
+    point_of_sale_id = new_fields.Many2one('sii.point_of_sale','Point of sale')
 
-    point_of_sale = fields.Integer(
+    point_of_sale = new_fields.Integer(
         related='point_of_sale_id.number', string='Point of sale',
         readonly=True)
 
-    use_documents = fields.Boolean(
+    use_documents = new_fields.Boolean(
         'Use Documents?', default='_get_default_doc')
 
-    document_sequence_type = fields.Selection(
+    document_sequence_type = new_fields.Selection(
             [('own_sequence', 'Own Sequence'),
              ('same_sequence', 'Same Invoice Sequence')],
             string='Document Sequence Type',
             help="Use own sequence or invoice sequence on Debit and Credit \
                  Notes?")
 
-    journal_activities_ids = fields.Many2many(
+    journal_activities_ids = new_fields.Many2many(
             'partner.activities',id1='journal_id', id2='activities_id',
             string='Journal Turns', help="""Select the turns you want to \
             invoice in this Journal""")
 
-    excempt_documents = fields.Boolean(
+    excempt_documents = new_fields.Boolean(
         'Excempt Documents Available', compute='_check_activities')
-
-    restore_mode = fields.Boolean(string="Restore Mode", default=False)
 
 
     @api.multi
@@ -352,11 +296,11 @@ class account_journal(models.Model):
 
 class ResCurrency(models.Model):
     _inherit = "res.currency"
-    sii_code = fields.Char('SII Code', size=4)
+    sii_code = new_fields.Char('SII Code', size=4)
 
 
 class PartnerActivities(models.Model):
     _inherit = 'partner.activities'
-    journal_ids = fields.Many2many(
+    journal_ids = new_fields.Many2many(
         'account.journal', id1='activities_id', id2='journal_id',
         string='Journals')
