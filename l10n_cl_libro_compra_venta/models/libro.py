@@ -142,11 +142,14 @@ class Libro(models.Model):
         'Resultado'
         , index=True, readonly=True, default='draft',
         track_visibility='onchange', copy=False,
-        help=" * The 'Draft' status is used when a user is encoding a new and unconfirmed Invoice.\n"
-             " * The 'Pro-forma' status is used the invoice does not have an invoice number.\n"
-             " * The 'Open' status is used when user create invoice, an invoice number is generated. Its in open status till user does not pay invoice.\n"
-             " * The 'Paid' status is set automatically when the invoice is paid. Its related journal entries may or may not be reconciled.\n"
-             " * The 'Cancelled' status is used when user cancel invoice.")
+        help=""" * The 'Draft' status is used when a user is encoding a new and\
+unconfirmed Invoice.\n
+* The 'Pro-forma' status is used the invoice does not have an invoice number.
+* The 'Open' status is used when user create invoice, an invoice number is \
+generated. Its in open status till user does not pay invoice.\n
+* The 'Paid' status is set automatically when the invoice is paid. Its related
+ journal entries may or may not be reconciled.\n
+* The 'Cancelled' status is used when user cancel invoice.""")
     move_ids = fields.Many2many('account.move',
         readonly=True,
         states={'draft': [('readonly', False)]})
@@ -361,16 +364,22 @@ class Libro(models.Model):
             certf += cert[76 * i:76 * (i + 1)] + '\n'
         return certf
 
-    def create_template_envio(self, RutEmisor, PeriodoTributario, FchResol, NroResol, EnvioDTE,signature_d,TipoOperacion='VENTA',TipoLibro='MENSUAL',TipoEnvio='TOTAL',FolioNotificacion="123", IdEnvio='SetDoc'):
-        if TipoOperacion == 'BOLETA' and TipoLibro not in ['ESPECIAL', 'RECTIFICA']:
+    def create_template_envio(
+            self, RutEmisor, PeriodoTributario, FchResol, NroResol,
+            EnvioDTE,signature_d,TipoOperacion='VENTA',TipoLibro='MENSUAL',
+            TipoEnvio='TOTAL',FolioNotificacion="123", IdEnvio='SetDoc'):
+        if TipoOperacion == 'BOLETA' and TipoLibro not in [
+            'ESPECIAL', 'RECTIFICA']:
             raise UserError("Boletas debe ser solamente Tipo Operación ESPECIAL")
         CodigoRectificacion = ''
         if TipoLibro in ['ESPECIAL'] or TipoOperacion in ['BOLETA']:
-            FolioNotificacion = '\n<FolioNotificacion>' + FolioNotificacion + '</FolioNotificacion>'
+            FolioNotificacion = '\n<FolioNotificacion>' + FolioNotificacion + \
+                                '</FolioNotificacion>'
         else:
             FolioNotificacion =''
         if TipoLibro == 'RECTIFICA':
-            CodigoRectificacion = '\n<CodAutRec>' + self.codigo_rectificacion + '</CodAutRec>'
+            CodigoRectificacion = '\n<CodAutRec>' + \
+                                  self.codigo_rectificacion + '</CodAutRec>'
 
         if TipoOperacion in ['BOLETA']:
             TipoOperacion = ''
@@ -448,7 +457,8 @@ class Libro(models.Model):
      @version: 2015-04-01
     '''
     def get_seed(self, company_id):
-        #En caso de que haya un problema con la validación de certificado del sii ( por una mala implementación de ellos)
+        #En caso de que haya un problema con la validación de certificado del
+        #  sii ( por una mala implementación de ellos)
         #esto omite la validacion
         try:
             import ssl
@@ -819,14 +829,18 @@ version="1.0">
         MntExe = 0
         MntIVA = 0
         Neto = 0
-        ActivoFijo = [0,0]
+        ActivoFijo = [0, 0]
         ivas = {}
         for l in rec.line_ids:
             if l.tax_line_id:
                 if l.tax_line_id and l.tax_line_id.amount > 0:
-                    if l.tax_line_id.sii_code in [14, 15, 17, 18, 19, 30,31, 32 ,33, 34, 36, 37, 38, 39, 41, 47, 48]: # diferentes tipos de IVA retenidos o no
+                    if l.tax_line_id.sii_code in [
+                           14, 15, 17, 18, 19, 30, 31, 32, 33, 34, 36, 37, 38,
+                            39, 41, 47, 48]:
+                        # diferentes tipos de IVA retenidos o no
                         if not l.tax_line_id.id in ivas:
-                            ivas[l.tax_line_id.id] = {'det': l.tax_line_id, 'TaxMnt': 0}
+                            ivas[l.tax_line_id.id] = {
+                                'det': l.tax_line_id, 'TaxMnt': 0, }
                         if l.credit > 0:
                             ivas[l.tax_line_id.id]['TaxMnt'] += l.credit
                             if l.tax_line_id.activo_fijo:
@@ -837,7 +851,8 @@ version="1.0">
                                 ActivoFijo[1] += l.debit
                     else:
                         if not l.tax_line_id.id in imp:
-                            imp[l.tax_line_id.id] = {'imp':l.tax_line_id, 'Mnt':0}
+                            imp[l.tax_line_id.id] = {
+                                'imp': l.tax_line_id, 'Mnt': 0, }
                         if l.credit > 0:
                             imp[l.tax_line_id.id]['Mnt'] += l.credit
                             TaxMnt += l.credit
@@ -846,7 +861,7 @@ version="1.0">
                             TaxMnt += l.debit
             elif l.tax_ids and l.tax_ids[0].no_rec:
                 if not l.tax_ids[0].id in imp:
-                    imp[l.tax_ids[0].id] = {'imp':l.tax_ids[0], 'Mnt':0}
+                    imp[l.tax_ids[0].id] = {'imp': l.tax_ids[0], 'Mnt': 0}
                 if l.credit > 0:
                     imp[l.tax_ids[0].id]['Mnt'] += l.credit
                     TaxMnt += l.credit
@@ -862,7 +877,8 @@ version="1.0">
                     Neto += l.debit
                     if l.tax_ids[0].activo_fijo:
                         ActivoFijo[0] += l.debit
-            elif l.tax_ids and l.tax_ids[0].amount == 0: #caso monto exento
+            elif l.tax_ids and l.tax_ids[0].amount == 0:
+                #  caso monto exento
                 if l.credit > 0:
                     MntExe += l.credit
                 else:
@@ -880,7 +896,8 @@ version="1.0">
         det['RUTDoc'] = self.format_vat(rec.partner_id.vat)
         det['RznSoc'] = rec.partner_id.name[:50]
         if inv.referencias and inv.referencias[0].sii_referencia_CodRef:
-            det['TpoDocRef'] = inv.referencias[0].sii_referencia_TpoDocRef.sii_code
+            det['TpoDocRef'] = inv.referencias[
+                0].sii_referencia_TpoDocRef.sii_code
             det['FolioDocRef'] = inv.referencias[0].origen
         if MntExe > 0 :
             det['MntExe'] = int(round(MntExe,0))
@@ -888,7 +905,8 @@ version="1.0">
             det['MntExe'] = 0
         if Neto > 0:
             det['MntNeto'] = int(round(Neto))
-            if ivas: # Es algún tipo de iva que puede ser adicional o anticipado
+            if ivas:
+                # Es algún tipo de iva que puede ser adicional o anticipado
                 MntIVA = 0
                 for key, i in ivas.items():
                     if i['det'].sii_code not in [14]:
@@ -926,8 +944,10 @@ version="1.0">
                         det['IVARetTotal'] = int(round(i['TaxMnt']))
                         MntIVA -= det['IVARetTotal']
                     else:
-                        det['IVARetParcial'] = int(round(Neto * (tasa.retencion / 100)))
-                        det['IVANoRetenido'] = int(round(i['TaxMnt'] - (Neto * (tasa.retencion / 100))))
+                        det['IVARetParcial'] = int(round(
+                            Neto * (tasa.retencion / 100)))
+                        det['IVANoRetenido'] = int(round(
+                            i['TaxMnt'] - (Neto * (tasa.retencion / 100))))
                         MntIVA -= det['IVARetParcial']
         monto_total = int(round((Neto + MntExe + TaxMnt + MntIVA), 0))
         if no_product :
@@ -949,12 +969,16 @@ version="1.0">
         det['MntTotal'] = int(round(rec.monto_total))
         return det
 
-    def _process_imps(self, tax_line_id, totales=0, currency=None, Neto=0, TaxMnt=0, MntExe=0, ivas={}, imp={}):
+    def _process_imps(
+            self, tax_line_id, totales=0, currency=None, Neto=0, TaxMnt=0,
+            MntExe=0, ivas={}, imp={}):
         mnt = tax_line_id.compute_all(totales,  currency, 1)['taxes'][0]
         if mnt['amount'] < 0:
             mnt['amount'] *= -1
             mnt['base'] *= -1
-        if tax_line_id.sii_code in [14, 15, 17, 18, 19, 30,31, 32 ,33, 34, 36, 37, 38, 39, 41, 47, 48]: # diferentes tipos de IVA retenidos o no
+        if tax_line_id.sii_code in [
+            14, 15, 17, 18, 19, 30,31, 32 ,33, 34, 36, 37, 38, 39, 41, 47, 48]:
+            # diferentes tipos de IVA retenidos o no
             ivas.setdefault(tax_line_id.id, [ tax_line_id, 0])
             ivas[tax_line_id.id][1] += mnt['amount']
             TaxMnt += mnt['amount']
@@ -1007,12 +1031,18 @@ version="1.0">
                         impuestos.setdefault(t.id, [t, 0])
                         impuestos[t.id][1] += line.price_subtotal_incl
             for key, t in impuestos.iteritems():
-                Neto, TaxMnt, MntExe, ivas, imp = self._process_imps(t[0], t[1], rec.pricelist_id.currency_id, Neto, TaxMnt, MntExe, ivas, imp)
+                Neto, TaxMnt, MntExe, ivas, imp = self._process_imps(
+                    t[0], t[1], rec.pricelist_id.currency_id, Neto, TaxMnt,
+                    MntExe, ivas, imp)
         else:  # si la boleta fue hecha por contabilidad
             for l in rec.line_ids:
                 if l.tax_line_id:
-                    if l.tax_line_id and l.tax_line_id.amount > 0: #supuesto iva único
-                        if l.tax_line_id.sii_code in [14, 15, 17, 18, 19, 30,31, 32 ,33, 34, 36, 37, 38, 39, 41, 47, 48]: # diferentes tipos de IVA retenidos o no
+                    if l.tax_line_id and l.tax_line_id.amount > 0:
+                        # supuesto iva único
+                        if l.tax_line_id.sii_code in [
+                                14, 15, 17, 18, 19, 30, 31, 32, 33, 34, 36, 37,
+                                38, 39, 41, 47, 48]:
+                            #  diferentes tipos de IVA retenidos o no
                             if not l.tax_line_id.id in ivas:
                                 ivas[l.tax_line_id.id] = [l.tax_line_id, 0]
                             if l.credit > 0:
@@ -1055,7 +1085,8 @@ version="1.0">
         return det
 
     def _procesar_otros_imp(self, resumen, resumenP):
-        no_rec = 0 if 'TotImpSinCredito' not in resumenP else resumenP['TotImpSinCredito']
+        no_rec = 0 if 'TotImpSinCredito' not in resumenP else resumenP[
+            'TotImpSinCredito']
         if not 'itemOtrosImp' in resumenP :
             tots = []
             for o in resumen['itemOtrosImp']:
@@ -1082,10 +1113,13 @@ version="1.0">
             for o in resumenP['itemOtrosImp']:
                 if o['TotOtrosImp']['CodImp'] == cod:
                     o['TotOtrosImp']['TotMntImp'] += r['OtrosImp']['MntImp']
-                    if cod == r['OtrosImp']['CodImp'] and not 'TotCredImp' in o['TotOtrosImp']:
-                        o['TotOtrosImp']['TotCredImp'] = r['OtrosImp']['MntImp']
+                    if cod == r['OtrosImp']['CodImp'] and not \
+                                    'TotCredImp' in o['TotOtrosImp']:
+                        o['TotOtrosImp']['TotCredImp'] = r[
+                            'OtrosImp']['MntImp']
                     elif cod == r['OtrosImp']['CodImp']:
-                        o['TotOtrosImp']['TotCredImp'] += r['OtrosImp']['MntImp']
+                        o['TotOtrosImp']['TotCredImp'] += r[
+                            'OtrosImp']['MntImp']
                     seted = True
                     itemOtrosImp.append(o)
                 else:
@@ -1154,25 +1188,31 @@ version="1.0">
         if 'IVANoRec' in resumen and not 'itemNoRec' in resumenP:
             tot = {}
             tot['TotIVANoRec'] = collections.OrderedDict()
-            tot['TotIVANoRec']['CodIVANoRec'] = resumen['IVANoRec']['CodIVANoRec']
+            tot['TotIVANoRec']['CodIVANoRec'] = resumen[
+                'IVANoRec']['CodIVANoRec']
             tot['TotIVANoRec']['TotOpIVANoRec'] = 1
-            tot['TotIVANoRec']['TotMntIVANoRec'] = resumen['IVANoRec']['MntIVANoRec']
+            tot['TotIVANoRec']['TotMntIVANoRec'] = resumen[
+                'IVANoRec']['MntIVANoRec']
             resumenP['itemNoRec'] = [tot]
         elif 'IVANoRec' in resumen:
             seted = False
             itemNoRec = []
             for r in resumenP['itemNoRec']:
-                if r['TotIVANoRec']['CodIVANoRec'] == resumen['IVANoRec']['CodIVANoRec']:
+                if r['TotIVANoRec']['CodIVANoRec'] == resumen[
+                    'IVANoRec']['CodIVANoRec']:
                     r['TotIVANoRec']['TotOpIVANoRec'] += 1
-                    r['TotIVANoRec']['TotMntIVANoRec'] += resumen['IVANoRec']['MntIVANoRec']
+                    r['TotIVANoRec']['TotMntIVANoRec'] += resumen[
+                        'IVANoRec']['MntIVANoRec']
                     seted = True
                 itemNoRec.extend([r])
             if not seted:
                 tot = {}
                 tot['TotIVANoRec'] = collections.OrderedDict()
-                tot['TotIVANoRec']['CodIVANoRec'] = resumen['IVANoRec']['CodIVANoRec']
+                tot['TotIVANoRec']['CodIVANoRec'] = resumen[
+                    'IVANoRec']['CodIVANoRec']
                 tot['TotIVANoRec']['TotOpIVANoRec'] = 1
-                tot['TotIVANoRec']['TotMntIVANoRec'] = resumen['IVANoRec']['MntIVANoRec']
+                tot['TotIVANoRec']['TotMntIVANoRec'] = resumen[
+                    'IVANoRec']['MntIVANoRec']
                 itemNoRec.extend([tot])
             resumenP['itemNoRec'] = itemNoRec
 
@@ -1180,11 +1220,13 @@ version="1.0">
             resumenP['TotOpIVAUsoComun'] = 1
             resumenP['TotIVAUsoComun'] = resumen['IVAUsoComun']
             resumenP['FctProp'] = self.fact_prop
-            resumenP['TotCredIVAUsoComun'] = int(round((resumen['IVAUsoComun'] * self.fact_prop )))
+            resumenP['TotCredIVAUsoComun'] = int(
+                round((resumen['IVAUsoComun'] * self.fact_prop)))
         elif 'IVAUsoComun' in resumen:
             resumenP['TotOpIVAUsoComun'] += 1
             resumenP['TotIVAUsoComun'] += resumen['IVAUsoComun']
-            resumenP['TotCredIVAUsoComun'] += int(round((resumen['IVAUsoComun'] * self.fact_prop )))
+            resumenP['TotCredIVAUsoComun'] += int(
+                round((resumen['IVAUsoComun'] * self.fact_prop)))
         if 'itemOtrosImp' in resumen:
             resumenP = self._procesar_otros_imp(resumen, resumenP)
         if 'IVARetTotal' in resumen and not 'TotOpIVARetTotal' in resumenP:
@@ -1215,16 +1257,19 @@ version="1.0">
             return resumenP
         if not 'TotalesServicio' in resumenP:
             resumenP['TotalesServicio'] = collections.OrderedDict()
-            resumenP['TotalesServicio']['TpoServ'] = resumen['TpoServ']#@TODO separar por tipo de servicio
+            resumenP['TotalesServicio']['TpoServ'] = resumen['TpoServ']
+            # separar por tipo de servicio
             resumenP['TotalesServicio']['TotDoc'] = 0
         resumenP['TotalesServicio']['TotDoc'] += 1
-        if 'MntExe' in resumen and not 'TotMntExe' in resumenP['TotalesServicio']:
+        if 'MntExe' in resumen and not 'TotMntExe' in resumenP[
+            'TotalesServicio']:
             resumenP['TotalesServicio']['TotMntExe'] = resumen['MntExe']
         elif 'MntExe' in resumen:
             resumenP['TotalesServicio']['TotMntExe'] += resumen['MntExe']
         elif not 'TotMntExe' in resumenP['TotalesServicio']:
             resumenP['TotalesServicio']['TotMntExe'] = 0
-        if 'MntNeto' in resumen and not 'TotMntNeto' in resumenP['TotalesServicio']:
+        if 'MntNeto' in resumen and not 'TotMntNeto' in resumenP[
+            'TotalesServicio']:
             resumenP['TotalesServicio']['TotMntNeto'] = resumen['MntNeto']
         elif 'MntNeto' in resumen:
             resumenP['TotalesServicio']['TotMntNeto'] += resumen['MntNeto']
@@ -1232,7 +1277,8 @@ version="1.0">
             resumenP['TotalesServicio']['TotMntNeto'] = 0
         if 'MntIVA' in resumen:
             resumenP['TotalesServicio']['TasaIVA'] = resumen['TasaIVA']
-        if 'MntIVA' in resumen and not 'TotMntIVA' in resumenP['TotalesServicio']:
+        if 'MntIVA' in resumen and not 'TotMntIVA' in resumenP[
+            'TotalesServicio']:
             resumenP['TotalesServicio']['TotMntIVA'] = resumen['MntIVA']
         elif 'MntIVA' in resumen:
             resumenP['TotalesServicio']['TotMntIVA'] += resumen['MntIVA']
@@ -1266,27 +1312,33 @@ version="1.0">
             TpoDoc = rec.document_class_id.sii_code
             if not TpoDoc in resumenesPeriodo:
                 resumenesPeriodo[TpoDoc] = {}
-            if self.tipo_operacion == 'BOLETA' and rec.document_class_id not in [False, 0] and rec.sii_document_number in [False, 0]:
+            if self.tipo_operacion == 'BOLETA' and rec.document_class_id \
+                    not in [False, 0] and rec.sii_document_number in [False, 0]:
                 if not rec.sii_document_number:
                     orders = sorted(self.env['pos.order'].search(
                             [('account_move', '=', rec.id),
                              ('invoice_id' , '=', False),
                              ('sii_document_number', 'not in', [False, '0']),
                              ('document_class_id.sii_code', 'in', [39, 41]),
-                            ]).with_context(lang='es_CL'), key=lambda r: r.sii_document_number)
+                            ]).with_context(lang='es_CL'),
+                                    key=lambda r: r.sii_document_number)
                     for order in orders:
                         TpoDoc = order.document_class_id.sii_code
                         if not TpoDoc in resumenesPeriodo:
                             resumenesPeriodo[TpoDoc] = {}
                         resumen = self.getResumenBoleta(order)
-                        resumenesPeriodo[TpoDoc] = self._setResumenPeriodoBoleta(resumen, resumenesPeriodo[TpoDoc])
+                        resumenesPeriodo[TpoDoc] = \
+                            self._setResumenPeriodoBoleta(
+                                resumen, resumenesPeriodo[TpoDoc])
                         del(resumen['MntNeto'])
                         del(resumen['MntIVA'])
                         del(resumen['TasaIVA'])
                         resumenes.extend([{'Detalle':resumen}])
                 else:
                     resumen = self.getResumenBoleta(rec)
-                    resumenesPeriodo[TpoDoc] = self._setResumenPeriodoBoleta(resumen, resumenesPeriodo[TpoDoc])
+                    resumenesPeriodo[TpoDoc] = \
+                        self._setResumenPeriodoBoleta(
+                            resumen, resumenesPeriodo[TpoDoc])
                     del(resumen['MntNeto'])
                     del(resumen['MntIVA'])
                     del(resumen['TasaIVA'])
@@ -1294,17 +1346,22 @@ version="1.0">
                 resumen = self.getResumen(rec)
                 resumenes.extend([{'Detalle':resumen}])
             if self.tipo_operacion != 'BOLETA':
-                resumenesPeriodo[TpoDoc] = self._setResumenPeriodo(resumen, resumenesPeriodo[TpoDoc])
+                resumenesPeriodo[TpoDoc] = self._setResumenPeriodo(
+                    resumen, resumenesPeriodo[TpoDoc])
         if self.boletas:#no es el libro de boletas especial
             for boletas in self.boletas:
                 resumenesPeriodo[boletas.tipo_boleta.id] = {}
                 resumen = self._setResumenBoletas(boletas)
                 del(resumen['TotDoc'])
-                resumenesPeriodo[boletas.tipo_boleta.id] = self._setResumenPeriodo(resumen, resumenesPeriodo[boletas.tipo_boleta.id])
+                resumenesPeriodo[boletas.tipo_boleta.id] = \
+                    self._setResumenPeriodo(
+                        resumen, resumenesPeriodo[boletas.tipo_boleta.id])
                 #resumenes.extend([{'Detalle':resumen}])
-        lista = ['TpoDoc', 'TpoImp', 'TotDoc', 'TotAnulado', 'TotMntExe', 'TotMntNeto', 'TotalesServicio', 'TotOpIVARec',
-                'TotMntIVA', 'TotMntIVA', 'TotOpActivoFijo', 'TotMntIVAActivoFijo', 'itemNoRec', 'TotOpIVAUsoComun',
-                'TotIVAUsoComun', 'FctProp', 'TotCredIVAUsoComun', 'itemOtrosImp', 'TotImpSinCredito', 'TotIVARetTotal',
+        lista = ['TpoDoc', 'TpoImp', 'TotDoc', 'TotAnulado', 'TotMntExe',
+                 'TotMntNeto', 'TotalesServicio', 'TotOpIVARec', 'TotMntIVA',
+                 'TotMntIVA', 'TotOpActivoFijo', 'TotMntIVAActivoFijo',
+                 'itemNoRec', 'TotOpIVAUsoComun', 'TotIVAUsoComun', 'FctProp',
+                 'TotCredIVAUsoComun', 'itemOtrosImp', 'TotImpSinCredito', 'TotIVARetTotal',
                   'TotIVARetParcial', 'TotMntTotal', 'TotIVANoRetenido',
                  'TotTabPuros', 'TotTabCigarrillos', 'TotTabElaborado', 'TotImpVehiculo',]
         ResumenPeriodo=[]

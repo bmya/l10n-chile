@@ -369,6 +369,7 @@ class AccountInvoice(models.Model):
             line.invoice_line_tax_ids = False
             line.invoice_line_tax_ids = tax_ids
 
+    @api.one
     def _get_available_journal_document_class(self):
         invoice_type = self.type
         document_class_ids = []
@@ -732,12 +733,12 @@ facturas o facturas no afectas')
                             invoice.reference, invoice.partner_id.name))
         return self.write({'state': 'open'})
 
-    @api.model
-    def create(self, vals):
-        inv = super(account_invoice, self).create(vals)
-        inv.update_domain_journal()
-        inv.set_default_journal()
-        return inv
+    # @api.model
+    # def create(self, vals):
+    #     inv = super(AccountInvoice, self).create(vals)
+    #     inv.update_domain_journal()
+    #     inv.set_default_journal()
+    #     return inv
 
     @api.model
     def _default_journal(self):
@@ -754,7 +755,7 @@ facturas o facturas no afectas')
             ]
             journal_id = self.env['account.journal'].search(domain, limit=1)
             return journal_id
-        return super(account_invoice, self)._default_journal()
+        return super(AccountInvoice, self)._default_journal()
 
 
 class Referencias(models.Model):
