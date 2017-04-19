@@ -83,18 +83,21 @@ except ImportError:
     _logger.info('Cannot import SOOAPpy')
 
 try:
-    from signxml import xmldsig, methods
+    from signxml import XMLSigner, XMLVerifier, methods
 except ImportError:
     _logger.info('Cannot import signxml')
 
-server_url = {'SIIHOMO':'https://maullin.sii.cl/DTEWS/','SII':'https://palena.sii.cl/DTEWS/'}
+server_url = {
+    'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
+    'SII':'https://palena.sii.cl/DTEWS/', }
 
 BC = '''-----BEGIN CERTIFICATE-----\n'''
 EC = '''\n-----END CERTIFICATE-----\n'''
 
 # hardcodeamos este valor por ahora
 import os
-xsdpath = os.path.dirname(os.path.realpath(__file__)).replace('/models','/static/xsd/')
+xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
+    '/models', '/static/xsd/')
 
 connection_status = {
     '0': 'Upload OK',
@@ -106,8 +109,7 @@ connection_status = {
     '7': 'Esquema Invalido',
     '8': 'Firma del Documento',
     '9': 'Sistema Bloqueado',
-    'Otro': 'Error Interno.',
-}
+    'Otro': 'Error Interno.', }
 
 class Libro(models.Model):
     _name = "account.move.book"
@@ -150,8 +152,8 @@ class Libro(models.Model):
         states={'draft': [('readonly', False)]})
 
     tipo_libro = fields.Selection([
-                ('ESPECIAL','Especial'),
-                ('MENSUAL','Mensual'),
+                ('ESPECIAL', 'Especial'),
+                ('MENSUAL', 'Mensual'),
                 ('RECTIFICA', 'Rectifica'),
                 ],
                 string="Tipo de Libro",
@@ -161,9 +163,9 @@ class Libro(models.Model):
                 states={'draft': [('readonly', False)]}
             )
     tipo_operacion = fields.Selection([
-                ('COMPRA','Compras'),
-                ('VENTA','Ventas'),
-                ('BOLETA','Boleta'),
+                ('COMPRA', 'Compras'),
+                ('VENTA', 'Ventas'),
+                ('BOLETA', 'Boleta'),
                 ],
                 string="Tipo de operación",
                 default="COMPRA",
@@ -172,10 +174,10 @@ class Libro(models.Model):
                 states={'draft': [('readonly', False)]}
             )
     tipo_envio = fields.Selection([
-                ('AJUSTE','Ajuste'),
-                ('TOTAL','Total'),
-                ('PARCIAL','Parcial'),
-                ('TOTAL','Total'),
+                ('AJUSTE', 'Ajuste'),
+                ('TOTAL', 'Total'),
+                ('PARCIAL', 'Parcial'),
+                ('TOTAL', 'Total'),
                 ],
                 string="Tipo de Envío",
                 default="TOTAL",
@@ -257,7 +259,7 @@ class Libro(models.Model):
     codigo_rectificacion = fields.Char(string="Código de Rectificación")
 
     _defaults = {
-        'date' : datetime.now(),
+        'date': datetime.now(),
         'periodo_tributario': datetime.now().strftime('%Y-%m'),
     }
 
@@ -274,27 +276,30 @@ class Libro(models.Model):
             ('date' , '<', next_month.strftime('%Y-%m-%d')),
             ]
         domain = 'sale'
-        if self.tipo_operacion in [ 'COMPRA' ]:
+        if self.tipo_operacion in ['COMPRA']:
             two_month = current + relativedelta.relativedelta(months=-2)
-            query.append(('date' , '>=', two_month.strftime('%Y-%m-%d')))
+            query.append(('date', '>=', two_month.strftime('%Y-%m-%d')))
             domain = 'purchase'
         query.append(('journal_id.type', '=', domain))
         if self.tipo_operacion in [ 'VENTA' ]:
             docs.extend([35, 38, 39, 41])
             libro_boletas = self.env['account.move.consumo_folios'].search([
                 ('state','not in', ['draft']),
-                ('fecha_inicio','>=', current),
-                ('fecha_inicio','<', next_month),
+                ('fecha_inicio', '>=', current),
+                ('fecha_inicio', '<', next_month),
             ])
             if libro_boletas:
-                lines = [[5,],]
+                lines = [[5, ], ]
                 for det in libro_boletas.detalles:
                     line = {
                         'currency_id' : self.env.user.company_id.currency_id,
                         'tipo_boleta' : det.tpo_doc,
                         'cantidad_boletas' : det.cantidad ,
                         'neto' : det.monto_neto,
-                        'impuesto' : self.env['account.tax'].search([('sii_code','=', 14), ('type_tax_use','=','sale'),('company','=',self.company_id.id)],limit=1).id,
+                        'impuesto': self.env['account.tax'].search(
+                            [('sii_code', '=', 14),
+                             ('type_tax_use', '=', 'sale'),
+                             ('company', '=', self.company_id.id)], limit=1).id,
                         'monto_impuesto' : det.monto_iva,
                         'monto_exento': det.monto_exento,
                         }
@@ -493,23 +498,22 @@ version="1.0">
 {1}</LibroBoleta>'''.format(xsd, doc)
         return xml
 
-    '''
-    Funcion usada en autenticacion en SII
-    Firma de la semilla utilizando biblioteca signxml
-    De autoria de Andrei Kislyuk https://github.com/kislyuk/signxml
-    (en este caso particular esta probada la efectividad de la libreria)
-     @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-     @version: 2016-06-01
-    '''
-    def sign_seed(self, message, privkey, cert):
+    @staticmethod
+    def sign_seed(message, privkey, cert):
+        """
+        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+        @version: 2016-06-01
+        """
+        _logger.info('SIGNING WITH SIGN_SEED ##### ------ #####')
         doc = etree.fromstring(message)
-        signed_node = xmldsig(
-            doc, digest_algorithm=u'sha1').sign(
-            method=methods.enveloped, algorithm=u'rsa-sha1',
-            key=privkey.encode('ascii'),
-            cert=cert)
+        signed_node = XMLSigner(
+            method=methods.enveloped, signature_algorithm=u'rsa-sha1',
+            digest_algorithm=u'sha1').sign(
+            doc, key=privkey.encode('ascii'), passphrase=None, cert=cert,
+            key_name=None, key_info=None, id_attribute=None)
         msg = etree.tostring(
             signed_node, pretty_print=True).replace('ds:', '')
+        _logger.info('message: {}'.format(msg))
         return msg
 
     '''
@@ -521,7 +525,7 @@ version="1.0">
     '''
     def get_token(self, seed_file,company_id):
         url = server_url[company_id.dte_service_provider] + 'GetTokenFromSeed.jws?WSDL'
-        ns = 'urn:'+ server_url[company_id.dte_service_provider] +'GetTokenFromSeed.jws'
+        ns = 'urn:' + server_url[company_id.dte_service_provider] +'GetTokenFromSeed.jws'
         _server = SOAPProxy(url, ns)
         tree = etree.fromstring(seed_file)
         ss = etree.tostring(tree, pretty_print=True, encoding='iso-8859-1')
@@ -679,10 +683,11 @@ version="1.0">
         return resolution_data
 
     @api.multi
-    def send_xml_file(self, envio_dte=None, file_name="envio",company_id=False):
+    def send_xml_file(
+            self, envio_dte=None, file_name="envio", company_id=False):
         if not company_id.dte_service_provider:
             raise UserError(_("Not Service provider selected!"))
-        try:
+        if True:  # try:
             signature_d = self.get_digital_signature_pem(
                 company_id)
             seed = self.get_seed(company_id)
@@ -691,7 +696,7 @@ version="1.0">
                 template_string, signature_d['priv_key'],
                 signature_d['cert'])
             token = self.get_token(seed_firmado,company_id)
-        except:
+        else:  # except:
             _logger.info(connection_status)
             raise UserError(connection_status)
 
@@ -1347,19 +1352,19 @@ version="1.0">
     def do_dte_send_book(self):
         if self.state not in ['NoEnviado', 'Rechazado']:
             raise UserError("El Libro  ya ha sido enviado")
-        envio_dte, doc_id =  self._validar()
+        envio_dte, doc_id = self._validar()
         company_id = self.company_id
         result = self.send_xml_file(envio_dte, doc_id+'.xml', company_id)
         self.write({
-            'sii_xml_response':result['sii_xml_response'],
-            'sii_send_ident':result['sii_send_ident'],
+            'sii_xml_response': result['sii_xml_response'],
+            'sii_send_ident': result['sii_send_ident'],
             'state': result['sii_result'],
-            'sii_xml_request':envio_dte
+            'sii_xml_request': envio_dte
             })
 
     def _get_send_status(self, track_id, signature_d,token):
         url = server_url[self.company_id.dte_service_provider] + 'QueryEstUp.jws?WSDL'
-        ns = 'urn:'+ server_url[self.company_id.dte_service_provider] + 'QueryEstUp.jws'
+        ns = 'urn:' + server_url[self.company_id.dte_service_provider] + 'QueryEstUp.jws'
         _server = SOAPProxy(url, ns)
         respuesta = _server.getEstUp(self.company_id.vat[2:-1],self.company_id.vat[-1],track_id,token)
         self.sii_receipt = respuesta

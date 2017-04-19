@@ -79,7 +79,6 @@ invoice should be unreconciled first. You can only refund this invoice.'))
                     refund = inv.refund(
                         form.date_invoice, date, description, inv.journal_id.id)
                     refund.compute_taxes()
-                    pass
                 type = inv.type
                 if inv.type in ['out_invoice', 'out_refund']:
                     refund.type = 'out_refund'

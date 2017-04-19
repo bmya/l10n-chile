@@ -10,7 +10,7 @@ TYPE2JOURNAL = {
     'out_invoice': 'sale',
     'in_invoice': 'purchase',
     'out_refund': 'sale',
-    'in_refund': 'purchase'}
+    'in_refund': 'purchase', }
 
 
 class AccountInvoiceLine(models.Model):
@@ -61,13 +61,10 @@ class AccountInvoiceTax(models.Model):
                 if tax.tax_id in line.invoice_line_tax_ids and \
                         tax.tax_id.price_include:
                     price_tax_included += line.price_tax_included
-            if price_tax_included > 0:
-                base = round(
-                    price_tax_included / (1 + tax.tax_id.amount / 100))
-                iva_round = round(base * (tax.tax_id.amount / 100))
-                if round(base + iva_round) != round(price_tax_included):
-                    base = int(
-                        price_tax_included / (1 + tax.tax_id.amount / 100))
+            if price_tax_included > 0 and tax.tax_id.sii_type in ["R"]:
+                base = round(price_tax_included)
+            elif price_tax_included > 0:
+                base = round(price_tax_included / (1 + tax.tax_id.amount / 100.0))
             neto += base
         return neto
 
@@ -82,6 +79,11 @@ class AccountInvoiceTax(models.Model):
         else:
             super(AccountInvoiceTax, self)._compute_base_amount()
 
+    amount_retencion = fields.Monetary(string="Retención",
+        default=0.00,)
+    retencion_account_id = fields.Many2one('account.account',
+       string='Tax Account',
+       domain=[('deprecated', '=', False)])
 
 class AccountInvoice(models.Model):
     _inherit = "account.invoice"
@@ -135,18 +137,22 @@ class AccountInvoice(models.Model):
     def _compute_amount(self):
         for inv in self:
             amount_tax = 0
+            amount_retencion = 0
             included = False
             for tax in inv.tax_line_ids:
                 if tax.tax_id.price_include:
                     included = True
                 amount_tax += tax.amount
+                amount_retencion  += tax.amount_retencion
+            inv.amount_retencion = amount_retencion
             if included:
                 neto = inv.tax_line_ids._getNeto()
+                amount_retencion  += amount_retencion
             else:
                 neto = sum(line.price_subtotal for line in inv.invoice_line_ids)
             inv.amount_untaxed = neto
             inv.amount_tax = amount_tax
-            inv.amount_total = inv.amount_untaxed + inv.amount_tax
+            inv.amount_total = inv.amount_untaxed + inv.amount_tax - amount_retencion
             amount_total_company_signed = inv.amount_total
             amount_untaxed_signed = inv.amount_untaxed
             if inv.currency_id and inv.currency_id != \
@@ -160,11 +166,59 @@ class AccountInvoice(models.Model):
             inv.amount_total_signed = inv.amount_total * sign
             inv.amount_untaxed_signed = amount_untaxed_signed * sign
 
+    def _prepare_tax_line_vals(self, line, tax):
+        vals = super(AccountInvoice, self)._prepare_tax_line_vals(line, tax)
+        vals['amount_retencion'] = tax['retencion']
+        vals['retencion_account_id'] = self.type in ('out_invoice', 'in_invoice') and (tax['refund_account_id'] or line.account_id.id) or (tax['account_id'] or line.account_id.id)
+        return vals
+
+    @api.model
+    def tax_line_move_line_get(self):
+        res = []
+        # keep track of taxes already processed
+        done_taxes = []
+        # loop the invoice.tax.line in reversal sequence
+        for tax_line in sorted(self.tax_line_ids, key=lambda x: -x.sequence):
+            if tax_line.amount:
+                tax = tax_line.tax_id
+                if tax.amount_type == "group":
+                    for child_tax in tax.children_tax_ids:
+                        done_taxes.append(child_tax.id)
+                done_taxes.append(tax.id)
+                if (tax_line.amount - tax_line.amount_retencion) > 0:
+                    res.append({
+                        'invoice_tax_line_id': tax_line.id,
+                        'tax_line_id': tax_line.tax_id.id,
+                        'type': 'tax',
+                        'name': tax_line.name,
+                        'price_unit': (tax_line.amount - tax_line.amount_retencion),
+                        'quantity': 1,
+                        'price': (tax_line.amount - tax_line.amount_retencion),
+                        'account_id': tax_line.account_id.id,
+                        'account_analytic_id': tax_line.account_analytic_id.id,
+                        'invoice_id': self.id,
+                        'tax_ids': [(6, 0, done_taxes)] if tax_line.tax_id.include_base_amount else []
+                    })
+                if tax_line.amount_retencion > 0:
+                    res.append({
+                        'invoice_tax_line_id': tax_line.id,
+                        'tax_line_id': tax_line.tax_id.id,
+                        'type': 'tax',
+                        'name': tax_line.name,
+                        'price_unit': -tax_line.amount_retencion,
+                        'quantity': 1,
+                        'price': -tax_line.amount_retencion,
+                        'account_id': tax_line.retencion_account_id.id,
+                        'account_analytic_id': tax_line.account_analytic_id.id,
+                        'invoice_id': self.id,
+                        'tax_ids': [(6, 0, done_taxes)] if tax_line.tax_id.include_base_amount else []
+                    })
+        return res
+
     @api.multi
     def get_taxes_values(self):
         tax_grouped = {}
         for line in self.invoice_line_ids:
-            tot_discount = line.price_unit * ((line.discount or 0.0) / 100.0)
             taxes = line.invoice_line_tax_ids.compute_all(
                 line.price_unit, self.currency_id, line.quantity,
                 line.product_id, self.partner_id,
@@ -180,18 +234,18 @@ class AccountInvoice(models.Model):
                         line.account_analytic_id and \
                         val['account_id'] == line.account_id.id:
                     val['account_analytic_id'] = line.account_analytic_id.id
-
                 key = self.env['account.tax'].browse(
                     tax['id']).get_grouping_key(val)
-
                 if key not in tax_grouped:
                     tax_grouped[key] = val
                 else:
                     tax_grouped[key]['amount'] += val['amount']
+                    tax_grouped[key]['amount_retencion'] += val['amount_retencion']
                     tax_grouped[key]['base'] += val['base']
         return tax_grouped
 
     def get_document_class_default(self, document_classes):
+        document_class_id = None
         if self.turn_issuer.vat_affected not in ['SI', 'ND']:
             exempt_ids = [
                 self.env.ref('l10n_cl_invoice.dc_y_f_dtn').id,
@@ -214,7 +268,7 @@ class AccountInvoice(models.Model):
                 for turn in available_turn_ids:
                     rec.turn_issuer = turn.id
 
-    @api.model
+    @api.multi
     def name_get(self):
         TYPES = {
             'out_invoice': _('Invoice'),
@@ -230,22 +284,15 @@ class AccountInvoice(models.Model):
         return result
 
     @api.model
-    def _name_search(self, name='', args=None, operator='ilike', limit=100,
-                     name_get_uid=None):
-        # args = args or []
-        args = [] if args is None else args.copy()
-        if not (name == '' and operator == 'ilike'):
-            recs = self.browse()
-            if name:
-                recs = self.search(
-                    [('document_number', '=', name)] + args, limit=limit)
-            if not recs:
-                recs = self.search([('name', operator, name)] + args,
-                                   limit=limit)
-            # return recs.name_get()
-        return super(AccountInvoice, self)._name_search(
-            name='', args=args, operator='ilike', limit=limit,
-            name_get_uid=name_get_uid)
+    def name_search(self, name, args=None, operator='ilike', limit=100):
+        args = args or []
+        recs = self.browse()
+        if name:
+            recs = self.search(
+                [('document_number', '=', name)] + args, limit=limit)
+        if not recs:
+            recs = self.search([('name', operator, name)] + args, limit=limit)
+        return recs.name_get()
 
     def _buscar_tax_equivalente(self, tax):
         tax_n = self.env['account.tax'].search(
@@ -263,7 +310,7 @@ class AccountInvoice(models.Model):
         )
         return tax_n
 
-    def _crearTaxEquivalente(self):
+    def _crear_tax_equivalente(self):
         tax_n = self.env['account.tax'].create({
             'sii_code': tax.sii_code,
             'sii_type': tax.sii_type,
@@ -278,77 +325,67 @@ class AccountInvoice(models.Model):
             'amount': tax.amount,
             'amount_type': tax.amount_type,
             'account_id':tax.account_id.id,
-            'refund_account_id': tax.refund_account_id.id,
-        })
+            'refund_account_id': tax.refund_account_id.id, })
         return tax
 
-    @api.onchange('company_id')
-    def _refreshRecords(self):
-        if self.journal_id and self.journal_id.company_id != self.company_id.id:
-            inv_type = self._context.get('type', 'out_invoice')
-            inv_types = inv_type if isinstance(inv_type, list) else [inv_type]
-            company_id = self._context.get('company_id', self.company_id.id)
-            domain = [
-                ('type', 'in', filter(None, map(TYPE2JOURNAL.get, inv_types))),
-                ('company_id', '=', company_id),
-            ]
-            journal = self.journal_id = self.env['account.journal'].search(
-                domain, limit=1)
-            for line in self.invoice_line_ids:
-                tax_ids = []
-                if self._context.get('type') in ('out_invoice', 'in_refund'):
-                    line.account_id = journal.default_credit_account_id.id
-                else:
-                    line.account_id = journal.default_debit_account_id.id
-                if self._context.get('type') in ('out_invoice', 'out_refund'):
-                    for tax in line.product_id.taxes_id:
-                        if tax.company_id.id == self.company_id.id:
-                            tax_ids.append(tax.id)
-                        else:
-                            tax_n = self._buscar_tax_equivalente(tax)
-                            if not tax_n:
-                                tax_n = self._crearTaxEquivalente(tax)
-                            tax_ids.append(tax_n.id)
-                    line.product_id.taxes_id = False
-                    line.product_id.taxes_id = tax_ids
-                else:
-                    for tax in line.product_id.supplier_taxes_id:
-                        if tax.company_id.id == self.company_id.id:
-                            tax_ids.append(tax.id)
-                        else:
-                            tax_n = self._buscar_tax_equivalente(tax)
-                            if not tax_n:
-                                tax_n = self._crearTaxEquivalente(tax)
-                            tax_ids.append(tax_n.id)
-                    line.invoice_line_tax_ids = False
-                    line.product_id.supplier_taxes_id.append = tax_ids
-                line.invoice_line_tax_ids = False
-                line.invoice_line_tax_ids = tax_ids
+    @api.onchange('partner_id')
+    def update_journal(self):
+        self.journal_id = self._default_journal()
+        self.set_default_journal()
+        return self.update_domain_journal()
 
-    @api.one
-    @api.depends('journal_id', 'partner_id', 'turn_issuer')
+    @api.onchange('company_id')
+    def _refresh_records(self):
+        self.journal_id = self._default_journal()
+        journal = self.journal_id
+        for line in self.invoice_line_ids:
+            tax_ids = []
+            if self._context.get('type') in ('out_invoice', 'in_refund'):
+                line.account_id = journal.default_credit_account_id.id
+            else:
+                line.account_id = journal.default_debit_account_id.id
+            if self._context.get('type') in ('out_invoice', 'out_refund'):
+                for tax in line.product_id.taxes_id:
+                    if tax.company_id.id == self.company_id.id:
+                        tax_ids.append(tax.id)
+                    else:
+                        tax_n = self._buscarTaxEquivalente(tax)
+                        if not tax_n:
+                            tax_n = self._crearTaxEquivalente(tax)
+                        tax_ids.append(tax_n.id)
+                line.product_id.taxes_id = False
+                line.product_id.taxes_id = tax_ids
+            else:
+                for tax in line.product_id.supplier_taxes_id:
+                    if tax.company_id.id == self.company_id.id:
+                        tax_ids.append(tax.id)
+                    else:
+                        tax_n = self._buscarTaxEquivalente(tax)
+                        if not tax_n:
+                            tax_n = self._crearTaxEquivalente(tax)
+                        tax_ids.append(tax_n.id)
+                line.invoice_line_tax_ids = False
+                line.product_id.supplier_taxes_id.append = tax_ids
+            line.invoice_line_tax_ids = False
+            line.invoice_line_tax_ids = tax_ids
+
     def _get_available_journal_document_class(self):
         invoice_type = self.type
         document_class_ids = []
         document_class_id = False
-        self.available_journal_document_class_ids = self.env[
-            'account.journal.sii_document_class']
+        nd = False
+        for ref in self.referencias:
+            if not nd:
+                nd = ref.sii_referencia_CodRef
+        #self.available_journal_document_class_ids = self.env[
+        #    'account.journal.sii_document_class']
         if invoice_type in [
                 'out_invoice', 'in_invoice', 'out_refund', 'in_refund']:
             operation_type = self.get_operation_type(invoice_type)
             if self.use_documents:
                 letter_ids = self.get_valid_document_letters(
                     self.partner_id.id, operation_type, self.company_id.id)
-                # domain = [
-                #     ('journal_id', '=', self.journal_id.id),
-                #     '|', ('sii_document_class_id.document_letter_id',
-                #           'in', letter_ids),
-                #          ('sii_document_class_id.document_letter_id',
-                #           '=', False)]
-                # If document_type in context we try to serch specific document
-                # domain modificado
                 document_type = self._context.get('document_type', False)
-
                 if document_type:
                     document_classes = self.env[
                         'account.journal.sii_document_class'].search(
@@ -420,42 +457,47 @@ a VAT."""))
     @api.depends('sii_document_number', 'number')
     def _get_document_number(self):
         if self.sii_document_number and self.sii_document_class_id:
-            document_number = \
-                (self.sii_document_class_id.doc_code_prefix or '') + \
-                self.sii_document_number
+            document_number = (
+                self.sii_document_class_id.doc_code_prefix or '') + self.sii_document_number
         else:
             document_number = self.number
         self.document_number = document_number
 
+    def _domain_journal_document_class_id(self):
+        domain = []
+        for rec in self:
+            domain = rec._get_available_journal_document_class()
+        return [('id', 'in', domain)]
+
     turn_issuer = fields.Many2one(
         'partner.activities',
-        'Giro Emisor', readonly=True, store=True, required=False,
+        'Giro Emisor',
+        readonly=True,
+        store=True,
+        required=False,
         states={'draft': [('readonly', False)]},
         )
-
     vat_discriminated = fields.Boolean(
         'Discriminate VAT?',
         compute="get_vat_discriminated",
         store=True,
         readonly=False,
         help="Discriminate VAT on Quotations and Sale Orders?")
-
     available_journals = fields.Many2one(
         'account.journal',
-        compute='_get_available_journal_document_class',
+    #    compute='_get_available_journal_document_class',
         string='Available Journals')
-
     available_journal_document_class_ids = fields.Many2many(
         'account.journal.sii_document_class',
-        compute='_get_available_journal_document_class',
+    #    compute='_get_available_journal_document_class',
         string='Available Journal Document Classes')
-
     supplier_invoice_number = fields.Char(
         copy=False)
     journal_document_class_id = fields.Many2one(
         'account.journal.sii_document_class',
         'Documents Type',
-        default=_get_available_journal_document_class,
+        default=_default_journal_document_class_id,
+        domain=_domain_journal_document_class_id,
         readonly=True,
         store=True,
         states={'draft': [('readonly', False)]})
@@ -476,13 +518,7 @@ a VAT."""))
         related='commercial_partner_id.responsability_id',
         store=True,
         )
-    formated_vat = fields.Char(
-        string='Responsability',
-        related='commercial_partner_id.formated_vat',)
-    iva_uso_comun = fields.Boolean(
-        string="Uso Común", readonly=True,
-        states={'draft': [('readonly', False)]})
-    # solamente para compras tratamiento del iva
+    iva_uso_comun = fields.Boolean(string="Uso Común", readonly=True, states={'draft': [('readonly', False)]}) # solamente para compras tratamiento del iva
     no_rec_code = fields.Selection([
         ('1', 'Compras destinadas a IVA a generar operaciones no gravados \
 o exentas.'),
@@ -512,6 +548,9 @@ recuperable", readonly=True, states={'draft': [('readonly', False)]})
 Gratuito')], string="Forma de pago", readonly=True, states={'draft': [('\
 readonly', False)]}, default='1')
     contact_id = fields.Many2one('res.partner', string="Contacto")
+    amount_retencion = fields.Monetary(string="Retención",
+        default=0.00,
+        compute='_compute_amount')
 
     @api.one
     @api.constrains('supplier_invoice_number', 'partner_id', 'company_id')
@@ -668,6 +707,30 @@ facturas o facturas no afectas')
                             sii_document_class_id.name,
                             invoice.reference, invoice.partner_id.name))
         return self.write({'state': 'open'})
+
+    @api.model
+    def create(self, vals):
+        inv = super(account_invoice, self).create(vals)
+        inv.update_domain_journal()
+        inv.set_default_journal()
+        return inv
+
+    @api.model
+    def _default_journal(self):
+        if self._context.get('default_journal_id', False):
+            return self.env['account.journal'].browse(self._context.get('default_journal_id'))
+        if self._context.get('honorarios', False):
+            inv_type = self._context.get('type', 'out_invoice')
+            inv_types = inv_type if isinstance(inv_type, list) else [inv_type]
+            company_id = self._context.get('company_id', self.env.user.company_id.id)
+            domain = [
+                ('journal_document_class_ids.sii_document_class_id.document_letter_id.name','=','M'),
+                ('type', 'in', filter(None, map(TYPE2JOURNAL.get, inv_types))),
+                ('company_id', '=', company_id),
+            ]
+            journal_id = self.env['account.journal'].search(domain, limit=1)
+            return journal_id
+        return super(account_invoice, self)._default_journal()
 
 
 class Referencias(models.Model):

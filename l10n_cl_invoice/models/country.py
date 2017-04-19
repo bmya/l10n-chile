@@ -2,7 +2,7 @@
 from odoo import fields, models, api
 
 
-class sii_country(models.Model):
+class SiiCountry(models.Model):
     _inherit = 'res.country'
 
     rut_natural = fields.Char('RUT persona natural', size=11)

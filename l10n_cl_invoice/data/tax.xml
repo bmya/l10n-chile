@@ -6,6 +6,18 @@
     <record id="l10n_cl_chart.IVAC_19" model="account.tax.template">
       <field name="sii_code">14</field>
     </record>
+    <record id="iva_activo_fijo" model="account.tax.template">
+      <field name="chart_template_id" ref="l10n_cl_chart.cl_chart_template"/>
+      <field name="sii_code">14</field>
+      <field name="name">Activo Fijo</field>
+      <field name="description">19%</field>
+      <field name="amount">19</field>
+      <field name="amount_type">percent</field>
+      <field name="type_tax_use">purchase</field>
+      <field name="refund_account_id" ref="l10n_cl_chart.210760"/>
+      <field name="account_id" ref="l10n_cl_chart.210760"/>
+      <field name="activo_fijo" eval="True"/>
+    </record>
     <record id="retencion_iva" model="account.tax.template">
       <field name="chart_template_id" ref="l10n_cl_chart.cl_chart_template_bmya"/>
       <field name="sii_code">15</field>
@@ -47,6 +59,42 @@
       <field name="name">Específico Compra</field>
       <field name="description">Especifico</field>
       <field name="amount">63</field>
+      <field name="amount_type">percent</field>
+      <field name="type_tax_use">purchase</field>
+      <field name="no_rec" eval="True" />
+      <field name="refund_account_id" ref="l10n_cl_chart.210760"/>
+      <field name="account_id" ref="l10n_cl_chart.210760"/>
+    </record>
+    <record id="ila_compra" model="account.tax.template">
+      <field name="chart_template_id" ref="l10n_cl_chart.cl_chart_template"/>
+      <field name="sii_code">24</field>
+      <field name="name">ILA (Licores, Piscos, destilados, etc.) Vinos Compras</field>
+      <field name="description">ILA 27%</field>
+      <field name="amount">27</field>
+      <field name="amount_type">percent</field>
+      <field name="type_tax_use">purchase</field>
+      <field name="no_rec" eval="True" />
+      <field name="refund_account_id" ref="l10n_cl.231"/>
+      <field name="account_id" ref="l10n_cl.231"/>
+    </record>
+    <record id="ila_vinos_compra" model="account.tax.template">
+      <field name="chart_template_id" ref="l10n_cl_chart.cl_chart_template"/>
+      <field name="sii_code">25</field>
+      <field name="name">ILA Vinos Compras</field>
+      <field name="description">ILA 15%</field>
+      <field name="amount">15</field>
+      <field name="amount_type">percent</field>
+      <field name="type_tax_use">purchase</field>
+      <field name="no_rec" eval="True" />
+      <field name="refund_account_id" ref="l10n_cl_chart.210760"/>
+      <field name="account_id" ref="l10n_cl_chart.210760"/>
+    </record>
+    <record id="cervezas_compra" model="account.tax.template">
+      <field name="chart_template_id" ref="l10n_cl_chart.cl_chart_template"/>
+      <field name="sii_code">26</field>
+      <field name="name">Cervezas y bebidas alcohólicas Compras</field>
+      <field name="description">15%</field>
+      <field name="amount">15</field>
       <field name="amount_type">percent</field>
       <field name="type_tax_use">purchase</field>
       <field name="no_rec" eval="True" />
