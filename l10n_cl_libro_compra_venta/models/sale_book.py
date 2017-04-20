@@ -72,6 +72,8 @@ try:
     from signxml import XMLSigner, XMLVerifier, methods
 except ImportError:
     _logger.info('Cannot import signxml')
+import xml.dom.minidom
+
 
 server_url = {
     'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
@@ -111,6 +113,7 @@ def to_json(colnames, rows):
 
 def db_handler(method):
     def call(self, *args, **kwargs):
+        _logger.info(args)
         account_invoice_ids = [str(x.id) for x in self.invoice_ids]
         query = method(self, *args, **kwargs)
         cursor = self.env.cr
@@ -323,7 +326,8 @@ generated. Its in open status till user does not pay invoice.\n
         dc.sii_code as "TpoDoc",
         ai.sii_document_number as "NroDoc",
         ai.date_invoice as "FchDoc",
-        rp.vat as "RUTDoc",
+        trim(leading '0' from substring(rp.vat from 3 for 8)) || '-' ||
+        right(rp.vat, 1) as "RUTDoc",
         rp.name as "RznSoc",
         ai.mnt_exe as "MntExe",
         ai.amount_untaxed - ai.mnt_exe as "MntNeto",
@@ -346,26 +350,40 @@ generated. Its in open status till user does not pay invoice.\n
         self.total_otros_imps = 0  # todo: hacer esta part
         self.total = sum([x['TotMntIVA'] for x in jvalue])
 
-    def _record_detail(self, jvalue):
-        detalles = {'Detalles': jvalue}
-        _logger.info('grabando detalle en sii_xml_request #####-----####')
-        xml_detail = dicttoxml.dicttoxml(
-            detalles, root=False, attr_type=False).replace('item', 'Detalle')
-        _logger.info(xml_detail)
-        root = etree.XML(xml_detail)
-        xml_pret = etree.tostring(root, pretty_print=True)
-        _logger.info(xml_pret)
+    @staticmethod
+    def _record_detail(dict1, dict2):
+        dicttoxml.set_debug(False)
+        xml_detail1 = dicttoxml.dicttoxml(
+            dict1, root=False, attr_type=False).replace(
+            'item', 'TotalesPeriodo')
+        xml_detail2 = dicttoxml.dicttoxml(
+            dict2, root=False, attr_type=False).replace(
+            'item', 'Detalle').replace('<Detalles>', '').replace(
+            '</Detalles>', '')
+        xml_envio_libro = """
+<EnvioLibro ID="VENTA_2017-04"><Caratula><RutEmisorLibro>76201224-3\
+</RutEmisorLibro><RutEnvia>23841194-7</RutEnvia><PeriodoTributario>\
+2017-04</PeriodoTributario><FchResol>2014-01-20</FchResol><NroResol>0\
+</NroResol><TipoOperacion>VENTA</TipoOperacion><TipoLibro>ESPECIAL\
+</TipoLibro><TipoEnvio>TOTAL</TipoEnvio><FolioNotificacion>1\
+</FolioNotificacion></Caratula>{}{}</EnvioLibro>""".format(
+            xml_detail1, xml_detail2)
+        _logger.info(xml_envio_libro)
         # raise UserError('check xml')
+        xml1 = xml.dom.minidom.parseString(xml_envio_libro)
+        xml_pret = xml1.toprettyxml()
+        # root = etree.XML(xml_envio_libro)
+        # xml_pret = etree.tostring(root, pretty_print=True)
+        _logger.info(xml_pret)
         return xml_pret
 
     @api.depends('invoice_ids')
     def set_values(self):
-        dict1 = self._summary_by_period()
-        self._record_totals(dict1)
-        # self._record_summary(dict1)
-        dict2 = self._detail_by_period()
-        xml_pret = self._record_detail(dict2)
-        # self.invalidate_cache()
+        dict0 = self._summary_by_period()
+        self._record_totals(dict0)
+        dict1 = {'ResumenPeriodo': dict0}
+        dict2 = {'Detalles': self._detail_by_period()}
+        xml_pret = self._record_detail(dict1, dict2)
         self.sii_xml_request = xml_pret
 
 class Boletas(models.Model):
