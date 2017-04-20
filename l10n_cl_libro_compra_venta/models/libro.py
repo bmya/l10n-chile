@@ -6,6 +6,7 @@ import dateutil.relativedelta as relativedelta
 import logging
 from lxml import etree
 from lxml.etree import Element, SubElement
+import json
 from lxml import objectify
 from lxml.etree import XMLSyntaxError
 from odoo import SUPERUSER_ID
@@ -154,6 +155,10 @@ generated. Its in open status till user does not pay invoice.\n
         readonly=True,
         states={'draft': [('readonly', False)]})
 
+    invoice_ids = fields.Many2many(
+        'account.invoice', readonly=True,
+        states={'draft': [('readonly', False)]})
+
     tipo_libro = fields.Selection([
                 ('ESPECIAL', 'Especial'),
                 ('MENSUAL', 'Mensual'),
@@ -229,6 +234,7 @@ generated. Its in open status till user does not pay invoice.\n
         string='Periodo Tributario',
         required=True,
         readonly=True,
+        default=lambda x: datetime.now().strftime('%Y-%m'),
         states={'draft': [('readonly', False)]})
     company_id = fields.Many2one('res.company',
         string="Compañía",
@@ -253,6 +259,7 @@ generated. Its in open status till user does not pay invoice.\n
         string="Fecha",
         required=True,
         readonly=True,
+        default=lambda x: datetime.now(),
         states={'draft': [('readonly', False)]})
     boletas = fields.One2many('account.move.book.boletas',
         'book_id',
@@ -261,22 +268,18 @@ generated. Its in open status till user does not pay invoice.\n
         states={'draft': [('readonly', False)]})
     codigo_rectificacion = fields.Char(string="Código de Rectificación")
 
-    _defaults = {
-        'date': datetime.now(),
-        'periodo_tributario': datetime.now().strftime('%Y-%m'),
-    }
 
     @api.onchange('periodo_tributario', 'tipo_operacion', 'company_id')
     def set_movimientos(self):
-        current = datetime.strptime( self.periodo_tributario + '-01', '%Y-%m-%d' )
+        current = datetime.strptime(self.periodo_tributario + '-01', '%Y-%m-%d')
         next_month = current + relativedelta.relativedelta(months=1)
         docs = [False, 70, 71]
         operator = 'not in'
         query = [
             ('company_id', '=', self.company_id.id),
             ('sended', '=', False),
-            ('date' , '>=', current.strftime('%Y-%m-%d')),
-            ('date' , '<', next_month.strftime('%Y-%m-%d')),
+            ('date', '>=', current.strftime('%Y-%m-%d')),
+            ('date', '<', next_month.strftime('%Y-%m-%d')),
             ]
         domain = 'sale'
         if self.tipo_operacion in ['COMPRA']:
@@ -284,10 +287,10 @@ generated. Its in open status till user does not pay invoice.\n
             query.append(('date', '>=', two_month.strftime('%Y-%m-%d')))
             domain = 'purchase'
         query.append(('journal_id.type', '=', domain))
-        if self.tipo_operacion in [ 'VENTA' ]:
+        if self.tipo_operacion in ['VENTA']:
             docs.extend([35, 38, 39, 41])
             libro_boletas = self.env['account.move.consumo_folios'].search([
-                ('state','not in', ['draft']),
+                ('state', 'not in', ['draft']),
                 ('fecha_inicio', '>=', current),
                 ('fecha_inicio', '<', next_month),
             ])
@@ -295,10 +298,10 @@ generated. Its in open status till user does not pay invoice.\n
                 lines = [[5, ], ]
                 for det in libro_boletas.detalles:
                     line = {
-                        'currency_id' : self.env.user.company_id.currency_id,
-                        'tipo_boleta' : det.tpo_doc,
-                        'cantidad_boletas' : det.cantidad ,
-                        'neto' : det.monto_neto,
+                        'currency_id': self.env.user.company_id.currency_id,
+                        'tipo_boleta': det.tpo_doc,
+                        'cantidad_boletas': det.cantidad ,
+                        'neto': det.monto_neto,
                         'impuesto': self.env['account.tax'].search(
                             [('sii_code', '=', 14),
                              ('type_tax_use', '=', 'sale'),
@@ -308,7 +311,7 @@ generated. Its in open status till user does not pay invoice.\n
                         }
                     lines.append([0,0, line])
                 self.detalles = lines
-        if self.tipo_operacion in [ 'VENTA' ]:
+        if self.tipo_operacion in ['VENTA']:
             operator = 'in'
         query.append(('document_class_id.sii_code', operator, docs))
         self.move_ids = self.env['account.move'].search(query)
@@ -326,30 +329,74 @@ generated. Its in open status till user does not pay invoice.\n
                     imp[key]['debit'] += i['debit']
         return imp
 
-    @api.onchange('move_ids')
-    def set_resumen(self):
-        for mov in self.move_ids:
-            totales = mov.totales_por_movimiento()
-            self.total_afecto += totales['neto']
-            self.total_exento += totales['exento']
-            self.total_iva += totales['iva']
-            self.total_otros_imps += totales['otros_imps']
-            self.total += mov.amount
+    @staticmethod
+    def _to_json(colnames, rows):
+        all_data = []
+        for row in rows:
+            each_row = collections.OrderedDict()
+            i = 0
+            for colname in colnames:
+                each_row[colname] = row[i]
+                i += 1
+            all_data.append(each_row)
+        return all_data
 
-    @api.onchange('move_ids')
-    def compute_taxes(self):
-        imp = self._get_imps()
-        if self.boletas:
-            for bol in self.boletas:
-                imp[bol.impuesto.id]['debit'] += bol.monto_impuesto
-        if self.impuestos and isinstance(self.id, int):
-            self._cr.execute("DELETE FROM account_move_book_tax WHERE book_id=%s", (self.id,))
-            self.invalidate_cache()
-        lines = [[5,],]
-        for key, i in imp.items():
-            i['currency_id'] = self.env.user.company_id.currency_id.id
-            lines.append([0,0, i])
-        self.impuestos = lines
+    @api.onchange('invoice_ids')
+    def set_resumen(self):
+        """
+        Funcion a modificar Daniel Blanco
+        :return:
+        """
+        account_invoice_ids = [str(x.id) for x in self.invoice_ids]
+        query = """select
+        sii_document_class_id, count(*) as "TotDoc", sum(
+            mnt_exe) as "total_exento", sum(amount_untaxed) as "total_afecto",
+            sum(amount_total)-sum(amount_untaxed) as total_iva,
+            sum(amount_total) as total
+        from account_invoice
+        where id in (%s) group by sii_document_class_id"""
+        cursor = self.env.cr
+        cursor.execute(query % ', '.join(account_invoice_ids))
+        rows = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+        _logger.info('colnames: {}'.format(colnames))
+        _logger.info('rows: {}'.format(rows))
+        dict1 = self._to_json(colnames, rows)
+        _logger.info('check json:')
+        print json.dumps(dict1)
+        # map((total_afecto, total_exento, total_iva, total), dict
+        dict2 = {
+            'total_afecto': sum([x['total_afecto'] for x in dict1]),
+            'total_exento': sum([x['total_exento'] for x in dict1]),
+            'total_iva': sum([x['total_iva'] for x in dict1]),
+            'total_otros_imps': 0,  # todo: hacer esta parte
+            'total': sum([x['total'] for x in dict1]), }
+        # raise UserError(json.dumps(dict2))
+        # self.write(dict2)
+
+        # for mov in self.move_ids:
+        #     self.total_afecto += totales['neto']
+        #     self.total_exento += totales['exento']
+        #     self.total_iva += totales['iva']
+        #     self.total_otros_imps += totales['otros_imps']
+        #     self.total += mov.amount
+
+    # @api.onchange('move_ids')
+    # def compute_taxes(self):
+    #     imp = self._get_imps()
+    #     if self.boletas:
+    #         for bol in self.boletas:
+    #             imp[bol.impuesto.id]['debit'] += bol.monto_impuesto
+    #     if self.impuestos and isinstance(self.id, int):
+    #         self._cr.execute(
+    #             "DELETE FROM account_move_book_tax WHERE book_id=%s", (
+    #                 self.id,))
+    #         self.invalidate_cache()
+    #     lines = [[5,],]
+    #     for key, i in imp.items():
+    #         i['currency_id'] = self.env.user.company_id.currency_id.id
+    #         lines.append([0,0, i])
+    #     self.impuestos = lines
 
     @api.multi
     def unlink(self):
@@ -549,6 +596,7 @@ version="1.0">
         if not isinstance(x, str):
             x = x.decode(encoding)
         return x
+
     def long_to_bytes(self, n, blocksize=0):
         """long_to_bytes(n:long, blocksize:int) : string
         Convert a long integer to a byte string.
@@ -645,7 +693,8 @@ version="1.0">
         if not obj:
             obj = user = self.env.user
         if not obj.cert:
-            obj = self.env['res.users'].search([("authorized_users_ids","=", user.id)])
+            obj = self.env['res.users'].search(
+                [("authorized_users_ids","=", user.id)])
             if not obj or not obj.cert:
                 obj = self.env['res.company'].browse([comp_id.id])
                 if not obj.cert or not user.id in obj.authorized_users_ids.ids:
@@ -667,7 +716,8 @@ version="1.0">
             obj = user = self.env.user
         _logger.info(obj.name)
         if not obj.cert:
-            obj = self.env['res.users'].search([("authorized_users_ids","=", user.id)])
+            obj = self.env['res.users'].search(
+                [("authorized_users_ids","=", user.id)])
             if not obj or not obj.cert:
                 obj = self.env['res.company'].browse([comp_id.id])
                 if not obj.cert or not user.id in obj.authorized_users_ids.ids:
@@ -780,7 +830,7 @@ version="1.0">
         sha1 = hashlib.new('sha1', data)
         return sha1.digest()
 
-    @api.onchange('periodo_tributario','tipo_operacion')
+    @api.onchange('periodo_tributario', 'tipo_operacion')
     def _setName(self):
         self.name = self.tipo_operacion
         if self.periodo_tributario:
@@ -809,21 +859,19 @@ version="1.0">
     def getResumen(self, rec):
         no_product = False
         ob = self.env['account.invoice']
-        inv = ob.search([
-                        ('move_id','=',rec.id),
-                        ])
+        inv = ob.search([('move_id','=',rec.id), ])
         det = collections.OrderedDict()
         det['TpoDoc'] = rec.document_class_id.sii_code
-        #det['Emisor']
-        #det['IndFactCompra']
+        # det['Emisor']
+        # det['IndFactCompra']
         if self.tipo_operacion in ['COMPRA']:
             det['NroDoc'] = int(rec.ref)
         else:
             det['NroDoc'] = int(rec.sii_document_number)
         if rec.canceled:
             det['Anulado'] = 'A'
-        #det['Operacion']
-        #det['TotalesServicio']
+        # det['Operacion']
+        # det['TotalesServicio']
         imp = {}
         TaxMnt = 0
         MntExe = 0
@@ -886,7 +934,7 @@ version="1.0">
         if ivas:
             for i, value in ivas.items():
                 det['TpoImp'] = self._TpoImp(value['det'])
-                det['TasaImp'] = round(value['det'].amount,2)
+                det['TasaImp'] = round(value['det'].amount, 2)
                 continue
         #det['IndServicio']
         #det['IndSinCosto']
@@ -899,8 +947,8 @@ version="1.0">
             det['TpoDocRef'] = inv.referencias[
                 0].sii_referencia_TpoDocRef.sii_code
             det['FolioDocRef'] = inv.referencias[0].origen
-        if MntExe > 0 :
-            det['MntExe'] = int(round(MntExe,0))
+        if MntExe > 0:
+            det['MntExe'] = int(round(MntExe, 0))
         elif self.tipo_operacion in ['VENTA'] and not Neto > 0:
             det['MntExe'] = 0
         if Neto > 0:
@@ -950,7 +998,7 @@ version="1.0">
                             i['TaxMnt'] - (Neto * (tasa.retencion / 100))))
                         MntIVA -= det['IVARetParcial']
         monto_total = int(round((Neto + MntExe + TaxMnt + MntIVA), 0))
-        if no_product :
+        if no_product:
             monto_total = 0
         det['MntTotal'] = monto_total
         return det
@@ -960,8 +1008,8 @@ version="1.0">
         det['TpoDoc'] = rec.tipo_boleta.sii_code
         det['TotDoc'] = det['NroDoc'] = rec.cantidad_boletas
         if rec.impuesto.amount > 0:
-            #det['TpoImp'] = self._TpoImp(rec.impuesto)
-            det['TasaImp'] = round(rec.impuesto.amount,2)
+            # det['TpoImp'] = self._TpoImp(rec.impuesto)
+            det['TasaImp'] = round(rec.impuesto.amount, 2)
             det['MntNeto'] = int(round(rec.neto))
             det['MntIVA'] = int(round(rec.monto_impuesto))
         else:
@@ -1143,7 +1191,7 @@ version="1.0">
             resumenP['TotImpSinCredito'] = no_rec
         return resumenP
 
-    def _setResumenPeriodo(self,resumen,resumenP):
+    def _setResumenPeriodo(self, resumen, resumenP):
         resumenP['TpoDoc'] = resumen['TpoDoc']
         if 'TpoImp' in resumen:
             resumenP['TpoImp'] = resumen['TpoImp'] or 1
@@ -1333,7 +1381,7 @@ version="1.0">
                         del(resumen['MntNeto'])
                         del(resumen['MntIVA'])
                         del(resumen['TasaIVA'])
-                        resumenes.extend([{'Detalle':resumen}])
+                        resumenes.extend([{'Detalle': resumen}])
                 else:
                     resumen = self.getResumenBoleta(rec)
                     resumenesPeriodo[TpoDoc] = \
@@ -1344,11 +1392,12 @@ version="1.0">
                     del(resumen['TasaIVA'])
             else:
                 resumen = self.getResumen(rec)
-                resumenes.extend([{'Detalle':resumen}])
+                resumenes.extend([{'Detalle': resumen}])
             if self.tipo_operacion != 'BOLETA':
                 resumenesPeriodo[TpoDoc] = self._setResumenPeriodo(
                     resumen, resumenesPeriodo[TpoDoc])
-        if self.boletas:#no es el libro de boletas especial
+        if self.boletas:
+            # no es el libro de boletas especial
             for boletas in self.boletas:
                 resumenesPeriodo[boletas.tipo_boleta.id] = {}
                 resumen = self._setResumenBoletas(boletas)
@@ -1378,14 +1427,15 @@ version="1.0">
         dte['TmstFirma'] = self.time_stamp()
         resol_data = self.get_resolution_data(company_id)
         RUTEmisor = self.format_vat(company_id.vat)
-        RUTRecep = "60803000-K" # RUT SII
+        RUTRecep = "60803000-K"  # RUT SII
         xml = dicttoxml.dicttoxml(
             dte, root=False, attr_type=False)
         doc_id =  self.tipo_operacion+'_'+self.periodo_tributario
         libro = self.create_template_envio( RUTEmisor, self.periodo_tributario,
             resol_data['dte_resolution_date'],
             resol_data['dte_resolution_number'],
-            xml, signature_d,self.tipo_operacion,self.tipo_libro,self.tipo_envio,self.folio_notificacion, doc_id)
+            xml, signature_d, self.tipo_operacion, self.tipo_libro,
+            self.tipo_envio, self.folio_notificacion, doc_id)
         xml  = self.create_template_env(libro)
         env = 'libro'
         if self.tipo_operacion in['BOLETA']:
@@ -1540,7 +1590,7 @@ class ImpuestosLibro(models.Model):
     def get_monto(self):
         for t in self:
             t.amount = t.debit - t.credit
-            if t.book_id.tipo_operacion in [ 'VENTA' ]:
+            if t.book_id.tipo_operacion in ['VENTA']:
                 t.amount = t.credit - t.debit
 
     tax_id = fields.Many2one('account.tax', string="Impuesto")

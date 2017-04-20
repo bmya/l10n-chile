@@ -71,7 +71,8 @@
                 </group>
                 <notebook>
                   <page string="Movimientos">
-                    <field name="move_ids" editable="bottom" widget="many2many_list">
+                    <!--<field name="move_ids" editable="bottom" widget="many2many_list">-->
+                    <field name="invoice_ids" editable="bottom" widget="many2many_list">
                       <field name="document_number"/>
                       <field name="date"/>
                         <field name="line_ids" widget="one2many_list">

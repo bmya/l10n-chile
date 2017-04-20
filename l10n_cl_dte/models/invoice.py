@@ -1120,10 +1120,20 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             raise UserError(_(msg))
         return False
 
-    def _es_boleta(self):
-        if self.sii_document_class_id.sii_code in [35, 38, 39, 41, 70, 71]:
-            return True
-        return False
+    def is_doc_type_b(self):
+        """
+        Funcion para encontrar documentos tipo "boleta"
+        En lugar de poner una lista con codigos del sii, pongo un tipo basado
+        en parametrización hecha previamente (boletas = documentos tipo "b"
+        y tipo "m" según definición histórica en l10n_cl_invoice, ya que el
+        modelo letter lo que hace es parametrizar los comportamientos de
+        los documentos
+        :return:
+        """
+        # return self.sii_document_class_id.sii_code in [
+            # 35, 38, 39, 41, 70, 71]
+        return self.sii_document_class_id.document_letter_id.name in ['B', 'M']
+
 
     def _giros_sender(self):
         giros_sender = []
@@ -1138,7 +1148,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         IdDoc['Folio'] = self.get_folio()
         IdDoc['FchEmis'] = self.safe_date(self.date_invoice)
         self.date_invoice = self.safe_date(self.date_invoice)
-        if self._es_boleta():
+        if self.is_doc_type_b():
             IdDoc['IndServicio'] = 3
             # TODO agregar las otras opciones a la fichade producto servicio
         if self.ticket:
@@ -1146,17 +1156,17 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         # if self.tipo_servicio:
         #    Encabezado['IdDoc']['IndServicio'] = 1,2,3,4
         # todo: forma de pago y fecha de vencimiento - opcional
-        if tax_include and MntExe == 0 and not self._es_boleta():
+        if tax_include and MntExe == 0 and not self.is_doc_type_b():
             IdDoc['MntBruto'] = 1
-        if not self._es_boleta():
+        if not self.is_doc_type_b():
             IdDoc['FmaPago'] = self.forma_pago or 1
-        if not tax_include and self._es_boleta():
+        if not tax_include and self.is_doc_type_b():
             IdDoc['IndMntNeto'] = 2
-        #if self._es_boleta():
+        #if self.is_doc_type_b():
             #Servicios periódicos
         #    IdDoc['PeriodoDesde'] =
         #    IdDoc['PeriodoHasta'] =
-        if not self._es_boleta():
+        if not self.is_doc_type_b():
             IdDoc['FchVenc'] = self.date_due or datetime.strftime(
                 datetime.now(), '%Y-%m-%d')
         return IdDoc
@@ -1164,7 +1174,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
     def _sender(self):
         emisor= collections.OrderedDict()
         emisor['RUTEmisor'] = self.format_vat(self.company_id.vat)
-        if self._es_boleta():
+        if self.is_doc_type_b():
             emisor['RznSocEmisor'] = self.normalize_string(
                 self.company_id.partner_id.name, 'RznSoc', 'safe')
             # emisor['GiroEmisor'] = self.normalize_string(
@@ -1199,14 +1209,14 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
 
     def _receptor(self):
         receptor = collections.OrderedDict()
-        if not self.partner_id.vat and not self._es_boleta():
+        if not self.partner_id.vat and not self.is_doc_type_b():
             raise UserError("Debe Ingresar RUT Receptor")
-        # if self._es_boleta():
+        # if self.is_doc_type_b():
         #     receptor['CdgIntRecep']
         receptor['RUTRecep'] = self.format_vat(self.partner_id.vat)
         receptor['RznSocRecep'] = self.normalize_string(
             self.partner_id.name, 'RznSocRecep', 'safe')
-        if not self._es_boleta():
+        if not self.is_doc_type_b():
             # if not self.activity_description:
             #    raise UserError(_('Seleccione giro del partner.'))
             # receptor['GiroRecep'] = self.normalize_string(
@@ -1216,7 +1226,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         if self.partner_id.phone:
             receptor['Contacto'] = self.normalize_string(
                 self.partner_id.phone, 'Contacto', 'truncate')
-        if self.partner_id.dte_email and not self._es_boleta():
+        if self.partner_id.dte_email and not self.is_doc_type_b():
             receptor['CorreoRecep'] = self.partner_id.dte_email
         receptor['DirRecep'] = self.normalize_string('{} {}'.format(
             self.partner_id.street or '',
@@ -1232,11 +1242,11 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         if self.sii_document_class_id.sii_code == 34 or (
                 self.referencias and self.referencias[0].
                 sii_referencia_TpoDocRef.sii_code == '34'):
-            Totales['MntExe'] = int(round(self.amount_total, 0))
+            self.mnt_exe = Totales['MntExe'] = int(round(self.amount_total, 0))
             if no_product:
-                Totales['MntExe'] = 0
+                self.mnt_exe = Totales['MntExe'] = 0
         elif self.amount_untaxed and self.amount_untaxed != 0:
-            if not self._es_boleta() or not tax_include:
+            if not self.is_doc_type_b() or not tax_include:
                 IVA = False
                 for t in self.tax_line_ids:
                     if t.tax_id.sii_code in [14, 15]:
@@ -1244,15 +1254,15 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 if IVA and IVA.base > 0:
                     Totales['MntNeto'] = int(round((IVA.base), 0))
             if MntExe > 0:
-                Totales['MntExe'] = int(round( MntExe))
-            if not self._es_boleta() or not tax_include:
+                self.mnt_exe = Totales['MntExe'] = int(round(MntExe))
+            if not self.is_doc_type_b() or not tax_include:
                 if IVA:
-                    if not self._es_boleta():
+                    if not self.is_doc_type_b():
                         Totales['TasaIVA'] = round(IVA.tax_id.amount,2)
                     Totales['IVA'] = int(round(IVA.amount, 0))
                 if no_product:
                     Totales['MntNeto'] = 0
-                    if not self._es_boleta():
+                    if not self.is_doc_type_b():
                         Totales['TasaIVA'] = 0
                     Totales['IVA'] = 0
             if IVA and IVA.tax_id.sii_code in [15]:
@@ -1332,7 +1342,7 @@ Linux/3.13.0-88-generic'
                 MntExe += int(round(line.price_tax_included, 0))
                 # if line.product_id.type == 'events':
                 #   lines['ItemEspectaculo'] =
-                #            if self._es_boleta():
+                #            if self.is_doc_type_b():
                 #                lines['RUTMandante']
             lines['NmbItem'] = self.normalize_string(
                 line.product_id.name, 'NmbItem', 'safe')
@@ -1386,7 +1396,7 @@ Linux/3.13.0-88-generic'
         ref_lines = []
         if self.company_id.dte_service_provider == 'SIIHOMO' and isinstance(
                 att_number, unicode) and att_number != '' and \
-                not self._es_boleta():
+                not self.is_doc_type_b():
             ref_line = collections.OrderedDict()
             ref_line['NroLinRef'] = lin_ref
             ref_line['TpoDocRef'] = "SET"
@@ -1404,7 +1414,7 @@ Linux/3.13.0-88-generic'
             for ref in self.referencias:
                 ref_line = collections.OrderedDict()
                 ref_line['NroLinRef'] = lin_ref
-                if not self._es_boleta():
+                if not self.is_doc_type_b():
                     if ref.sii_referencia_TpoDocRef:
                         ref_line['TpoDocRef'] = \
                             ref.sii_referencia_TpoDocRef.sii_code
@@ -1415,7 +1425,7 @@ Linux/3.13.0-88-generic'
                 if ref.sii_referencia_CodRef not in ['', 'none', False]:
                     ref_line['CodRef'] = ref.sii_referencia_CodRef
                 ref_line['RazonRef'] = ref.motivo
-                if self._es_boleta():
+                if self.is_doc_type_b():
                     ref_line['CodVndor'] = self.seler_id.id
                     ref_lines[
                         'CodCaja'] = self.journal_id.point_of_sale_id.name
@@ -1463,7 +1473,7 @@ signature.'''))
         envelope_efact = self.convert_encoding(xml_pret, 'ISO-8859-1')
         envelope_efact = self.create_template_doc(envelope_efact)
         _logger.info('envelope_efact: {}'.format(envelope_efact))
-        type = 'bol' if self._es_boleta() else 'doc'
+        type = 'bol' if self.is_doc_type_b() else 'doc'
         #    type = 'bol'
         einvoice = self.sign_full_xml(
             envelope_efact, signature_d['priv_key'],
@@ -1696,14 +1706,14 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
 
     def send_envelope_recipient(
             self, RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
-            es_boleta, file_name, company_id, certp):
+            is_doc_type_b, file_name, company_id, certp):
         dtes = self.create_template_envelope(
             RUTEmisor, self.format_vat(self.partner_id.vat),
             resol_data['dte_resolution_date'],
             resol_data['dte_resolution_number'], self.time_stamp(), documentos,
             signature_d, SubTotDTE)
         env = 'env'
-        if es_boleta:
+        if is_doc_type_b:
             envio_dte = self.create_template_env(dtes, 'BOLETA')
             env = 'env_boleta'
         else:
@@ -1780,7 +1790,7 @@ dte/hgen/html/{}'.format(json.loads(r.text)['token'])
         DTEs = {}
         clases = {}
         company_id = False
-        es_boleta = False
+        is_doc_type_b = False
         batch = 0
         # ACA ES DONDE SE DETERMINA EL ORDEN
         # DEBERÍA TENER ALGUNA MANERA DE ORDENAR EL SET DE DATOS QUE
@@ -1793,7 +1803,7 @@ dte/hgen/html/{}'.format(json.loads(r.text)['token'])
                 # que por numeración viene a continuación de la guia/nota,
                 # será rechazada la guía porque debe estar declarada la
                 # factura primero
-            es_boleta = inv._es_boleta()
+            is_doc_type_b = inv.is_doc_type_b()
             # <- el boleta soy yo con estos nombres de funcion
             if inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
                 # raise UserError(inv.company_id.dte_service_provider)
@@ -1868,7 +1878,7 @@ hacer eso en un envío')
         for key in sorted(dtes.iterkeys()):
             documentos += '\n' + dtes[key]
         # raise UserError(documentos)
-        if not es_boleta:
+        if not is_doc_type_b:
             self.send_envelope_sii(
                 RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
                 file_name, company_id, certp)
@@ -1878,7 +1888,7 @@ hacer eso en un envío')
             if inv.sii_result == 'Aceptado':
                 inv.send_envelope_recipient(
                     RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
-                    es_boleta, file_name, company_id, certp)
+                    is_doc_type_b, file_name, company_id, certp)
                 inv.get_pdf_docsonline()
 
     @api.multi
@@ -1947,6 +1957,7 @@ cola de envío interna en odoo''')
      @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
      @version: 2015-02-01
     """
+    mnt_exe = fields.Float('Monto exento de la factura')
     sii_batch_number = fields.Integer(
         copy=False,
         string='Batch Number',
