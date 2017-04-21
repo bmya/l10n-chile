@@ -700,7 +700,8 @@ YComp 5.0.2.4)',
         params['archivo'] = (file_name, envio_dte, "text/xml")
         multi = urllib3.filepost.encode_multipart_formdata(params)
         headers.update({'Content-Length': '{}'.format(len(multi[0]))})
-        response = pool.request_encode_body('POST', url + post, params, headers)
+        response = pool.request_encode_body('POST', url + post, params,
+                                            headers)
         retorno = {
             'sii_xml_response': response.data,
             'sii_result': 'NoEnviado',
