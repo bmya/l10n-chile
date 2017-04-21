@@ -77,9 +77,9 @@ server_url = {
 BC = '''-----BEGIN CERTIFICATE-----\n'''
 EC = '''\n-----END CERTIFICATE-----\n'''
 
-import os
-xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
-    '/models', '/static/xsd/')
+# import os
+# xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
+#     '/models', '/static/xsd/')
 
 connection_status = {
     '0': 'Upload OK',
