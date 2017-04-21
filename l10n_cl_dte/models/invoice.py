@@ -206,6 +206,18 @@ api_upd_status = host + '/dte/dte_emitidos/actualizar_estado/'
 no_product = False
 
 
+class Signer(XMLSigner):
+    def __init__(self):
+        super(Signer, self).__init__(
+            method=methods.detached,
+            signature_algorithm='rsa-sha1',
+            digest_algorithm='sha1',
+            c14n_algorithm='http://www.w3.org/TR/2001/REC-xml-c14n-20010315')
+
+    def key_value_serialization_is_required(self, cert_chain):
+        return True
+
+
 class Invoice(models.Model):
     """
     Extension of data model to contain global parameters needed
@@ -231,15 +243,12 @@ class Invoice(models.Model):
 
     @staticmethod
     def format_vat(value):
-        ''' Se Elimina el 0 para prevenir problemas con el sii, ya que las
-        muestras no las toma si va con
-        el 0 , y tambien internamente se generan problemas'''
         if not value or value == '' or value == 0:
             value = "CL666666666"
-            #TODO: opción de crear código de cliente en vez de rut genérico
-        rut = value[:10] + '-' + value[10:]
-        rut = rut.replace('CL0', '').replace('CL', '')
-        return rut
+        else:
+            value = (value[:10] + '-' + value[10:]).replace(
+                'CL0', '').replace('CL', '')
+        return value
 
     @staticmethod
     def analyze_sii_result(sii_result, sii_message, sii_receipt):
@@ -476,6 +485,12 @@ version="1.0">
         return xml
 
     @staticmethod
+    def append_sign_env_book(doc, sign):
+        xml = doc.replace(
+            '</LibroCompraVenta>', '') + sign + '</LibroCompraVenta>'
+        return xml
+
+    @staticmethod
     def append_sign_env_recep(doc, sign):
         xml = doc.replace('</EnvioRecibos>', '') + sign + '</EnvioRecibos>'
         return xml
@@ -498,6 +513,8 @@ version="1.0">
         """
         _logger.info('SIGNING WITH SIGN_SEED ##### ------ #####')
         doc = etree.fromstring(message)
+        # signed_node = Signer.sign(
+        #    doc, key=privkey.encode('ascii'), cert=cert, key_info=None)
         signed_node = XMLSigner(
             method=methods.enveloped, signature_algorithm=u'rsa-sha1',
             digest_algorithm=u'sha1').sign(
@@ -620,7 +637,9 @@ version="1.0">
             'recep': 'Recibos_v10.xsd',
             'env_recep': 'EnvioRecibos_v10.xsd',
             'env_resp': 'RespuestaEnvioDTE_v10.xsd',
-            'sig': 'xmldsignature_v10.xsd'}
+            'sig': 'xmldsignature_v10.xsd',
+            'book': 'LibroCV_v10.xsd',
+        }
         xsd_file = xsdpath + validacion_type[validacion]
         try:
             xmlschema_doc = etree.parse(xsd_file)
@@ -701,11 +720,6 @@ YComp 5.0.2.4)',
 
     def sign_full_xml(self, message, privkey, cert, uri, type='doc'):
         doc = etree.fromstring(message)
-        print '############message############'
-        print message
-        print '############ doc ############'
-        print doc
-        print '############ doc[1] ############'
         string = etree.tostring(doc[0])
         # raise UserError('string sign: {}'.format(message))
         mess = etree.tostring(etree.fromstring(string), method="c14n")
@@ -786,6 +800,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
             fulldoc = self.append_sign_env_resp(message, msg)
         if type == 'env_boleta':
             fulldoc = self.append_sign_env_bol(message, msg)
+        if type == 'book':
+            fulldoc = self.append_sign_env_book(message, msg)
         fulldoc = fulldoc if self.xml_validator(fulldoc, type) else ''
         return fulldoc
 
@@ -946,9 +962,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
             return inv.sii_document_class_id.name
 
     @staticmethod
-    def time_stamp(formato='%Y-%m-%dT%H:%M:%S'):
+    def time_stamp(format='%Y-%m-%dT%H:%M:%S'):
         tz = pytz.timezone('America/Santiago')
-        return datetime.now(tz).strftime(formato)
+        return datetime.now(tz).strftime(format)
 
     @staticmethod
     def convert_encoding(data, new_coding='UTF-8'):
