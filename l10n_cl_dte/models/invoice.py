@@ -1027,7 +1027,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         return xml
 
     def get_digital_signature_pem(self, comp_id):
-        obj = user = self[0].responsable_envio
+        obj = user = False
+        # if 'responsable_envio' in self and self._ids:
+        #    obj = user = self[0].responsable_envio
         if not obj:
             obj = user = self.env.user
         if not obj.cert:
@@ -1042,7 +1044,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
             'subject_serial_number': obj.subject_serial_number,
             'priv_key': obj.priv_key,
             'cert': obj.cert,
-            'rut_envia': obj.subject_serial_number}
+            'rut_envia': obj.subject_serial_number, }
         return signature_data
 
     def get_digital_signature(self, comp_id):

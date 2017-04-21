@@ -77,10 +77,6 @@ server_url = {
 BC = '''-----BEGIN CERTIFICATE-----\n'''
 EC = '''\n-----END CERTIFICATE-----\n'''
 
-# import os
-# xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
-#     '/models', '/static/xsd/')
-
 connection_status = {
     '0': 'Upload OK',
     '1': 'El Sender no tiene permiso para enviar',
@@ -109,10 +105,16 @@ def to_json(colnames, rows):
 def db_handler(method):
     def call(self, *args, **kwargs):
         _logger.info(args)
-        account_invoice_ids = [str(x.id) for x in self.invoice_ids]
+        try:
+            account_invoice_ids = [str(x.id) for x in self.invoice_ids]
+        except:
+            return False
         query = method(self, *args, **kwargs)
         cursor = self.env.cr
-        cursor.execute(query % ', '.join(account_invoice_ids))
+        try:
+            cursor.execute(query % ', '.join(account_invoice_ids))
+        except:
+            return False
         rows = cursor.fetchall()
         colnames = [desc[0] for desc in cursor.description]
         _logger.info('colnames: {}'.format(colnames))
@@ -286,10 +288,10 @@ generated. Its in open status till user does not pay invoice.\n
         select
         sii_code as "TpoDoc",
         totdoc as "TotDoc",
-        f*total_exento as "TotMntExe",
-        f*total_afecto - f*total_exento as "TotMntNeto",
-        f*total_iva as "TotMntIVA",
-        f*total as "TotMntTotal"
+        @ (f*total_exento) as "TotMntExe",
+        @ (f*total_afecto - f*total_exento) as "TotMntNeto",
+        @ (f*total_iva) as "TotMntIVA",
+        @ (f*total) as "TotMntTotal"
         from
         (select
         count(*) as totdoc,
@@ -313,7 +315,7 @@ generated. Its in open status till user does not pay invoice.\n
         return """
         select
         dc.sii_code as "TpoDoc",
-        ai.sii_document_number as "NroDoc",
+        cast(ai.sii_document_number as integer) as "NroDoc",
         ai.date_invoice as "FchDoc",
         trim(leading '0' from substring(rp.vat from 3 for 8)) || '-' ||
         right(rp.vat, 1) as "RUTDoc",
@@ -342,35 +344,14 @@ generated. Its in open status till user does not pay invoice.\n
         order by ai.id
         """
 
-    def get_digital_signature_pem(self, comp_id):
-        obj = user = False
-        if 'responsable_envio' in self and self._ids:
-            obj = user = self[0].responsable_envio
-        if not obj:
-            obj = user = self.env.user
-        if not obj.cert:
-            obj = self.env['res.users'].search(
-                [("authorized_users_ids","=", user.id)])
-            if not obj or not obj.cert:
-                obj = self.env['res.company'].browse([comp_id.id])
-                if not obj.cert or not user.id in obj.authorized_users_ids.ids:
-                    return False
-        signature_data = {
-            'subject_name': obj.name,  # or obj.partner_id.name
-            'subject_serial_number': obj.subject_serial_number,
-            'priv_key': obj.priv_key,
-            'cert': obj.cert,
-            'rut_envia': obj.subject_serial_number, }
-        return signature_data
-
     def _record_totals(self, jvalue):
-        _logger.info('grabando totales en sii_xml_request #####-----####')
         _logger.info(json.dumps(jvalue))
-        self.total_afecto = sum([x['TotMntNeto'] for x in jvalue])
-        self.total_exento = sum([x['TotMntExe'] for x in jvalue])
-        self.total_iva = sum([x['TotMntIVA'] for x in jvalue])
-        self.total_otros_imps = 0
-        self.total = sum([x['TotMntIVA'] for x in jvalue])
+        if jvalue:
+            self.total_afecto = sum([x['TotMntNeto'] for x in jvalue])
+            self.total_exento = sum([x['TotMntExe'] for x in jvalue])
+            self.total_iva = sum([x['TotMntIVA'] for x in jvalue])
+            self.total_otros_imps = 0
+            self.total = sum([x['TotMntIVA'] for x in jvalue])
 
     @staticmethod
     def _envelope_book(xml_pret):
@@ -381,62 +362,65 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
 {}</LibroCompraVenta>""".format(xml_pret)
 
     def _record_detail(self, dict1, dict2):
-        dicttoxml.set_debug(False)
-        inv_obj = self.env['account.invoice']
-        resol_data = inv_obj.get_resolution_data(self.company_id)
-        signature_d = self.get_digital_signature_pem(self.company_id)
-        xml_detail1 = dicttoxml.dicttoxml(
-            dict1, root=False, attr_type=False).replace(
-            'item', 'TotalesPeriodo')
-        xml_detail2 = dicttoxml.dicttoxml(
-            dict2, root=False, attr_type=False).replace(
-            'item', 'Detalle').replace('<Detalles>', '').replace(
-            '</Detalles>', '')
-        xml_detail2 = xml_detail2.replace(
-            '<TpoDocRef/>', '').replace('<FolioDocRef/>', '').replace(
-            '<TpoDocRef></TpoDocRef>', '').replace(
-            '<FolioDocRef></FolioDocRef>', '')
-        xml_envio_libro = """<EnvioLibro ID="{}">\
-<Caratula>\
-<RutEmisorLibro>{}</RutEmisorLibro>\
-<RutEnvia>{}</RutEnvia>\
-<PeriodoTributario>{}</PeriodoTributario>\
-<FchResol>{}</FchResol>\
-<NroResol>{}</NroResol>\
-<TipoOperacion>{}</TipoOperacion>\
-<TipoLibro>ESPECIAL</TipoLibro>\
-<TipoEnvio>{}</TipoEnvio>\
-<FolioNotificacion>{}</FolioNotificacion>\
-</Caratula>{}{}<TmstFirma>{}</TmstFirma></EnvioLibro>""".format(
-            self.name.replace(' ', '_'),
-            inv_obj.format_vat(self.company_id.vat),
-            signature_d['subject_serial_number'],
-            self.periodo_tributario,
-            resol_data['dte_resolution_date'],
-            resol_data['dte_resolution_number'],
-            self.tipo_operacion,
-            self.tipo_envio,
-            self.folio_notificacion,
-            xml_detail1, xml_detail2,
-            inv_obj.time_stamp(),
-        )
-        _logger.info(xml_envio_libro)
-        xml1 = xml.dom.minidom.parseString(xml_envio_libro)
-        xml_pret = xml1.toprettyxml()
-        xml_pret = inv_obj.convert_encoding(xml_pret).replace(
-            '<?xml version="1.0" ?>', '')
-        # xml_pret = inv_obj.sign_seed(
-        #     xml_pret, signature_d['priv_key'], signature_d['cert'])
-        # _logger.info('esto es lo que se firma......')
-        certp = signature_d['cert'].replace(
-            BC, '').replace(EC, '').replace('\n', '')
-        xml_pret = self._envelope_book(xml_pret)
-        _logger.info(xml_pret)
-        xml_pret = inv_obj.sign_full_xml(
-            xml_pret, signature_d['priv_key'], certp,
-            self.name.replace(' ', '_'), type='book')
-        _logger.info(xml_pret)
-        return xml_pret
+        try:
+            dicttoxml.set_debug(False)
+            inv_obj = self.env['account.invoice']
+            resol_data = inv_obj.get_resolution_data(self.company_id)
+            signature_d = inv_obj.get_digital_signature_pem(self.company_id)
+            xml_detail1 = dicttoxml.dicttoxml(
+                dict1, root=False, attr_type=False).replace(
+                'item', 'TotalesPeriodo')
+            xml_detail2 = dicttoxml.dicttoxml(
+                dict2, root=False, attr_type=False).replace(
+                'item', 'Detalle').replace('<Detalles>', '').replace(
+                '</Detalles>', '')
+            xml_detail2 = xml_detail2.replace(
+                '<TpoDocRef/>', '').replace('<FolioDocRef/>', '').replace(
+                '<TpoDocRef></TpoDocRef>', '').replace(
+                '<FolioDocRef></FolioDocRef>', '')
+            xml_envio_libro = """<EnvioLibro ID="{}">\
+    <Caratula>\
+    <RutEmisorLibro>{}</RutEmisorLibro>\
+    <RutEnvia>{}</RutEnvia>\
+    <PeriodoTributario>{}</PeriodoTributario>\
+    <FchResol>{}</FchResol>\
+    <NroResol>{}</NroResol>\
+    <TipoOperacion>{}</TipoOperacion>\
+    <TipoLibro>ESPECIAL</TipoLibro>\
+    <TipoEnvio>{}</TipoEnvio>\
+    <FolioNotificacion>{}</FolioNotificacion>\
+    </Caratula>{}{}<TmstFirma>{}</TmstFirma></EnvioLibro>""".format(
+                self.name.replace(' ', '_'),
+                inv_obj.format_vat(self.company_id.vat),
+                signature_d['subject_serial_number'],
+                self.periodo_tributario,
+                resol_data['dte_resolution_date'],
+                resol_data['dte_resolution_number'],
+                self.tipo_operacion,
+                self.tipo_envio,
+                self.folio_notificacion,
+                xml_detail1, xml_detail2,
+                inv_obj.time_stamp(),
+            )
+            _logger.info(xml_envio_libro)
+            xml1 = xml.dom.minidom.parseString(xml_envio_libro)
+            xml_pret = xml1.toprettyxml()
+            xml_pret = inv_obj.convert_encoding(xml_pret).replace(
+                '<?xml version="1.0" ?>', '')
+            # xml_pret = inv_obj.sign_seed(
+            #     xml_pret, signature_d['priv_key'], signature_d['cert'])
+            # _logger.info('esto es lo que se firma......')
+            certp = signature_d['cert'].replace(
+                BC, '').replace(EC, '').replace('\n', '')
+            xml_pret = self._envelope_book(xml_pret)
+            _logger.info(xml_pret)
+            xml_pret = inv_obj.sign_full_xml(
+                xml_pret, signature_d['priv_key'], certp,
+                self.name.replace(' ', '_'), type='book')
+            _logger.info(xml_pret)
+            return xml_pret
+        except:
+            return False
 
     @api.depends('invoice_ids')
     def set_values(self):
@@ -449,18 +433,62 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
 
     @api.multi
     def validar_libro(self):
-        if not self.state or \
-                self.state not in ['Borrador', 'NoEnviado', 'Rechazado']:
-            raise UserError("El Libro  ya ha sido enviado")
+        inv_obj = self.env['account.invoice']
+        if self.state not in ['draft', 'NoEnviado', 'Rechazado']:
+            raise UserError('El libro se encuentra en estado: {}'.format(
+                self.state))
         company_id = self.company_id
         doc_id = self.tipo_operacion + '_' + self.periodo_tributario
-        result = self.send_xml_file(envio_dte, doc_id + '.xml', company_id)
+        result = inv_obj.send_xml_file(
+            self.sii_xml_request, doc_id + '.xml', company_id)
         self.write({
             'sii_xml_response': result['sii_xml_response'],
             'sii_send_ident': result['sii_send_ident'],
             'state': result['sii_result'],
-            'sii_xml_request': envio_dte
+            # 'sii_xml_request': envio_dte
         })
+
+    def _get_send_status(self, track_id, signature_d,token):
+        url = server_url[self.company_id.dte_service_provider] + 'QueryEstUp.jws?WSDL'
+        ns = 'urn:' + server_url[self.company_id.dte_service_provider] + 'QueryEstUp.jws'
+        _server = SOAPProxy(url, ns)
+        respuesta = _server.getEstUp(self.company_id.vat[2:-1],self.company_id.vat[-1],track_id,token)
+        self.sii_receipt = respuesta
+        resp = xmltodict.parse(respuesta)
+        status = False
+        if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == "-11":
+            status =  {'warning':{'title':_('Error -11'), 'message': _("Error -11: Espere a que sea aceptado por el SII, intente en 5s más")}}
+        if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == "EPR":
+            self.state = "Proceso"
+            if 'SII:RESP_BODY' in resp['SII:RESPUESTA'] and resp['SII:RESPUESTA']['SII:RESP_BODY']['RECHAZADOS'] == "1":
+                self.sii_result = "Rechazado"
+        elif resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == "RCT":
+            self.state = "Rechazado"
+            status = {'warning':{'title':_('Error RCT'), 'message': _(resp['SII:RESPUESTA']['GLOSA'])}}
+        return status
+
+
+    @api.multi
+    def ask_for_dte_status(self):
+        inv_obj = self.env['account.invoice']
+        try:
+            signature_d = inv_obj.get_digital_signature_pem(
+                self.company_id)
+            seed = inv_obj.get_seed(self.company_id)
+            template_string = inv_obj.create_template_seed(seed)
+            seed_firmado = inv_obj.sign_seed(
+                template_string, signature_d['priv_key'],
+                signature_d['cert'])
+            token = inv_obj.get_token(seed_firmado, self.company_id)
+        except:
+            raise UserError(connection_status[response.e])
+        xml_response = xmltodict.parse(self.sii_xml_response)
+        _logger.info(xml_response)
+        if self.state == 'Enviado':
+            status = self._get_send_status(
+                self.sii_send_ident, signature_d, token)
+            if self.state != 'Proceso':
+                return status
 
 
 class Boletas(models.Model):
