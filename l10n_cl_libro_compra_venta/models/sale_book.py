@@ -72,7 +72,7 @@ from bs4 import BeautifulSoup as bs
 
 server_url = {
     'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
-    'SII':'https://palena.sii.cl/DTEWS/', }
+    'SII': 'https://palena.sii.cl/DTEWS/', }
 
 BC = '''-----BEGIN CERTIFICATE-----\n'''
 EC = '''\n-----END CERTIFICATE-----\n'''
@@ -90,13 +90,43 @@ connection_status = {
     'Otro': 'Error Interno.', }
 
 
+def char_replace(text):
+    """
+    Funcion para reemplazar caracteres especiales
+    Esta funcion sirve para salvar bug en libreDTE con los recortes de
+    giros que están codificados en utf8 (cuando trunca, trunca la
+    codificacion)
+    @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+    @version: 2016-07-31
+    """
+    special_chars = [
+        [u'á', 'a'],
+        [u'é', 'e'],
+        [u'í', 'i'],
+        [u'ó', 'o'],
+        [u'ú', 'u'],
+        [u'ñ', 'n'],
+        [u'Á', 'A'],
+        [u'É', 'E'],
+        [u'Í', 'I'],
+        [u'Ó', 'O'],
+        [u'Ú', 'U'],
+        [u'Ñ', 'N']]
+    for char in special_chars:
+        try:
+            text = text.replace(char[0], char[1])
+        except:
+            pass
+    return text
+
+
 def to_json(colnames, rows):
     all_data = []
     for row in rows:
         each_row = collections.OrderedDict()
         i = 0
         for colname in colnames:
-            each_row[colname] = row[i]
+            each_row[colname] = char_replace(row[i])
             i += 1
         all_data.append(each_row)
     return all_data
@@ -289,34 +319,50 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
     @db_handler
     def _summary_by_period(self):
         return """
+        /*
+        NO LOS TUVE EN CUENTA
+        TotOpIVAUsoComun
+        TotIVAUsoComun
+        VAN ANTES DE:
+        TotImpSinCredito
+        */
         select
-        sii_code as "TpoDoc",
-        totdoc as "TotDoc",
-        totopexe as "TotOpExe",
-        @ (f*total_exento) as "TotMntExe",
-        @ (f*total_afecto - f*total_exento) as "TotMntNeto",
-        totopivarec as "TotOpIVARec",
-        @ (f*total_iva) as "TotMntIVA",
-        @ (f*total) as "TotMntTotal"
-        from
-        (select
-        count(*) as totdoc,
-        sum (case when mnt_exe >0 then 1 else 0 end) as totopexe,
-        dc.sii_code,
-        (case
-        when dc.sii_code = 61 then -1
-        else 1
-        end) as f,
-        cast(sum(mnt_exe) as integer) as "total_exento",
-        cast(sum(amount_untaxed) as integer) as "total_afecto",
-        cast((sum(amount_total)-sum(amount_untaxed)) as integer) as total_iva,
-        sum (case when (@ amount_total - @ amount_untaxed) > 0
-            then 1 else 0 end) as totopivarec,
-        cast(sum(amount_total) as integer) as total
+        dc.sii_code as "TpoDoc",
+        1 as "TpoImp",
+        count(*) as "TotDoc",
+        sum (case when mnt_exe > 0 then 1 else 0 end) as "TotOpExe",
+        sum(cast(ai.mnt_exe as integer)) as "TotMntExe",
+        sum(cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer)) as
+        "TotMntNeto",
+	sum(cast(round((case when ax.no_rec is False then 1 else 0 end), 0) as integer)) as "TotOpIVARec",
+        sum(cast(round((case when ax.no_rec is False then at.amount else 0 end), 0) as integer)) as "TotMntIVA",
+        max((case when ax.no_rec then 1 else 0 end)) as "TotIVANoRec",
+        max((case when ax.no_rec then ax.sii_code else 0 end)) as "CodIVANoRec",
+        sum((case when ax.no_rec then 1 else 0 end)) as "TotOpIVANoRec",
+        sum(cast(round((case when ax.no_rec then at.amount else 0 end), 0) as integer)) as "TotMntIVANoRec",
+        sum(cast(round((case when ax.no_rec then 0 else 0 end), 0) as integer)) as "TotImpSinCredito",
+        sum(cast(ai.amount_total as integer)) as "TotMntTotal"
         from account_invoice ai
-        join sii_document_class dc
+        left join sii_document_class dc
         on ai.sii_document_class_id = dc.id
-        where ai.id in (%s) group by dc.sii_code) as a
+        left join
+        (select ar.invoice_id, ar.origen, dcl.sii_code from
+        (select
+        invoice_id,
+        origen,
+        "sii_referencia_TpoDocRef" as tipo
+        from account_invoice_referencias) ar
+        left join sii_document_class dcl
+        on ar.tipo = dcl.id) as ref
+        on ref.invoice_id = ai.id
+        left join res_partner rp
+        on rp.id = ai.partner_id
+        left join account_invoice_tax at
+        on at.invoice_id = ai.id
+        left join account_tax ax
+        on ax.id = at.tax_id
+        where ai.id in (%s)
+        group by dc.sii_code
         """
 
     @db_handler
@@ -325,7 +371,7 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         select
         dc.sii_code as "TpoDoc",
         cast(ai.sii_document_number as integer) as "NroDoc",
-        ax.sii_code as "TpoImp",
+        1 as "TpoImp",
         round(ax.amount, 2) as "TasaImp",
         ai.date_invoice as "FchDoc",
         trim(leading '0' from substring(rp.vat from 3 for 8)) || '-' ||
@@ -342,6 +388,10 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         (case when ax.no_rec then ax.sii_code else 0 end) as "CodIVANoRec",
         cast(round((case when ax.no_rec then at.amount else 0 end), 0) as
         integer) as "MntIVANoRec",
+        /*cast(round((case when ax.no_rec then 0 else 0 end), 0) as
+        integer) as "IVAUsoComun",*/
+        cast(round((case when ax.no_rec then 0 else 0 end), 0) as
+        integer) as "MntSinCred",
         cast(ai.amount_total as integer) as "MntTotal"
         from account_invoice ai
         left join sii_document_class dc
@@ -387,30 +437,45 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
 xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
 {}</LibroCompraVenta>""".format(xml_pret)
 
+    @staticmethod
+    def insert_son_values(
+            parent_dictionary, grand_parent_tag, parent_tag, son_tags):
+        dict2n = collections.OrderedDict()
+        dict2n[grand_parent_tag] = []
+        for d2 in parent_dictionary[grand_parent_tag]:
+            dict2nlist = collections.OrderedDict()
+            for k, v in d2.iteritems():
+                if k == parent_tag:
+                    dict2nlist[k] = collections.OrderedDict()
+                elif k in son_tags and int(v) != 0:
+                    dict2nlist[parent_tag][k] = v
+                else:
+                    dict2nlist[k] = v
+                print k, v
+            dict2n[grand_parent_tag].append(dict2nlist)
+        return dict2n
+
     def _record_detail(self, dict1, dict2):
         if True:
             dicttoxml.set_debug(False)
             inv_obj = self.env['account.invoice']
             resol_data = inv_obj.get_resolution_data(self.company_id)
             signature_d = inv_obj.get_digital_signature_pem(self.company_id)
+            dict1n = self.insert_son_values(
+                dict1, 'ResumenPeriodo', 'TotIVANoRec',
+                ['CodIVANoRec', 'TotMntIVANoRec', 'TotOpIVANoRec'])
             xml_detail1 = dicttoxml.dicttoxml(
-                dict1, root=False, attr_type=False).replace(
+                dict1n, root=False, attr_type=False).replace(
                 'item', 'TotalesPeriodo').replace(
                 '<TotOpExe>0</TotOpExe>', '').replace(
-                '<TotOpIVARec>0</TotOpIVARec>', '')
-            dict2n = collections.OrderedDict()
-            dict2n['Detalles'] = []
-            for d2 in dict2['Detalles']:
-                dict2nlist = collections.OrderedDict()
-                for k, v in d2.iteritems():
-                    if k == 'IVANoRec':
-                        dict2nlist[k] = collections.OrderedDict()
-                    elif k in ['CodIVANoRec', 'MntIVANoRec'] and int(v) != 0:
-                        dict2nlist['IVANoRec'][k] = v
-                    else:
-                        dict2nlist[k] = v
-                    print k, v
-                dict2n['Detalles'].append(dict2nlist)
+                '<TotOpIVARec>0</TotOpIVARec>', '').replace(
+                '<TpoImp></TpoImp>', '').replace(
+                '<CodIVANoRec>0</CodIVANoRec>', '').replace(
+                '<TotOpIVANoRec>0</TotOpIVANoRec>', '').replace(
+                '<TotMntIVANoRec>0</TotMntIVANoRec>', '').replace(
+                '<TotIVANoRec></TotIVANoRec>', '')
+            dict2n = self.insert_son_values(
+                dict2, 'Detalles', 'IVANoRec', ['CodIVANoRec', 'MntIVANoRec'])
             # print dict2n
             xml_detail2 = dicttoxml.dicttoxml(
                 dict2n, root=False, attr_type=False).replace(
@@ -428,17 +493,17 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
             print xml_detail2
             # raise UserError('xml_detail2')
             xml_envio_libro = """<EnvioLibro ID="{}">\
-    <Caratula>\
-    <RutEmisorLibro>{}</RutEmisorLibro>\
-    <RutEnvia>{}</RutEnvia>\
-    <PeriodoTributario>{}</PeriodoTributario>\
-    <FchResol>{}</FchResol>\
-    <NroResol>{}</NroResol>\
-    <TipoOperacion>{}</TipoOperacion>\
-    <TipoLibro>ESPECIAL</TipoLibro>\
-    <TipoEnvio>{}</TipoEnvio>\
-    <FolioNotificacion>{}</FolioNotificacion>\
-    </Caratula>{}{}<TmstFirma>{}</TmstFirma></EnvioLibro>""".format(
+<Caratula>\
+<RutEmisorLibro>{}</RutEmisorLibro>\
+<RutEnvia>{}</RutEnvia>\
+<PeriodoTributario>{}</PeriodoTributario>\
+<FchResol>{}</FchResol>\
+<NroResol>{}</NroResol>\
+<TipoOperacion>{}</TipoOperacion>\
+<TipoLibro>ESPECIAL</TipoLibro>\
+<TipoEnvio>{}</TipoEnvio>\
+<FolioNotificacion>{}</FolioNotificacion>\
+</Caratula>{}{}<TmstFirma>{}</TmstFirma></EnvioLibro>""".format(
                 self.name.replace(' ', '_'),
                 inv_obj.format_vat(self.company_id.vat),
                 signature_d['subject_serial_number'],

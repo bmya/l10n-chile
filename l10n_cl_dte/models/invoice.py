@@ -208,7 +208,8 @@ class Signer(XMLSigner):
             digest_algorithm='sha1',
             c14n_algorithm='http://www.w3.org/TR/2001/REC-xml-c14n-20010315')
 
-    def key_value_serialization_is_required(self, cert_chain):
+    @staticmethod
+    def key_value_serialization_is_required(cert_chain):
         return True
 
 
@@ -298,31 +299,11 @@ class Invoice(models.Model):
             control = 'truncate'
         else:
             size = normalize_tags[key][0]
-        if self.company_id.dte_service_provider in ['LIBREDTE']:
-            var = self.char_replace(var)
-            # var = unicodedata.normalize(
-            # 'NFKD', var).encode('ascii', 'ignore')
         if control == 'truncate':
             var = var[:size]
         elif control == 'safe':
             self.safe_variable(var, key)
         return var
-
-    # metodos de libredte
-    @staticmethod
-    def remove_plurals_node(dte):
-        dte1 = collections.OrderedDict()
-        for k, v in dte.items():
-            if k in pluralizeds:
-                k = k[:-1]
-                vn = []
-                for v1 in v:
-                    vn.append(v1[k])
-                    v = vn
-            else:
-                k, v = k, v
-            dte1[k] = v
-        return dte1
 
     # metodos de sii
     @api.model
@@ -1269,8 +1250,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         encabezado['IdDoc'] = self._id_doc(tax_include, MntExe)
         encabezado['Emisor'] = self._sender()
         encabezado['Receptor'] = self._receptor()
-        if self.company_id.dte_service_provider not in ['LIBREDTE']:
-            encabezado['Totales'] = self._totals(MntExe, no_product)
+        encabezado['Totales'] = self._totals(MntExe, no_product)
         return encabezado
 
     def _invoice_lines(self):
@@ -1391,8 +1371,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         dte['Detalles'] = invoice_lines['invoice_lines']
         if len(ref_lines) > 0:
             dte['Referencias'] = ref_lines
-        if self.company_id.dte_service_provider not in ['LIBREDTE']:
-            dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
+        dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
         _logger.info('DTE _dte...{}'.format(json.dumps(dte)))
         # raise UserError('stop dentro _dte')
         return dte
@@ -1713,10 +1692,6 @@ for you or make the signer to authorize you to use his signature.'''))
                 # otra culiadez... retimbrar de vuelta porque sí
                 # si va a retimbrar para qué guardo antes el xml
                 inv._do_stamp(att_number)
-            elif inv.company_id.dte_service_provider == 'LIBREDTE':
-                # sacar a la mierda del nuevo código
-                _logger.info(
-                    'desde do_dte_send, cola: {}'.format(inv._dte(att_number)))
             if not inv.sii_document_class_id.sii_code in clases:
                 # en la  primera vuelta no hay nada en clases
                 # aparentemente lo que quiere hacer, es ordenar por codigo de
@@ -1743,7 +1718,7 @@ hacer eso en un envío')
             # tiene que ver, reconciliar los documentos con la factura
             # electronica?????? eso lo hace otro componente!
         file_name = ""
-        dtes = {}  #  otro diccionario mas y van 3
+        dtes = {}  # otro diccionario mas y van 3
         SubTotDTE = ''
         resol_data = self.get_resolution_data(company_id)
         signature_d = self.get_digital_signature(company_id)
@@ -1934,11 +1909,10 @@ envío interna en odoo')
     @api.multi
     def get_xml_attachment(self, inv=''):
         """
-        Función para leer el xml para libreDTE desde los attachments
+        Función para leer el xml desde los attachments
         @author: Daniel Blanco Martín (daniel[at]blancomartin.cl)
         @version: 2016-07-01
         """
-        # self.ensure_one()
         if inv == '':
             inv = self
         _logger.info('entrando a la funcion de toma de xml desde attachments')
