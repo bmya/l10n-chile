@@ -1272,14 +1272,14 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             self.partner_id.city, 'CiudadRecep', 'safe')
         return receptor
 
-    def _totales(self, MntExe=0, no_product=False, tax_include=False):
-        Totales = collections.OrderedDict()
+    def _totals(self, MntExe=0, no_product=False, tax_include=False):
+        totals = collections.OrderedDict()
         if self.sii_document_class_id.sii_code == 34 or (
                 self.referencias and self.referencias[0].
                 sii_referencia_TpoDocRef.sii_code == '34'):
-            self.mnt_exe = Totales['MntExe'] = int(round(self.amount_total, 0))
+            self.mnt_exe = totals['MntExe'] = int(round(self.amount_total, 0))
             if no_product:
-                self.mnt_exe = Totales['MntExe'] = 0
+                self.mnt_exe = totals['MntExe'] = 0
         elif self.amount_untaxed and self.amount_untaxed != 0:
             if not self.is_doc_type_b() or not tax_include:
                 IVA = False
@@ -1287,34 +1287,34 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                     if t.tax_id.sii_code in [14, 15]:
                         IVA = t
                 if IVA and IVA.base > 0:
-                    Totales['MntNeto'] = int(round((IVA.base), 0))
+                    totals['MntNeto'] = int(round((IVA.base), 0))
             if MntExe > 0:
-                self.mnt_exe = Totales['MntExe'] = int(round(MntExe))
+                self.mnt_exe = totals['MntExe'] = int(round(MntExe))
             if not self.is_doc_type_b() or not tax_include:
                 if IVA:
                     if not self.is_doc_type_b():
-                        Totales['TasaIVA'] = round(IVA.tax_id.amount,2)
-                    Totales['IVA'] = int(round(IVA.amount, 0))
+                        totals['TasaIVA'] = round(IVA.tax_id.amount,2)
+                    totals['IVA'] = int(round(IVA.amount, 0))
                 if no_product:
-                    Totales['MntNeto'] = 0
+                    totals['MntNeto'] = 0
                     if not self.is_doc_type_b():
-                        Totales['TasaIVA'] = 0
-                    Totales['IVA'] = 0
+                        totals['TasaIVA'] = 0
+                    totals['IVA'] = 0
             if IVA and IVA.tax_id.sii_code in [15]:
-                Totales['ImptoReten'] = collections.OrderedDict()
-                Totales['ImptoReten']['TpoImp'] = IVA.tax_id.sii_code
-                Totales['ImptoReten']['TasaImp'] = round(IVA.tax_id.amount,2)
-                Totales['ImptoReten']['MontoImp'] = int(round(IVA.amount))
+                totals['ImptoReten'] = collections.OrderedDict()
+                totals['ImptoReten']['TpoImp'] = IVA.tax_id.sii_code
+                totals['ImptoReten']['TasaImp'] = round(IVA.tax_id.amount,2)
+                totals['ImptoReten']['MontoImp'] = int(round(IVA.amount))
         monto_total = int(round(self.amount_total, 0))
         if no_product:
             monto_total = 0
-        Totales['MntTotal'] = monto_total
+        totals['MntTotal'] = monto_total
 
-        #Totales['MontoNF']
-        #Totales['TotalPeriodo']
-        #Totales['SaldoAnterior']
-        #Totales['VlrPagar']
-        return Totales
+        #totals['MontoNF']
+        #totals['TotalPeriodo']
+        #totals['SaldoAnterior']
+        #totals['VlrPagar']
+        return totals
 
     def _encabezado(self, MntExe=0, no_product=False, tax_include=False):
         encabezado = collections.OrderedDict()
@@ -1322,7 +1322,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         encabezado['Emisor'] = self._sender()
         encabezado['Receptor'] = self._receptor()
         if self.company_id.dte_service_provider not in ['LIBREDTE']:
-            encabezado['Totales'] = self._totales(MntExe, no_product)
+            encabezado['Totales'] = self._totals(MntExe, no_product)
         return encabezado
 
     def create_headers_ldte(self, comp_id=False):

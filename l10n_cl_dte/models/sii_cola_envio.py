@@ -35,7 +35,7 @@ class ColaEnvio(models.Model):
                     _logger.info(u'El primer registro del grupo se encuentra \
 en estado: {}. Se descarta el envío de este grupo. No se consultará nuevamente\
  por cola'.format(docs[0].sii_result))
-                    docs.active = False
+                    c.active = False
                     # c.unlink()
                     # return
                 else:
