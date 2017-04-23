@@ -68,7 +68,7 @@ try:
 except ImportError:
     _logger.info('Cannot import signxml')
 import xml.dom.minidom
-
+from bs4 import BeautifulSoup as bs
 
 server_url = {
     'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
@@ -325,6 +325,8 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         select
         dc.sii_code as "TpoDoc",
         cast(ai.sii_document_number as integer) as "NroDoc",
+        ax.sii_code as "TpoImp",
+        round(ax.amount, 2) as "TasaImp",
         ai.date_invoice as "FchDoc",
         trim(leading '0' from substring(rp.vat from 3 for 8)) || '-' ||
         right(rp.vat, 1) as "RUTDoc",
@@ -334,9 +336,15 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         cast(ai.mnt_exe as integer) as "MntExe",
         cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer) as
         "MntNeto",
+        cast((case when ax.no_rec is False then at.amount else 0 end)
+        as integer) as "MntIVA",
+        (case when ax.no_rec then 1 else 0 end) as "IVANoRec",
+        (case when ax.no_rec then ax.sii_code else 0 end) as "CodIVANoRec",
+        cast(round((case when ax.no_rec then at.amount else 0 end), 0) as
+        integer) as "MntIVANoRec",
         cast(ai.amount_total as integer) as "MntTotal"
         from account_invoice ai
-        join sii_document_class dc
+        left join sii_document_class dc
         on ai.sii_document_class_id = dc.id
         left join
         (select ar.invoice_id, ar.origen, dcl.sii_code from
@@ -348,8 +356,16 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         left join sii_document_class dcl
         on ar.tipo = dcl.id) as ref
         on ref.invoice_id = ai.id
-        join res_partner rp
+        left join res_partner rp
         on rp.id = ai.partner_id
+        /*left join account_invoice_line al
+        on al.invoice_id = ai.id
+        left join account_invoice_line_tax alt
+        on alt.invoice_line_id = al.id*/
+        left join account_invoice_tax at
+        on at.invoice_id = ai.id
+        left join account_tax ax
+        on ax.id = at.tax_id
         where ai.id in (%s)
         order by ai.id
         """
@@ -382,14 +398,35 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
                 'item', 'TotalesPeriodo').replace(
                 '<TotOpExe>0</TotOpExe>', '').replace(
                 '<TotOpIVARec>0</TotOpIVARec>', '')
+            dict2n = collections.OrderedDict()
+            dict2n['Detalles'] = []
+            for d2 in dict2['Detalles']:
+                dict2nlist = collections.OrderedDict()
+                for k, v in d2.iteritems():
+                    if k == 'IVANoRec':
+                        dict2nlist[k] = collections.OrderedDict()
+                    elif k in ['CodIVANoRec', 'MntIVANoRec'] and int(v) != 0:
+                        dict2nlist['IVANoRec'][k] = v
+                    else:
+                        dict2nlist[k] = v
+                    print k, v
+                dict2n['Detalles'].append(dict2nlist)
+            # print dict2n
             xml_detail2 = dicttoxml.dicttoxml(
-                dict2, root=False, attr_type=False).replace(
+                dict2n, root=False, attr_type=False).replace(
                 'item', 'Detalle').replace('<Detalles>', '').replace(
                 '</Detalles>', '')
             xml_detail2 = xml_detail2.replace(
                 '<TpoDocRef/>', '').replace('<FolioDocRef/>', '').replace(
                 '<TpoDocRef></TpoDocRef>', '').replace(
-                '<FolioDocRef></FolioDocRef>', '')
+                '<FolioDocRef></FolioDocRef>', '').replace(
+                '<TpoImp></TpoImp>', '').replace(
+                '<TasaImp></TasaImp>', '').replace(
+                '<CodIVANoRec>0</CodIVANoRec>', '').replace(
+                '<MntIVANoRec>0</MntIVANoRec>', '').replace(
+                '<IVANoRec></IVANoRec>', '')
+            print xml_detail2
+            # raise UserError('xml_detail2')
             xml_envio_libro = """<EnvioLibro ID="{}">\
     <Caratula>\
     <RutEmisorLibro>{}</RutEmisorLibro>\

@@ -14,7 +14,8 @@
                     <field name="sii_document_class_id"/>
                 </field>
                 <xpath expr="//group[last()]" position="inside">
-                    <filter string="Document Type" icon="terp-folder-orange" domain="[]" context="{'group_by':'sii_document_class_id'}"/>
+                    <filter string="Document Type" icon="terp-folder-orange"
+                            domain="[]" context="{'group_by':'sii_document_class_id'}"/>
                 </xpath>
             </field>
         </record>
@@ -45,21 +46,50 @@
             <field name="model">account.invoice</field>
             <field name="inherit_id" ref="account.invoice_form"/>
             <field name="arch" type="xml">
-              <!--<button name="invoice_cancel" position="attributes">
-                  <attribute name="invisible">1</attribute>
-              </button>-->
-              <field name="state" position="before">
-                <button name="%(account.action_account_invoice_refund)d" type='action' string='Refund Invoice' groups="base.group_user" attrs="{'invisible': ['|',('type', '=', 'out_invoice'), ('state', 'not in', ('open','proforma2','paid'))]}"/>
-              </field>
+                <!--<button name="invoice_cancel" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>-->
+                <field name="state" position="before">
+                    <button name="%(account.action_account_invoice_refund)d" type='action' string='Refund Invoice' groups="base.group_user" attrs="{'invisible': ['|',('type', '=', 'out_invoice'), ('state', 'not in', ('open','proforma2','paid'))]}"/>
+                </field>
                <xpath expr="//page/field[@name='invoice_line_ids']/tree/field[@name='product_id']" position="after">
-                 <field name="name" />
+                     <field name="name" />
                </xpath>
-                <form>
+               <form>
                     <field name="available_journal_document_class_ids" invisible="1"/>
                     <field name="use_documents" invisible="1"/>
                     <field name="sii_document_number" invisible="1"/>
                     <field name="move_name" invisible="1"/>
-                </form>
+               </form>
+               <field name="date_invoice" position="after">
+                    <!-- poner diario y documento -->
+                    <field name="journal_id"
+                        attrs="{'readonly':[
+                                '|', '|', ('state', '!=', 'draft'),
+                                         ('sii_document_number', '!=', False),
+                                         ('move_name', '!=', False)]}"
+                        options="{'no_create': True}"
+                        domains="[('journal_id', 'in', available_journals)]"/>
+                    <field name="journal_document_class_id"
+                        attrs="{
+                             'invisible':[('use_documents','=',False)],
+                             'required':[('use_documents','=',True)],
+                             'readonly':['|', ('state', '!=', 'draft'), ('sii_document_number','!=',False)]}"
+                        options="{'no_create': True}"
+                        domain="[('id', 'in', available_journal_document_class_ids[0][2])]"/>
+                    <field name="turn_issuer"
+                        domain="[('journal_ids', '=', journal_id)]"
+                        attrs="{'required':[('use_documents', '=', True)]}"
+                        options="{'no_create': True}"/>
+                        <!--<field name="journal_document_class_id"
+                           attrs="{'invisible':[('use_documents','=',False)],'required':[('use_documents','=',True)],'readonly':['|',('state','!=','draft'),('sii_document_number','!=',False)]}"
+                           options="{'no_create': True}"
+                           domain="[('id','in',available_journal_document_class_ids[0][2])]"/>-->
+
+                </field>
+                <field name="account_id" position="attributes">
+                    <attribute name="options">{'no_create': True}</attribute>
+                </field>
                 <field name="payment_term_id" position="after">
                   <field name="forma_pago" />
                   <field name="contact_id" domain="[
@@ -105,39 +135,6 @@
 
                 <field name="number" position="after">
                     <field name="document_number" class="oe_inline"/>
-                </field>
-
-                <field name="journal_id" position="attributes">
-                    <attribute name="attrs">
-                        {'readonly':[
-                            '|', '|', ('state', '!=', 'draft'),
-                                     ('sii_document_number', '!=', False),
-                                     ('move_name', '!=', False)]}</attribute>
-                    <attribute name="options">{'no_create': True}</attribute>
-                    <attribute name="domains">[('journal_id', 'in', available_journals)]</attribute>
-                </field>
-
-                <field name="journal_id" position="after">
-                       <field name="turn_issuer"
-                           domain="[('journal_ids', '=', journal_id)]"
-                           attrs="{'required':[('use_documents', '=', True)]}"
-                           options="{'no_create': True}"/>
-                    <!--<field name="journal_document_class_id"
-                           attrs="{'invisible':[('use_documents','=',False)],'required':[('use_documents','=',True)],'readonly':['|',('state','!=','draft'),('sii_document_number','!=',False)]}"
-                           options="{'no_create': True}"
-                           domain="[('id','in',available_journal_document_class_ids[0][2])]"/>-->
-                    <field name="journal_document_class_id"
-                           attrs="{
-                                'invisible':[('use_documents','=',False)],
-                                'required':[('use_documents','=',True)],
-                                'readonly':['|', ('state', '!=', 'draft'), ('sii_document_number','!=',False)]}"
-                           options="{'no_create': True}"
-                           domain="[('id', 'in', available_journal_document_class_ids[0][2])]"
-                    />
-                </field>
-
-                <field name="account_id" position="attributes">
-                    <attribute name="options">{'no_create': True}</attribute>
                 </field>
 
                 <xpath expr="//form/sheet/h1/label[1]" position="after">
@@ -203,9 +200,9 @@
                     <field name="iva_uso_comun" />
                   </group>
                 </xpath>
-                                <field name="tax_line_ids" position="before">
+                <!--<field name="tax_line_ids" position="before">
                     <field name="referencias" mode="tree">
-                      <form>
+                    <form>
                         <group>
                           <field name="origen" required="True"/>
                           <field name="sii_referencia_TpoDocRef" required="True" />
@@ -222,7 +219,7 @@
                         <field name="fecha_documento"/>
                       </tree>
                     </field>
-                </field>
+                </field>-->
 
             </field>
         </record>
