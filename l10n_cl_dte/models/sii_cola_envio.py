@@ -33,8 +33,9 @@ class ColaEnvio(models.Model):
                         docs[0].sii_result in [
                             'Proceso', 'Rechazado', 'Aceptado']:
                     _logger.info(u'El primer registro del grupo se encuentra \
-en proceso. Se descarta el envío de este grupo.')
-                    # docs.active = False
+en estado: {}. Se descarta el envío de este grupo. No se consultará nuevamente\
+ por cola'.format(docs[0].sii_result))
+                    docs.active = False
                     # c.unlink()
                     # return
                 else:
