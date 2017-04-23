@@ -130,8 +130,7 @@
                            attrs="{
                                 'invisible':[('use_documents','=',False)],
                                 'required':[('use_documents','=',True)],
-                                'readonly':['|', ('state', '!=', 'draft'),
-                                            ('sii_document_number','!=',False)]}"
+                                'readonly':['|', ('state', '!=', 'draft'), ('sii_document_number','!=',False)]}"
                            options="{'no_create': True}"
                            domain="[('id', 'in', available_journal_document_class_ids[0][2])]"
                     />
@@ -190,8 +189,7 @@
                             attrs="{'invisible':[('use_documents','=',False)],
                                 'required':[('use_documents','=',True)],
                                 'readonly':[
-                                    '|',('state','!=','draft'),
-                                        ('sii_document_number','!=',False)]}"
+                                    '|',('state','!=','draft')]}"
                             domain="[('id','in',available_journal_document_class_ids[0][2])]"
                             options="{'no_create': True}"/>
                 </field>
@@ -205,6 +203,27 @@
                     <field name="iva_uso_comun" />
                   </group>
                 </xpath>
+                                <field name="tax_line_ids" position="before">
+                    <field name="referencias" mode="tree">
+                      <form>
+                        <group>
+                          <field name="origen" required="True"/>
+                          <field name="sii_referencia_TpoDocRef" required="True" />
+                          <field name="sii_referencia_CodRef"/>
+                          <field name="motivo"/>
+                          <field name="fecha_documento"/>
+                        </group>
+                      </form>
+                      <tree>
+                        <field name="origen" required="True"/>
+                        <field name="sii_referencia_TpoDocRef" required="True" />
+                        <field name="sii_referencia_CodRef"/>
+                        <field name="motivo"/>
+                        <field name="fecha_documento"/>
+                      </tree>
+                    </field>
+                </field>
+
             </field>
         </record>
 

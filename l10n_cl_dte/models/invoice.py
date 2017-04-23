@@ -975,9 +975,25 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
         @version: 2014-12-01
         """
-        encoding = cchardet.detect(data)['encoding']
+        try:
+            encoding = cchardet.detect(data)['encoding']
+            _logger.info('ENCODING #################')
+            _logger.info(encoding)
+        except:
+            encoding = 'ascii'
         if new_coding.upper() != encoding.upper():
-            data = data.decode(encoding, data).encode(new_coding)
+            try:
+                data = data.decode(encoding=encoding, errors='ignore')
+            except:
+                try:
+                    data = data.decode(encoding='UTF-8', errors='ignore')
+                except:
+                    try:
+                        data = data.decode(
+                            encoding='ISO-8859-9', errors='replace')
+                    except:
+                        pass
+            data = data.encode(encoding=new_coding, errors='ignore')
         return data
 
     @staticmethod

@@ -105,9 +105,9 @@ def to_json(colnames, rows):
 def db_handler(method):
     def call(self, *args, **kwargs):
         _logger.info(args)
-        try:
+        if True:  # try:
             account_invoice_ids = [str(x.id) for x in self.invoice_ids]
-        except:
+        else:  # except:
             return False
         query = method(self, *args, **kwargs)
         cursor = self.env.cr
@@ -181,8 +181,11 @@ generated. Its in open status till user does not pay invoice.\n
                 default='MENSUAL',
                 required=True,
                 readonly=True,
-                states={'draft': [('readonly', False)]}
-            )
+                states={'draft': [('readonly', False)]},
+                help=u"""Mensual: corresponde a libros regulares.
+Especial: corresponde a un libro solicitado vía una notificación.
+Rectifica: Corresponde a un libro que reemplaza a uno ya recibido por el SII, \
+requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
     tipo_operacion = fields.Selection([
                 ('COMPRA', 'Compras'),
                 ('VENTA', 'Ventas'),
@@ -268,7 +271,8 @@ generated. Its in open status till user does not pay invoice.\n
     nro_segmento = fields.Integer(
         string="Número de Segmento",
         readonly=True,
-        states={'draft': [('readonly', False)]})
+        states={'draft': [('readonly', False)]},
+        help=u"""Sólo si el TIPO DE ENVIO es PARCIAL.""")
     date = fields.Date(
         string="Fecha",
         required=True,
@@ -288,13 +292,16 @@ generated. Its in open status till user does not pay invoice.\n
         select
         sii_code as "TpoDoc",
         totdoc as "TotDoc",
+        totopexe as "TotOpExe",
         @ (f*total_exento) as "TotMntExe",
         @ (f*total_afecto - f*total_exento) as "TotMntNeto",
+        totopivarec as "TotOpIVARec",
         @ (f*total_iva) as "TotMntIVA",
         @ (f*total) as "TotMntTotal"
         from
         (select
         count(*) as totdoc,
+        sum (case when mnt_exe >0 then 1 else 0 end) as totopexe,
         dc.sii_code,
         (case
         when dc.sii_code = 61 then -1
@@ -303,6 +310,8 @@ generated. Its in open status till user does not pay invoice.\n
         cast(sum(mnt_exe) as integer) as "total_exento",
         cast(sum(amount_untaxed) as integer) as "total_afecto",
         cast((sum(amount_total)-sum(amount_untaxed)) as integer) as total_iva,
+        sum (case when (@ amount_total - @ amount_untaxed) > 0
+            then 1 else 0 end) as totopivarec,
         cast(sum(amount_total) as integer) as total
         from account_invoice ai
         join sii_document_class dc
@@ -319,11 +328,12 @@ generated. Its in open status till user does not pay invoice.\n
         ai.date_invoice as "FchDoc",
         trim(leading '0' from substring(rp.vat from 3 for 8)) || '-' ||
         right(rp.vat, 1) as "RUTDoc",
-        rp.name as "RznSoc",
+        left(rp.name, 50) as "RznSoc",
         ref.sii_code as "TpoDocRef",
         ref.origen as "FolioDocRef",
         cast(ai.mnt_exe as integer) as "MntExe",
-        cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer) as "MntNeto",
+        cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer) as
+        "MntNeto",
         cast(ai.amount_total as integer) as "MntTotal"
         from account_invoice ai
         join sii_document_class dc
@@ -362,14 +372,16 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
 {}</LibroCompraVenta>""".format(xml_pret)
 
     def _record_detail(self, dict1, dict2):
-        try:
+        if True:
             dicttoxml.set_debug(False)
             inv_obj = self.env['account.invoice']
             resol_data = inv_obj.get_resolution_data(self.company_id)
             signature_d = inv_obj.get_digital_signature_pem(self.company_id)
             xml_detail1 = dicttoxml.dicttoxml(
                 dict1, root=False, attr_type=False).replace(
-                'item', 'TotalesPeriodo')
+                'item', 'TotalesPeriodo').replace(
+                '<TotOpExe>0</TotOpExe>', '').replace(
+                '<TotOpIVARec>0</TotOpIVARec>', '')
             xml_detail2 = dicttoxml.dicttoxml(
                 dict2, root=False, attr_type=False).replace(
                 'item', 'Detalle').replace('<Detalles>', '').replace(
@@ -405,11 +417,14 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
             _logger.info(xml_envio_libro)
             xml1 = xml.dom.minidom.parseString(xml_envio_libro)
             xml_pret = xml1.toprettyxml()
-            xml_pret = inv_obj.convert_encoding(xml_pret).replace(
-                '<?xml version="1.0" ?>', '')
-            # xml_pret = inv_obj.sign_seed(
-            #     xml_pret, signature_d['priv_key'], signature_d['cert'])
-            # _logger.info('esto es lo que se firma......')
+            if True:  # try:
+                xml_pret = inv_obj.convert_encoding(
+                    xml_pret, 'ISO-8859-1').replace(
+                    '<?xml version="1.0" ?>', '')
+            else:  # except:
+                _logger.info(u'no pude decodificar algún caracter. La versión \
+guardada del xml es la siguiente: {}'.format(xml_pret))
+                # raise UserError('xml pret sin decodificar')
             certp = signature_d['cert'].replace(
                 BC, '').replace(EC, '').replace('\n', '')
             xml_pret = self._envelope_book(xml_pret)
@@ -419,7 +434,8 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
                 self.name.replace(' ', '_'), type='book')
             _logger.info(xml_pret)
             return xml_pret
-        except:
+        else:  # except:
+            _logger.info('no se pudo obtener archivos (primer pasada)')
             return False
 
     @api.depends('invoice_ids')
