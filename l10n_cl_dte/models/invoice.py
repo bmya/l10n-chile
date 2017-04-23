@@ -1526,7 +1526,7 @@ signature.'''))
         try:
             respuesta = _server.getEstUp(rut[:8], str(rut[-1]), track_id, token)
         except:
-            raise UserError('Proceso: Obtener estado envío (get_send_status): \
+            raise UserError(u'Proceso: Obtener estado envío (get_send_status): \
 No se pudo obtener una respuesta del servidor SII. RUT: {} DV: {} TrackID: \
 {}, Token: {}'.format(rut[:8], str(rut[-1]), track_id, token))
         self.sii_receipt = respuesta
@@ -1963,7 +1963,7 @@ hacer eso en un envío')
                     template_string, signature_d['priv_key'],
                     signature_d['cert'])
                 token = self.get_token(seed_firmado, self.company_id)
-                _logger.info('$$$$$$$$$$$$$$$$-token: {}'.format(token))
+                _logger.info('ask_for_dte_status token: {}'.format(token))
             else:  # except:
                 _logger.info(connection_status)
                 raise UserError(connection_status)

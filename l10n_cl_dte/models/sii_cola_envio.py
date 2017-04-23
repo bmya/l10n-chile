@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from odoo import fields, models, api, _
+import logging
 import ast
+
+_logger = logging.getLogger(__name__)
 
 class ColaEnvio(models.Model):
     _name = "sii.cola_envio"
@@ -17,21 +20,37 @@ class ColaEnvio(models.Model):
 
     @api.model
     def _cron_process_queue(self):
+        _logger.info(u'ingreso en la cola de envío')
         ids = self.search([('active', '=', True)])
         if ids:
+            _logger.info(
+                u'se encontraron registros para procesar: {}'.format(ids))
             for c in ids:
+                _logger.info(u'Procesando registros de {} ids: {}'.format(
+                    c.model, c.doc_ids))
                 docs = self.env[c.model].browse(ast.literal_eval(c.doc_ids))
                 if docs[0].sii_send_ident and docs[0].sii_message and \
                         docs[0].sii_result in [
                             'Proceso', 'Rechazado', 'Aceptado']:
+                    _logger.info(u'El primer registro del grupo se encuentra \
+en proceso. Se descarta el envío de este grupo.')
                     # docs.active = False
                     # c.unlink()
-                    return
+                    # return
                 else:
+                    _logger.info(
+                        u'Comenzando el proceso de envío para {}'.format(docs))
                     for doc in docs:
                         doc.responsable_envio = c.user_id
                     if c.tipo_trabajo == 'envio':
+                        _logger.info(
+                            u'Realizando Envío de {} para nro atención: \
+{}'.format(docs, c.att_number))
                         c.xml_sending = docs.do_dte_send(c.att_number)
                         c.tipo_trabajo = 'consulta'
                     else:
+                        _logger.info(u'Realizando consulta para {}'.format(
+                            docs))
                         docs[0].ask_for_dte_status()
+        else:
+            _logger.info(u'NO se encontraron ids para enviar')
