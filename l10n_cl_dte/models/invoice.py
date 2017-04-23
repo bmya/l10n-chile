@@ -197,12 +197,6 @@ connection_status = {
     'Otro': 'Error Interno.', }
 xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
     '/models', '/static/xsd/')
-host = 'https://libredte.cl/api'
-api_emitir = host + '/dte/documentos/emitir'
-api_generar = host + '/dte/documentos/generar'
-api_gen_pdf = host + '/dte/documentos/generar_pdf'
-api_get_xml = host + '/dte/dte_emitidos/xml/{0}/{1}/{2}'
-api_upd_status = host + '/dte/dte_emitidos/actualizar_estado/'
 no_product = False
 
 
@@ -899,52 +893,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
                 pass
         return text
 
-    def enviar_ldte(self, dte, headers):
-        """
-        Función para enviar el dte a libreDTE
-        @author: Daniel Blanco
-        @version: 2017-02-11
-        :param headers:
-        :param dte:
-        :return:
-        Notar que esta llama al bring_xml_ldte
-        """
-        dte['Encabezado']['Emisor'] = self.remove_plurals_node(
-            dte['Encabezado']['Emisor'])
-        dte = self.remove_plurals_node(dte)
-        dte['Encabezado']['Emisor']['Acteco'] = dte[
-            'Encabezado']['Emisor']['Acteco'][0]
-        _logger.info('despues de remover plurales {}'.format(json.dumps(dte)))
-        # raise UserError('enviar-ldte')
-        response_emitir = pool.urlopen(
-            'POST', api_emitir, headers=headers, body=json.dumps(dte))
-        if response_emitir.status != 200:
-            raise UserError(
-                'Error en conexión al emitir: {}, {}'.format(
-                    response_emitir.status, response_emitir.data))
-        _logger.info('response_emitir: {}'.format(
-            response_emitir.data))
-        _logger.info('response_emitir respuesta satisfactoria')
-        try:
-            self.sii_xml_response = response_emitir.data
-            _logger.info('response_xml: {}'.format(
-                response_emitir.data))
-            _logger.info('try positivo')
-        except:
-            _logger.warning(
-                'no pudo guardar la respuesta al ws de emision')
-            _logger.info('try negativo')
-        '''
-        {"emisor": ----, "receptor": -, "dte": --,
-         "codigo": "-----"}
-        '''
-        response_emitir_data = response_emitir.data
-        response_j = self.bring_xml_ldte(response_emitir_data, headers=headers)
-        _logger.info('vino de bring_xml_dte')
-        _logger.info('response_j')
-        _logger.info(response_j)
-        return response_j
-
     @staticmethod
     def get_object_record_id(inv, call_model):
         if call_model == 'stock.picking':
@@ -1325,32 +1273,6 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             encabezado['Totales'] = self._totals(MntExe, no_product)
         return encabezado
 
-    def create_headers_ldte(self, comp_id=False):
-        """
-        Función para crear los headers necesarios por LibreDTE
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2016-06-23
-        """
-        if comp_id:
-            dte_username = comp_id.dte_username
-            dte_password = comp_id.dte_password
-        else:
-            dte_username = self.company_id.dte_username
-            dte_password = self.company_id.dte_password
-        headers = {}
-        headers['Authorization'] = 'Basic {}'.format(
-            base64.b64encode('{}:{}'.format(
-                dte_password, dte_username)))
-        # control del header
-        # raise UserError(headers['Authorization'])
-        headers['Accept-Encoding'] = 'gzip, deflate, identity'
-        headers['Accept'] = '*/*'
-        headers['User-Agent'] = 'python-requests/2.6.0 CPython/2.7.6 \
-Linux/3.13.0-88-generic'
-        headers['Connection'] = 'keep-alive'
-        headers['Content-Type'] = 'application/json'
-        return headers
-
     def _invoice_lines(self):
         line_number = 1
         invoice_lines = []
@@ -1616,70 +1538,6 @@ del servidor. Se toma el varlor preexistente en el mensaje')
                 raise UserError('_get_dte_status: no se pudo obtener una \
 respuesta satisfactoria por conexión ni de respuesta previa.')
 
-    def _check_ldte_status(self, inv='', foliop='', headers=''):
-        """
-        obtener estado de DTE (libreDTE).
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2017-02-11
-        """
-        try:
-            folio = self.get_folio_current()
-        except:
-            try:
-                if not folio:
-                    folio = foliop
-            except:
-                folio = foliop
-        if headers == '':
-            headers = self.create_headers_ldte(comp_id=self.company_id)
-        metodo = 1
-        response_status = pool.urlopen('GET', '{}{}/{}/{}'.format(
-            api_upd_status,
-            str(self.sii_document_class_id.sii_code),
-            str(folio),
-            str(self.format_vat(self.company_id.vat)).replace(
-                '-', '')[:-1]), headers=headers)
-        if response_status.status != 200:
-            raise UserError(
-                'Error al obtener el estado del DTE emitido: {}'.format(
-                    repr(response_status.data)))
-        _logger.info('Se recibió una respuesta:')
-        _logger.info(response_status.data)
-        response_status_j = json.loads(response_status.data)
-        _logger.info(response_status_j['track_id'])
-        _logger.info(response_status_j['revision_estado'])
-        _logger.info(response_status_j['revision_detalle'])
-        if response_status_j['revision_estado'] in [
-            'DTE aceptado'] or \
-                        response_status_j[
-                            'revision_detalle'] == 'DTE aceptado':
-            resultado_status = 'Aceptado'
-        elif response_status_j['revision_estado'] in \
-                ['RLV - DTE Aceptado con Reparos Leves']:
-            resultado_status = 'Reparo'
-        elif response_status_j['revision_estado'][:3] in \
-                ['SOK', 'CRT', 'PDR', 'FOK', '-11']:
-            resultado_status = 'Proceso'
-            _logger.info('Atención: Revisión en Proceso')
-        elif response_status_j['revision_estado'] in \
-                ['RCH - DTE Rechazado',
-                 'RFR - Rechazado por Error en Firma',
-                 'RSC - Rechazado por Error en Schema',
-                 'RCT - Rechazado por Error en Carátula']:
-            resultado_status = 'Rechazado'
-        else:
-            resultado_status = self.sii_result
-        _logger.info('a grabar resultado_status: {}'.format(
-            resultado_status))
-        setenvio = {
-            'sii_xml_response': response_status.data,
-            'sii_result': resultado_status,
-            'invoice_printed': 'printed'}
-        self.write(setenvio)
-        _logger.info(
-            'resultado_status grabado: {}'.format(self.sii_result))
-        _logger.info(response_status_j['revision_estado'])
-
     def save_xml_record(self, result, envio_dte, file_name):
         """
         Guarda el registro XML de las respuestas, pero no así el xml, el cual
@@ -1932,60 +1790,51 @@ hacer eso en un envío')
         Este proceso realiza las consultas desde la cola de envío.
         :return:
         """
-        if self.company_id.dte_service_provider not in ['LIBREDTE']:
-            if self.sii_message and self.sii_receipt:
-                _logger.info('ask_for_dte_status %%%%%%%%%% ya hay estado....')
-                self.sii_result = self.analyze_sii_result(
-                    self.sii_result, self.sii_message, self.sii_receipt)
-                # aca hacer los procesos nuevos
-                SubTotDTE = '''<SubTotDTE>
-   <TpoDTE>{}</TpoDTE>
-   <NroDTE>1</NroDTE>
+        if self.sii_message and self.sii_receipt:
+            _logger.info('ask_for_dte_status %%%%%%%%%% ya hay estado....')
+            self.sii_result = self.analyze_sii_result(
+                self.sii_result, self.sii_message, self.sii_receipt)
+            # aca hacer los procesos nuevos
+            SubTotDTE = '''<SubTotDTE>
+<TpoDTE>{}</TpoDTE>
+<NroDTE>1</NroDTE>
 </SubTotDTE>'''.format(self.sii_document_class_id.sii_code)
-                signature_d = self.get_digital_signature_pem(self.company_id)
-                certp = signature_d['cert'].replace(BC, '').replace(
-                    EC, '').replace('\n', '')
-                if self.sii_result == 'Aceptado':
-                    self.send_envelope_recipient(
-                        self.format_vat(self.company_id.vat),
-                        self.get_resolution_data(self.company_id),
-                        self.sii_xml_request, signature_d, SubTotDTE, False,
-                        self.sii_send_file_name, self.company_id, certp)
-                    # prepara para poder enviar los archivos.
-                return
+            signature_d = self.get_digital_signature_pem(self.company_id)
+            certp = signature_d['cert'].replace(BC, '').replace(
+                EC, '').replace('\n', '')
+            if self.sii_result == 'Aceptado':
+                self.send_envelope_recipient(
+                    self.format_vat(self.company_id.vat),
+                    self.get_resolution_data(self.company_id),
+                    self.sii_xml_request, signature_d, SubTotDTE, False,
+                    self.sii_send_file_name, self.company_id, certp)
+                # prepara para poder enviar los archivos.
+            return
 
-            if True:  # try:
-                signature_d = self.get_digital_signature_pem(
-                    self.company_id)
-                seed = self.get_seed(self.company_id)
-                template_string = self.create_template_seed(seed)
-                seed_firmado = self.sign_seed(
-                    template_string, signature_d['priv_key'],
-                    signature_d['cert'])
-                token = self.get_token(seed_firmado, self.company_id)
-                _logger.info('ask_for_dte_status token: {}'.format(token))
-            else:  # except:
-                _logger.info(connection_status)
-                raise UserError(connection_status)
-            if not self.sii_send_ident:
-                raise UserError(
-                    'No se ha enviado aún el documento, aún está en cola de \
-envío interna en odoo')
-            if self.sii_result == 'Enviado':
-                status = self._get_send_status(
-                    self.sii_send_ident, signature_d, token)
-                if self.sii_result != 'Proceso':
-                    return status
-            return self._get_dte_status(signature_d, token)
-
-        else:
-            self._check_ldte_status()
-            _logger.info(
-                'ask_for_dte_status: (check) intento para LibreDTE')
-
+        if True:  # try:
+            signature_d = self.get_digital_signature_pem(
+                self.company_id)
+            seed = self.get_seed(self.company_id)
+            template_string = self.create_template_seed(seed)
+            seed_firmado = self.sign_seed(
+                template_string, signature_d['priv_key'],
+                signature_d['cert'])
+            token = self.get_token(seed_firmado, self.company_id)
+            _logger.info('ask_for_dte_status token: {}'.format(token))
+        else:  # except:
+            _logger.info(connection_status)
+            raise UserError(connection_status)
         if not self.sii_send_ident:
-            raise UserError('''No se ha enviado aún el documento, aún está en \
-cola de envío interna en odoo''')
+            raise UserError(
+                'No se ha enviado aún el documento, aún está en cola de \
+envío interna en odoo')
+        if self.sii_result == 'Enviado':
+            status = self._get_send_status(
+                self.sii_send_ident, signature_d, token)
+            if self.sii_result != 'Proceso':
+                return status
+        return self._get_dte_status(signature_d, token)
+
 
     """
     Definicion de extension de modelo de datos para account.invoice
@@ -2083,129 +1932,6 @@ cola de envío interna en odoo''')
         return rel_invoices
 
     @api.multi
-    def bring_generated_xml_ldte(self, foliop=0, headers='', call_model=''):
-        """
-        Función para traer el XML que ya fué generado anteriormente, y sobre
-        el cual existe un track id.
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2016-12-16
-        :return:
-        """
-        # if call_model == 'stock.picking' or \
-        #                 self._context['active_model'] == 'stock.picking':
-        #     inv = self.env['stock.picking'].browse(
-        #         self._context['active_id'])
-        #     sii_code = 52
-        # else:
-        if True:
-            self.ensure_one()
-            inv = self
-            sii_code = inv.sii_document_class_id.sii_code
-            folio = self.get_folio_current()
-        try:
-            if not folio:
-                folio = foliop
-        except:
-            folio = foliop
-        emisor = self.format_vat(inv.company_id.vat)
-        _logger.info('entrada a bring_generated_xml_ldte. Folio: {}'.format(
-            folio))
-        if headers == '':
-            headers = self.create_headers_ldte()
-        _logger.info('headers: {}'.format(headers))
-        _logger.info(api_get_xml.format(sii_code, folio, emisor))
-        response_xml = pool.urlopen(
-            'GET', api_get_xml.format(sii_code, folio, emisor),
-            headers=headers)
-        if response_xml.status != 200:
-            raise UserError('Error: {}'.format(response_xml.data))
-        _logger.info('response_generar: {}'.format(
-            base64.b64decode(response_xml.data)))
-        inv.sii_xml_request = base64.b64decode(response_xml.data)
-        attachment_obj = self.env['ir.attachment']
-        _logger.info('Attachment')
-        attachment_name = self.get_attachment_name(
-            inv, call_model=str(inv._name))
-        record_id = self.get_object_record_id(inv, call_model=str(inv._name))
-        _logger.info(attachment_name)
-        attachment_id = attachment_obj.create(
-            {
-                'name': 'DTE_'+attachment_name+'-'+str(
-                    folio)+'.xml',
-                'datas': response_xml.data,
-                'datas_fname': 'DTE_'+attachment_name+'-'+str(
-                    folio)+'.xml',
-                'res_model': str(inv._name),
-                'res_id': record_id,
-                'type': 'binary'
-            })
-        _logger.info(
-            'Se ha generado factura en XML con el id {} para el id {}'.format(
-            attachment_id, record_id))
-
-    def bring_xml_ldte(self, response_emitir_data, headers=''):
-        """
-        Función para tomar el XML generado en libreDTE y adjuntarlo al registro
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2016-06-23
-        """
-        _logger.info('entrada a bringxml function')
-        if headers == '':
-            headers = self.create_headers_ldte()
-        _logger.info('api: {}, headers: {}, body: {}'.format(
-            api_generar, headers, response_emitir_data))
-        response_generar = pool.urlopen(
-            'POST', api_generar, headers=headers,
-            body=response_emitir_data)
-        if response_generar.status != 200:
-            raise UserError('Error en conexión al generar: {}, {}'.format(
-                response_generar.status, response_generar.data))
-        _logger.info('response_generar: {}'.format(response_generar.data))
-        self.sii_xml_response = response_emitir_data
-        try:
-            response_j = json.loads(response_generar.data)
-        except:
-            raise UserError('LibreDTE No pudo generar el XML.\n'
-                'Reintente en un instante. \n{}'.format(
-                response_generar.data))
-        _logger.info('Folio desde response_j: {}, tipo dte: {}'.format(
-            response_j['folio'], response_j['dte']))
-        if not response_j['xml']:
-            if True:
-                if True:
-                    _logger.info(
-                        'intentando traer el xml. headers: {}, folio: {}'.
-                        format(headers, int(response_j['folio'])))
-                    response_j['xml'] = self.bring_generated_xml_ldte(
-                        int(response_j['folio']), headers=headers)
-                else:
-                    raise UserError(
-                        'No se pudo recibir el XML del documento. Sin embargo, \
-este puede haber sido generado en LibreDTE. coloque el folio en el campo \
-TRACKID antes de revalidar, reintente la validación.')
-            else:
-                raise UserError('bring_gen: no pudo traer el xml')
-        else:
-            attachment_obj = self.env['ir.attachment']
-            _logger.info('Attachment')
-            _logger.info(self.sii_document_class_id.name)
-            _logger.info(response_j['folio'])
-            attachment_id = attachment_obj.create(
-                {
-                    'name': 'DTE_'+self.sii_document_class_id.name+'-'+str(
-                        response_j['folio'])+'.xml',
-                    'datas': response_j['xml'],
-                    'datas_fname': 'DTE_'+self.sii_document_class_id.name+'-'+str(
-                        response_j['folio'])+'.xml',
-                    'res_model': self._name,
-                    'res_id': self.id,
-                    'type': 'binary'
-                })
-            _logger.info('Se ha generado factura en XML con el id {}'.format(
-                attachment_id))
-        return response_j
-
-    @api.multi
     def get_xml_attachment(self, inv=''):
         """
         Función para leer el xml para libreDTE desde los attachments
@@ -2230,88 +1956,6 @@ TRACKID antes de revalidar, reintente la validación.')
         return xml_attachment
 
     @api.multi
-    def bring_pdf_ldte(self, foliop='', headers='', call_model=''):
-        """
-        Función para tomar el PDF generado en libreDTE y adjuntarlo al registro
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2016-06-23
-        Se corrige función para que no cree un nuevo PDF cada vez que se hace
-        clic en botón
-        y no tome PDF con cedible que se creará en botón imprimir.
-        @review: Juan Plaza (jplaza@isos.cl)
-        @version: 2016-09-28
-        """
-        _logger.info('bring_pdf_ldte.. call_model: {}'.format(call_model))
-        attachment_obj = self.env['ir.attachment']
-        if attachment_obj.search(
-                [('res_model', '=', self._name), ('res_id', '=', self.id,),
-                 ('name', 'like', 'DTE_'),
-                 ('name', 'not like', 'cedible'), ('name', 'ilike', '.pdf')]):
-            pass
-        else:
-            if call_model == 'stock.picking':
-                _logger.info(
-                    'contexto en bring_pdf_ldte: {}'.format(self._context))
-                inv = self.env['stock.picking'].browse(
-                    self._context['active_id'])
-                sii_code = 52
-            else:
-                self.ensure_one()
-                inv = self
-                sii_code = inv.sii_document_class_id.sii_code
-                folio = self.get_folio_current()
-            try:
-                if not folio:
-                    folio = foliop
-            except:
-                folio = foliop
-
-            _logger.info('entrada a bringpdf function')
-            if not headers:
-                headers = self.create_headers_ldte(comp_id=self.company_id)
-            # en lugar de third_party_xml, que ahora no va a existir más,
-            # hay que tomar el xml del adjunto, o bien del texto
-            # pero prefiero del adjunto
-            dte_xml = self.get_xml_attachment(inv)
-            dte_tributarias = self.company_id.dte_tributarias \
-                if self.company_id.dte_tributarias else 1
-            dte_cedibles = self.company_id.dte_cedibles \
-                if self.company_id.dte_cedibles else 0
-            generar_pdf_request = json.dumps(
-                {'xml': dte_xml,
-                 'cedible': 1 if dte_cedibles > 0 else 0,
-                 'copias_tributarias': dte_tributarias,
-                 'copias_cedibles': dte_cedibles,
-                 'compress': False})
-            _logger.info(generar_pdf_request)
-            response_pdf = pool.urlopen(
-                'POST', api_gen_pdf, headers=headers,
-                body=generar_pdf_request)
-            if response_pdf.status != 200:
-                raise UserError('Error en conexión al generar: {}, {}'.format(
-                    response_pdf.status, response_pdf.data))
-            invoice_pdf = base64.b64encode(response_pdf.data)
-            attachment_name = self.get_attachment_name(
-                inv, call_model=str(inv._name))
-            attachment_obj = self.env['ir.attachment']
-            record_id = self.get_object_record_id(
-                inv, call_model=str(inv._name))
-            attachment_id = attachment_obj.create(
-                {
-                    'name': 'DTE_' + attachment_name +
-                            '-' + str(folio) + '.pdf',
-                    'datas': invoice_pdf,
-                    'datas_fname': 'DTE_' + attachment_name +
-                                   '-' + str(folio) + '.pdf',
-                    'res_model': inv._name,
-                    'res_id': record_id,
-                    'type': 'binary'})
-            _logger.info('attachment pdf')
-            _logger.info(attachment_name)
-            _logger.info(attachment_id)
-            _logger.info(record_id)
-
-    @api.multi
     def action_invoice_open(self):
         for inv in self.with_context(lang='es_CL'):
             if inv.type[:2] == 'in':
@@ -2325,27 +1969,8 @@ TRACKID antes de revalidar, reintente la validación.')
                 continue
             inv.sii_result = 'NoEnviado'
             inv.responsable_envio = self.env.user.id
-            if inv.type in ['out_invoice', 'out_refund'] and \
-                    inv.company_id.dte_service_provider in ['SII', 'SIIHOMO']:
+            if inv.type in ['out_invoice', 'out_refund']:
                 inv._do_stamp()
-            elif inv.type in ['out_invoice', 'out_refund'] and \
-                    inv.company_id.dte_service_provider not in [
-                        'SII', 'SIIHOMO']:
-                tpo_dte = inv._tpo_dte()
-                # dte = collections.OrderedDict()
-                # dte[tpo_dte + ' ID'] = inv._dte()
-                dte = inv._dte()
-                _logger.info(
-                    'DTE desde action inv open {}'.format(json.dumps(dte)))
-                headers = self.create_headers_ldte()
-                response_j = self.enviar_ldte(dte, headers)
-                inv.write(
-                    {
-                        'sii_result': 'Enviado',
-                        'sii_send_ident': response_j['track_id']})
-                _logger.info('se guardó xml con la factura')
-                inv.set_folio(inv, response_j['folio'])
-
         super(Invoice, self).action_invoice_open()
 
     @api.multi
