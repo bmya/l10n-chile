@@ -173,6 +173,12 @@ J1u5/1VbPF6ASXkKoMOF0Bb9EYGVzQ1AMawDNOy0xSuAMpkyQe3yoGFthdKVK4JaypQ/F8\
 afeqWjiRVMvV4+s4Q==</FRMA></CAF><TSTED>2014-04-24T12:02:20</TSTED></DD>\
 <FRMT algoritmo="SHA1withRSA">jiuOQHXXcuwdpj8c510EZrCCw+pfTVGTT7obWm/\
 fHlAa7j08Xff95Yb2zg31sJt6lMjSKdOK+PQp25clZuECig==</FRMT></TED>"""
+
+# timbre = """<TED version="1.0"><DD><RE/><TD/><F/><FE/><RR/><RSR/><MNT/><IT1/>\
+# <CAF version="1.0"><DA><RE/><RS/><TD/><RNG><D/><H/></RNG><FA/><RSAPK><M/><E/>\
+# </RSAPK><IDK/></DA><FRMA algoritmo="SHA1withRSA"/></CAF><TSTED/></DD>\
+# <FRMT algoritmo="SHA1withRSA"/></TED>"""
+
 result = xmltodict.parse(timbre)
 server_url = {
     'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
@@ -635,7 +641,6 @@ version="1.0">
             sii_result='NoEnviado', doc_ids=''):
         if not company_id.dte_service_provider:
             raise UserError(_("Not Service provider selected!"))
-        # try:
         signature_d = self.get_digital_signature_pem(
             company_id)
         seed = self.get_seed(company_id)
@@ -644,16 +649,8 @@ version="1.0">
             template_string, signature_d['priv_key'],
             signature_d['cert'])
         token = self.get_token(seed_firmado, company_id)
-        # raise UserError(token)
-        # except:
-        #    _logger.info('error')
-        #    return
-
-        # better explicit than implicit...
-        if company_id.dte_service_provider == 'SIIHOMO':
-            url = 'https://maullin.sii.cl'
-        else:
-            url = 'https://palena.sii.cl'
+        url = server_url[company_id.dte_service_provider].replace(
+            '/DTEWS/', '')
         post = '/cgi_dte/UPL/DTEUpload'
         headers = {
             'Accept': 'image/gif, image/x-xbitmap, image/jpeg, \
@@ -675,8 +672,8 @@ YComp 5.0.2.4)',
         params['archivo'] = (file_name, envio_dte, "text/xml")
         multi = urllib3.filepost.encode_multipart_formdata(params)
         headers.update({'Content-Length': '{}'.format(len(multi[0]))})
-        response = pool.request_encode_body('POST', url + post, params,
-                                            headers)
+        response = pool.request_encode_body(
+            'POST', url + post, params, headers)
         retorno = {
             'sii_xml_response': response.data,
             'sii_result': 'NoEnviado',
@@ -697,7 +694,6 @@ YComp 5.0.2.4)',
     def sign_full_xml(self, message, privkey, cert, uri, type='doc'):
         doc = etree.fromstring(message)
         string = etree.tostring(doc[0])
-        # raise UserError('string sign: {}'.format(message))
         mess = etree.tostring(etree.fromstring(string), method="c14n")
         digest = base64.b64encode(self.digest(mess))
         reference_uri = '#' + uri
@@ -742,8 +738,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         type_ = FILETYPE_PEM
         key = OpenSSL.crypto.load_privatekey(type_, privkey.encode('ascii'))
         signature = OpenSSL.crypto.sign(key, signed_info_c14n, 'sha1')
-        signature_value.text = textwrap.fill(base64.b64encode(signature),
-                                             64)
+        signature_value.text = textwrap.fill(
+            base64.b64encode(signature), 64)
         key_info = SubElement(sig_root, "KeyInfo")
         key_value = SubElement(key_info, "KeyValue")
         rsa_key_value = SubElement(key_value, "RSAKeyValue")
@@ -753,8 +749,8 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
             backend=default_backend())
         modulus.text = textwrap.fill(
             base64.b64encode(
-                self.long_to_bytes(key.public_key().public_numbers().n)),
-            64)
+                self.long_to_bytes(
+                    key.public_key().public_numbers().n)), 64)
         exponent = SubElement(rsa_key_value, "Exponent")
         exponent.text = self.ensure_str(
             base64.b64encode(self.long_to_bytes(
@@ -848,7 +844,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
     def char_replace(text):
         """
         Funcion para reemplazar caracteres especiales
-        Esta funcion sirve para salvar bug en libreDTE con los recortes de
+        Esta funcion sirve para salvar bug en de recortes de
         giros que están codificados en utf8 (cuando trunca, trunca la
         codificacion)
         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
@@ -906,7 +902,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         """
         try:
             encoding = cchardet.detect(data)['encoding']
-            _logger.info('ENCODING #################')
+            _logger.info('Encoding:')
             _logger.info(encoding)
         except:
             encoding = 'ascii'
@@ -934,9 +930,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
         @version: 2016-06-23
         """
-        # if dte in [52]:
-        #     inv.voucher_ids[0].book_id.sequence_id.number_next_actual = folio
-        # else:
         inv.journal_document_class_id.sequence_id.number_next_actual = folio
 
     @staticmethod
@@ -957,12 +950,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
     def _dte_to_xml(dte, tpo_dte="Documento"):
         ted = dte[tpo_dte + ' ID']['TEDd']
         dte[(tpo_dte + ' ID')]['TEDd'] = ''
-        # xml = dicttoxml.dicttoxml(
-        #     dte, root=False, attr_type=False) \
-        #     .replace('<item>', '').replace('</item>', '')\
-        #     .replace('<reflines>', '').replace('</reflines>', '')\
-        #     .replace('<TEDd>', '').replace('</TEDd>', '')\
-        #     .replace('</' + tpo_dte + '_ID>', '\n'+ted+'\n</'+ tpo_dte + '_ID>')
         xml = dicttoxml.dicttoxml(
             dte, root=False, attr_type=False).replace('<item>', '') \
             .replace('</item>', '').replace('<TEDd>', '') \
@@ -973,8 +960,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
 
     def get_digital_signature_pem(self, comp_id):
         obj = user = False
-        # if 'responsable_envio' in self and self._ids:
-        #    obj = user = self[0].responsable_envio
         if not obj:
             obj = user = self.env.user
         if not obj.cert:
@@ -1024,8 +1009,7 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
             'type' : 'ir.actions.act_url',
             'url': '/web/binary/download_document?model=account.invoice\
 &field=sii_xml_request&id=%s&filename=%s' % (self.id,filename),
-            'target': 'self',
-        }
+            'target': 'self', }
 
     def get_folio_current(self):
         """
@@ -1097,7 +1081,6 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         # return self.sii_document_class_id.sii_code in [
             # 35, 38, 39, 41, 70, 71]
         return self.sii_document_class_id.document_letter_id.name in ['B', 'M']
-
 
     def _giros_sender(self):
         giros_sender = []
@@ -1218,11 +1201,11 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 if IVA and IVA.base > 0:
                     totals['MntNeto'] = int(round((IVA.base), 0))
             if MntExe > 0:
-                self.mnt_exe = totals['MntExe'] = int(round(MntExe))
+                self.mnt_exe = totals['MntExe'] = int(round(MntExe, 0))
             if not self.is_doc_type_b() or not tax_include:
                 if IVA:
                     if not self.is_doc_type_b():
-                        totals['TasaIVA'] = round(IVA.tax_id.amount,2)
+                        totals['TasaIVA'] = round(IVA.tax_id.amount, 2)
                     totals['IVA'] = int(round(IVA.amount, 0))
                 if no_product:
                     totals['MntNeto'] = 0
@@ -1232,17 +1215,12 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             if IVA and IVA.tax_id.sii_code in [15]:
                 totals['ImptoReten'] = collections.OrderedDict()
                 totals['ImptoReten']['TpoImp'] = IVA.tax_id.sii_code
-                totals['ImptoReten']['TasaImp'] = round(IVA.tax_id.amount,2)
+                totals['ImptoReten']['TasaImp'] = round(IVA.tax_id.amount, 2)
                 totals['ImptoReten']['MontoImp'] = int(round(IVA.amount))
         monto_total = int(round(self.amount_total, 0))
         if no_product:
             monto_total = 0
         totals['MntTotal'] = monto_total
-
-        #totals['MontoNF']
-        #totals['TotalPeriodo']
-        #totals['SaldoAnterior']
-        #totals['VlrPagar']
         return totals
 
     def _encabezado(self, MntExe=0, no_product=False, tax_include=False):
@@ -1301,7 +1279,7 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 raise UserError("NO puede ser menor que 0")
             if not no_product:
                 lines['UnmdItem'] = line.uom_id.name[:4]
-                lines['PrcItem'] = round(line.price_unit, 4)
+                lines['PrcItem'] = int(round(line.price_unit, 2))
             if line.discount > 0:
                 lines['DescuentoPct'] = line.discount
                 lines['DescuentoMonto'] = int(
@@ -1414,7 +1392,6 @@ signature.'''))
         einvoice = self.sign_full_xml(
             envelope_efact, signature_d['priv_key'],
             self.split_cert(certp), doc_id_number, type)
-        # raise UserError('envelope_efact: {}'.format(envelope_efact))
         self.sii_xml_request = einvoice
 
     def _get_send_status(self, track_id, signature_d, token):
@@ -1994,7 +1971,7 @@ envío interna en odoo')
             break
 
         resultcaf = self.get_caf_file()
-        # raise UserError('result caf: {}'.format(resultcaf))
+        # raise UserError('result caf: {}'.format(result['TED']['DD']['CAF']))
         result['TED']['DD']['CAF'] = resultcaf['AUTORIZACION']['CAF']
         dte = result['TED']['DD']
         dicttoxml.set_debug(False)
