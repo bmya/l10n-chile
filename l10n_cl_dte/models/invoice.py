@@ -162,17 +162,11 @@ pluralizeds = ['Actecos', 'Detalles', 'Referencias', 'ImptoRetens']
 # timbre patrón. Permite parsear y formar el
 # ordered-dict patrón corespondiente al documento
 # Public vars definition
-timbre = """<TED version="1.0"><DD><RE>99999999-9</RE><TD>11</TD><F>1</F>\
-<FE>2000-01-01</FE><RR>99999999-9</RR><RSR>\
-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</RSR><MNT>10000</MNT><IT1>IIIIIII\
-</IT1><CAF version="1.0"><DA><RE>99999999-9</RE><RS>YYYYYYYYYYYYYYY</RS>\
-<TD>10</TD><RNG><D>1</D><H>1000</H></RNG><FA>2000-01-01</FA><RSAPK><M>\
-DJKFFDJKJKDJFKDJFKDJFKDJKDnbUNTAi2IaDdtAndm2p5udoqFiw==</M><E>Aw==</E></RSAPK>\
-<IDK>300</IDK></DA><FRMA algoritmo="SHA1withRSA">\
-J1u5/1VbPF6ASXkKoMOF0Bb9EYGVzQ1AMawDNOy0xSuAMpkyQe3yoGFthdKVK4JaypQ/F8\
-afeqWjiRVMvV4+s4Q==</FRMA></CAF><TSTED></TSTED></DD>\
-<FRMT algoritmo="SHA1withRSA">jiuOQHXXcuwdpj8c510EZrCCw+pfTVGTT7obWm/\
-fHlAa7j08Xff95Yb2zg31sJt6lMjSKdOK+PQp25clZuECig==</FRMT></TED>"""
+timbre = """<TED version="1.0"><DD><RE/><TD/><F/>\
+<FE/><RR/><RSR/><MNT/><IT1/><CAF version="1.0"><DA><RE/><RS/>\
+<TD/><RNG><D/><H/></RNG><FA/><RSAPK><M/><E/></RSAPK>\
+<IDK/></DA><FRMA algoritmo="SHA1withRSA"/></CAF><TSTED/></DD>\
+<FRMT algoritmo="SHA1withRSA"/></TED>"""
 
 result = xmltodict.parse(timbre)
 server_url = {
@@ -1976,7 +1970,10 @@ envío interna en odoo')
         print result['TED']['DD']
         print resultcaf['AUTORIZACION']
         result['TED']['DD']['CAF'] = resultcaf['AUTORIZACION']['CAF']
+        timestamp = self.time_stamp()
+        result['TED']['DD']['TSTED'] = timestamp
         dte = result['TED']['DD']
+        # raise UserError(json.dumps(dte))
         dicttoxml.set_debug(False)
         ddxml = '<DD>'+dicttoxml.dicttoxml(
             dte, root=False, attr_type=False).replace(
@@ -1995,8 +1992,6 @@ envío interna en odoo')
         root = etree.XML(ddxml)
         # formateo sin remover indents
         ddxml = etree.tostring(root)
-        timestamp = self.time_stamp()
-        ddxml = ddxml.replace('<TSTED></TSTED>', '<TSTED>'+timestamp+'</TSTED>')
         frmt = self.signmessage(ddxml, keypriv, keypub)['firma']
         ted = (
             '''<TED version="1.0">{}<FRMT algoritmo="SHA1withRSA">{}\
