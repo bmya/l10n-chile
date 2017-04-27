@@ -334,13 +334,17 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         sum(cast(ai.mnt_exe as integer)) as "TotMntExe",
         sum(cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer)) as
         "TotMntNeto",
-	sum(cast(round((case when ax.no_rec is False then 1 else 0 end), 0) as integer)) as "TotOpIVARec",
-        sum(cast(round((case when ax.no_rec is False then at.amount else 0 end), 0) as integer)) as "TotMntIVA",
+	    sum(cast(round((case when ax.no_rec is False then 1 else 0 end), 0)
+	    as integer)) as "TotOpIVARec",
+        sum(cast(round((case when ax.no_rec is False then at.amount
+        else 0 end), 0) as integer)) as "TotMntIVA",
         max((case when ax.no_rec then 1 else 0 end)) as "TotIVANoRec",
         max((case when ax.no_rec then ax.sii_code else 0 end)) as "CodIVANoRec",
         sum((case when ax.no_rec then 1 else 0 end)) as "TotOpIVANoRec",
-        sum(cast(round((case when ax.no_rec then at.amount else 0 end), 0) as integer)) as "TotMntIVANoRec",
-        sum(cast(round((case when ax.no_rec then 0 else 0 end), 0) as integer)) as "TotImpSinCredito",
+        sum(cast(round((case when ax.no_rec then at.amount else 0 end), 0)
+        as integer)) as "TotMntIVANoRec",
+        sum(cast(round((case when ax.no_rec then 0 else 0 end), 0)
+        as integer)) as "TotImpSinCredito",
         sum(cast(ai.amount_total as integer)) as "TotMntTotal"
         from account_invoice ai
         left join sii_document_class dc
@@ -379,9 +383,11 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         left(rp.name, 50) as "RznSoc",
         ref.sii_code as "TpoDocRef",
         ref.origen as "FolioDocRef",
-        cast(ai.mnt_exe as integer) as "MntExe",
-        cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer) as
-        "MntNeto",
+        (case when ai.mnt_exe != 0 then cast(ai.mnt_exe as integer) else 0 end)
+         as "MntExe",
+        (case when (ai.amount_untaxed - ai.mnt_exe) != 0 then
+        cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer)
+        else 0 end) as "MntNeto",
         cast((case when ax.no_rec is False then at.amount else 0 end)
         as integer) as "MntIVA",
         (case when ax.no_rec then 1 else 0 end) as "IVANoRec",
@@ -459,8 +465,12 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
         if True:
             dicttoxml.set_debug(False)
             inv_obj = self.env['account.invoice']
-            resol_data = inv_obj.get_resolution_data(self.company_id)
-            signature_d = inv_obj.get_digital_signature_pem(self.company_id)
+            try:
+                resol_data = inv_obj.get_resolution_data(self.company_id)
+                signature_d = inv_obj.get_digital_signature_pem(self.company_id)
+            except:
+                return False
+                _logger.info(u'First entry: unknown company')
             dict1n = self.insert_son_values(
                 dict1, 'ResumenPeriodo', 'TotIVANoRec',
                 ['CodIVANoRec', 'TotMntIVANoRec', 'TotOpIVANoRec'])
@@ -567,22 +577,33 @@ guardada del xml es la siguiente: {}'.format(xml_pret))
         })
 
     def _get_send_status(self, track_id, signature_d,token):
-        url = server_url[self.company_id.dte_service_provider] + 'QueryEstUp.jws?WSDL'
-        ns = 'urn:' + server_url[self.company_id.dte_service_provider] + 'QueryEstUp.jws'
+        url = server_url[
+                  self.company_id.dte_service_provider] + 'QueryEstUp.jws?WSDL'
+        ns = 'urn:' + server_url[
+            self.company_id.dte_service_provider] + 'QueryEstUp.jws'
         _server = SOAPProxy(url, ns)
-        respuesta = _server.getEstUp(self.company_id.vat[2:-1],self.company_id.vat[-1],track_id,token)
+        respuesta = _server.getEstUp(
+            self.company_id.vat[2:-1], self.company_id.vat[-1], track_id, token)
         self.sii_receipt = respuesta
         resp = xmltodict.parse(respuesta)
         status = False
         if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == "-11":
-            status =  {'warning':{'title':_('Error -11'), 'message': _("Error -11: Espere a que sea aceptado por el SII, intente en 5s más")}}
+            status = {
+                'warning': {
+                    'title': _('Error -11'),
+                    'message': _("Error -11: Espere a que sea aceptado por el \
+SII, intente en 5s más")}}
         if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == "EPR":
             self.state = "Proceso"
-            if 'SII:RESP_BODY' in resp['SII:RESPUESTA'] and resp['SII:RESPUESTA']['SII:RESP_BODY']['RECHAZADOS'] == "1":
+            if 'SII:RESP_BODY' in resp['SII:RESPUESTA'] and resp[
+                'SII:RESPUESTA']['SII:RESP_BODY']['RECHAZADOS'] == "1":
                 self.sii_result = "Rechazado"
         elif resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == "RCT":
             self.state = "Rechazado"
-            status = {'warning':{'title':_('Error RCT'), 'message': _(resp['SII:RESPUESTA']['GLOSA'])}}
+            status = {
+                'warning': {
+                    'title': _('Error RCT'),
+                    'message': _(resp['SII:RESPUESTA']['GLOSA'])}}
         return status
 
 

@@ -7,6 +7,8 @@ import xmltodict
 from lxml import etree
 import collections
 import dicttoxml
+import json
+
 
 _logger = logging.getLogger(__name__)
 
@@ -41,7 +43,9 @@ class UploadXMLWizard(models.TransientModel):
     def confirm(self):
         context = dict(self._context or {})
         active_id = context.get('active_id', []) or []
-
+        _logger.info(context)
+        _logger.info(active_id)
+        # raise UserError('active_id')
         if self.action == 'create':
             self.do_create_inv()
         if self.action == 'create_po':
@@ -231,7 +235,7 @@ seleccione el archivo e envío')
         resp = collections.OrderedDict()
         resp['NmbEnvio'] = self.filename
         resp['FchRecep'] = self.inv.time_stamp()
-        resp['CodEnvio'] = self.inv._acortar_str(IdRespuesta, 10)
+        resp['CodEnvio'] = IdRespuesta[:10]
         resp['EnvioDTEID'] = xml[0].attrib['ID']
         resp['Digest'] = xml[1][0][2][2].text
         EstadoRecepEnv, RecepEnvGlosa = self._validar_caratula(

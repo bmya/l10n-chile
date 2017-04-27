@@ -28,7 +28,9 @@ class ColaEnvio(models.Model):
             for c in ids:
                 _logger.info(u'Procesando registros de {} ids: {}'.format(
                     c.model, c.doc_ids))
-                docs = self.env[c.model].browse(ast.literal_eval(c.doc_ids))
+                list_invoices = ast.literal_eval(c.doc_ids)
+                list_invoices.sort()
+                docs = self.env[c.model].browse(list_invoices)
                 if docs[0].sii_send_ident and docs[0].sii_message and \
                         docs[0].sii_result in [
                             'Proceso', 'Rechazado', 'Aceptado']:

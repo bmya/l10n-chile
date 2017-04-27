@@ -170,14 +170,9 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</RSR><MNT>10000</MNT><IT1>IIIIIII\
 DJKFFDJKJKDJFKDJFKDJFKDJKDnbUNTAi2IaDdtAndm2p5udoqFiw==</M><E>Aw==</E></RSAPK>\
 <IDK>300</IDK></DA><FRMA algoritmo="SHA1withRSA">\
 J1u5/1VbPF6ASXkKoMOF0Bb9EYGVzQ1AMawDNOy0xSuAMpkyQe3yoGFthdKVK4JaypQ/F8\
-afeqWjiRVMvV4+s4Q==</FRMA></CAF><TSTED>2014-04-24T12:02:20</TSTED></DD>\
+afeqWjiRVMvV4+s4Q==</FRMA></CAF><TSTED></TSTED></DD>\
 <FRMT algoritmo="SHA1withRSA">jiuOQHXXcuwdpj8c510EZrCCw+pfTVGTT7obWm/\
 fHlAa7j08Xff95Yb2zg31sJt6lMjSKdOK+PQp25clZuECig==</FRMT></TED>"""
-
-# timbre = """<TED version="1.0"><DD><RE/><TD/><F/><FE/><RR/><RSR/><MNT/><IT1/>\
-# <CAF version="1.0"><DA><RE/><RS/><TD/><RNG><D/><H/></RNG><FA/><RSAPK><M/><E/>\
-# </RSAPK><IDK/></DA><FRMA algoritmo="SHA1withRSA"/></CAF><TSTED/></DD>\
-# <FRMT algoritmo="SHA1withRSA"/></TED>"""
 
 result = xmltodict.parse(timbre)
 server_url = {
@@ -308,7 +303,7 @@ class Invoice(models.Model):
         if control == 'truncate':
             var = var[:size]
         elif control == 'safe':
-            self.safe_variable(var, key)
+            var = self.safe_variable(var[:size], key)
         return var
 
     # metodos de sii
@@ -1048,6 +1043,9 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         """
         caffiles = self.journal_document_class_id.sequence_id.dte_caf_ids
         folio = self.get_folio()
+        print '%%%%%%%%%%%%%%%%%%&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
+        print folio
+        print caffiles
         if not caffiles:
             raise UserError(_('''There is no CAF file available or in use \
 for this Document. Please enable one.'''))
@@ -1175,9 +1173,10 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 self.partner_id.phone, 'Contacto', 'truncate')
         if self.partner_id.dte_email and not self.is_doc_type_b():
             receptor['CorreoRecep'] = self.partner_id.dte_email
-        receptor['DirRecep'] = self.normalize_string('{} {}'.format(
-            self.partner_id.street or '',
-            self.partner_id.street2 or ''), 'DirRecep', 'safe')
+        receptor['DirRecep'] = self.normalize_string(
+            '%s %s' % (
+                self.partner_id.street or '',
+                self.partner_id.street2 or ''), 'DirRecep', 'safe')
         receptor['CmnaRecep'] = self.normalize_string(
             self.partner_id.city_id.name, 'CmnaRecep', 'safe')
         receptor['CiudadRecep'] = self.normalize_string(
@@ -1936,8 +1935,7 @@ envío interna en odoo')
         if not isinstance(att_number, unicode):
             att_number = ''
         if ids and self.check_if_not_sent(ids, 'account.invoice', 'envio'):
-            # ordenas los ids.sort()
-            # preparar el envio sii
+            ids.sort()
             self.env['sii.cola_envio'].create({
                 'doc_ids': ids,
                 'model': 'account.invoice',
@@ -1972,6 +1970,11 @@ envío interna en odoo')
 
         resultcaf = self.get_caf_file()
         # raise UserError('result caf: {}'.format(result['TED']['DD']['CAF']))
+        _logger.info('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+        print result
+        print result['TED']
+        print result['TED']['DD']
+        print resultcaf['AUTORIZACION']
         result['TED']['DD']['CAF'] = resultcaf['AUTORIZACION']['CAF']
         dte = result['TED']['DD']
         dicttoxml.set_debug(False)
@@ -1993,7 +1996,7 @@ envío interna en odoo')
         # formateo sin remover indents
         ddxml = etree.tostring(root)
         timestamp = self.time_stamp()
-        ddxml = ddxml.replace('2014-04-24T12:02:20', timestamp)
+        ddxml = ddxml.replace('<TSTED></TSTED>', '<TSTED>'+timestamp+'</TSTED>')
         frmt = self.signmessage(ddxml, keypriv, keypub)['firma']
         ted = (
             '''<TED version="1.0">{}<FRMT algoritmo="SHA1withRSA">{}\
