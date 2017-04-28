@@ -158,7 +158,7 @@ normalize_tags['FchRef'] = [10]
 normalize_tags['CodRef'] = [1]
 normalize_tags['RazonRef'] = [1]
 # todo: faltan comisiones y otros cargos
-pluralizeds = ['Actecos', 'Detalles', 'Referencias', 'ImptoRetens']
+pluralizeds = ['Actecos', 'Detalles', 'Referencias', 'DscRcgGlobals', 'ImptoRetens']
 # timbre patrón. Permite parsear y formar el
 # ordered-dict patrón corespondiente al documento
 # Public vars definition
@@ -194,6 +194,31 @@ xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
     '/models', '/static/xsd/')
 no_product = False
 
+def to_json(colnames, rows):
+    all_data = []
+    for row in rows:
+        each_row = collections.OrderedDict()
+        i = 0
+        for colname in colnames:
+            each_row[colname] = row[i]
+            i += 1
+        all_data.append(each_row)
+    return all_data
+
+def db_query(method):
+    def call(self, *args, **kwargs):
+        query = method(self, *args, **kwargs)
+        cursor = self.env.cr
+        try:
+            cursor.execute(query)
+        except:
+            return False
+        rows = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+        _logger.info('colnames: {}'.format(colnames))
+        _logger.info('rows: {}'.format(rows))
+        return to_json(colnames, rows)
+    return call
 
 class Signer(XMLSigner):
     def __init__(self):
@@ -216,6 +241,62 @@ class Invoice(models.Model):
     @version: 2016-06-11
     """
     _inherit = "account.invoice"
+
+    @db_query
+    def get_net_ex_amount(self):
+        return """
+        /*
+        SUMA DE MONTOS
+        */
+        select
+        invoice_id,
+        sum(price_subtotal) as sum_subtotal,
+        sum(tax_amount) as sum_taxes,
+        sum((CASE
+        WHEN tax_amount != 0 THEN 0
+        ELSE (CASE
+            WHEN price_subtotal > 0 THEN price_subtotal
+            ELSE 0
+        END)
+        END)) as mntexe,
+        sum((CASE
+        WHEN tax_amount > 0 THEN price_subtotal
+        ELSE 0
+        END)) as mntneto,
+        0 as mntnf,
+        sum((CASE
+        WHEN price_subtotal < 0 and tax_amount < 0 then abs(price_subtotal)
+        ELSE 0
+        END)) as dcglobalaf,
+        sum((CASE
+        WHEN price_subtotal < 0 and tax_amount is null THEN abs(price_subtotal)
+        ELSE 0
+        END)) as dcglobalex,
+        0 as dcglobalnf
+        from
+        (select
+        al.invoice_id as invoice_id,
+        al.id as line_id,
+        al.price_subtotal,
+        al.product_id,
+        al.name as al_pname,
+        at.name as at_name,
+        at.tax_group_id,
+        at.amount,
+        round(al.price_subtotal * at.amount / 100) as tax_amount,
+        at.no_rec,
+        at.retencion,
+        at.sii_code,
+        at.type_tax_use
+        from account_invoice_line al
+        left join account_invoice_line_tax alt
+        on al.id = alt.invoice_line_id
+        left join account_tax at
+        on alt.tax_id = at.id
+        where al.company_id = 1
+        and al.invoice_id = %s) as a
+        group by invoice_id
+        """ % self.id
 
     # metodos comunes
     @staticmethod
@@ -1177,30 +1258,49 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             self.partner_id.city, 'CiudadRecep', 'safe')
         return receptor
 
-    def _discounts(self, MntExe=0, MntNeto=0, global_discount=0):
-        discounts = collections.OrderedDict()
-        discounts['NroLinDR'] = 1
-        discounts['TpoMov'] = 'D' if global_discount < 0 else 'Receptor'
-        # discounts['GlosaDR'] =
-        discounts['TpoValor'] = '%'
-        _logger.info('global_discount: {}, mntexe: {}. mntneto: {}'.format(
-            global_discount, MntExe, MntNeto
-        ))
-        # raise UserError('dddddddddd')
-        try:
-            discounts['ValorDR'] = round(
-                100 * abs(global_discount)/float(MntExe + MntNeto), 2)
-        except:
-            raise UserError(u"""Imposible calcular porcentaje de descuentos \
-sobre totales de factura cero. Monto neto: {}, Monto exento: {}""".format(
-                MntNeto, MntExe))
-        if self.sii_document_class_id.sii_code in [34, 61] and MntExe > 0:
-            discounts['IndExeDR'] = 1
+    def _discounts(self, global_amounts):
+        _logger.info(json.dumps(global_amounts))
+        discount_types = [
+            ('dcglobalaf', 'mntneto'),
+            ('dcglobalex', 'mntexe'),
+            ('dcglobalnf', 'mntnf'), ]
+        discounts = []
+        for i in range(0, 3):
+            j = 1
+            try:
+                if global_amounts[discount_types[i][0]] == 0:
+                    continue
+            except:
+                continue
+            discount = {'DscRcgGlobal': collections.OrderedDict()}
+            # _logger.info(json.dumps(discounts))
+            # discounts[i]['DscRcgGlobal'] = collections.OrderedDict()
+            discount['DscRcgGlobal']['NroLinDR'] = j
+            discount['DscRcgGlobal']['TpoMov'] = 'D'
+            # discounts[i]['DscRcgGlobal']['GlosaDR'] =
+            discount['DscRcgGlobal']['TpoValor'] = '%'
+            try:
+                discount['DscRcgGlobal']['ValorDR'] = round(
+                    100 * abs(global_amounts[discount_types[i][0]])/float(
+                        global_amounts[discount_types[i][1]]), 2)
+            except ZeroDivisionError:
+                raise UserError(u"""Está aplicando un tipo de descuento exento \
+sobre un valor afecto o a la inversa. Revise los descuentos que intenta \
+realizar en su documento.""")
+            discount['DscRcgGlobal']['IndExeDR'] = i
+            j += 1
+        discounts.append(discount)
+        # raise UserError(json.dumps(discounts))
         return discounts
 
     def _totals(self, MntExe=0, no_product=False, tax_include=False,
                 global_discount=0):
         totals = collections.OrderedDict()
+        # esto sobreescribe el calculo del mntexe que viene por parametros
+        # para hacer: corregir desde antes, o cambiar el metodo de calcular
+        # para hacer: el mntexe siempre existe solo que si no hay neto, se
+        # debe validar que el tipo de documento valido para estos casos debe
+        # ser exenta
         if self.sii_document_class_id.sii_code == 34 or (
                 self.referencias and self.referencias[0].
                 sii_referencia_TpoDocRef.sii_code == '34'):
@@ -1238,6 +1338,17 @@ sobre totales de factura cero. Monto neto: {}, Monto exento: {}""".format(
         if no_product:
             monto_total = 0
         totals['MntTotal'] = monto_total
+        try:
+            if totals['MntExe'] > 0 and totals['MntTotal'] <= totals['MntExe'] \
+                    and self.sii_document_class_id.sii_code not in [
+                        34, 38, 41, 56, 61, 110, 112, ]:
+                raise UserError(u"""Ud. ha seleccionado un tipo de documento \
+incorrecto para facturación exenta. Seleccione el documento adecuado.""")
+        except KeyError:
+            pass
+#             raise UserError(u"""Ud. esta aplicando un descuento exento sobre \
+# items afectos. Agregue el IVA al descuento o use un item Descuento que tenga \
+# iva.""")
         return totals
 
     def _encabezado(self, MntExe=0, no_product=False, tax_include=False,
@@ -1350,15 +1461,19 @@ cuando se aplican descuentos globales.""")
     def _dte(self, att_number=None):
         dte = collections.OrderedDict()
         invoice_lines = self._invoice_lines()
-        global_discount = invoice_lines['global_discount']
-        MntExe = invoice_lines['MntExe']
+        # ver de discontinuar _invoice_lines y replazar por get_net_ex_amount
+        global_amounts = self.get_net_ex_amount()[0]
+        MntExe = global_amounts['mntexe'] - global_amounts['dcglobalex']
+        MntNeto = global_amounts['mntneto']
+        global_discount = global_amounts['dcglobalaf'] + \
+                          global_amounts['dcglobalex']
         dte['Encabezado'] = self._encabezado(
             MntExe, invoice_lines['no_product'], invoice_lines['tax_include'],
             global_discount)
-        try:
-            MntNeto = dte['Encabezado']['Totales']['MntNeto']
-        except:
-            MntNeto = 0
+        # try:
+        #     MntNeto = dte['Encabezado']['Totales']['MntNeto']
+        # except:
+        #     MntNeto = 0
         _logger.info('_dte: global_discount: {}'.format(global_discount))
         lin_ref = 1
         ref_lines = []
@@ -1398,9 +1513,10 @@ cuando se aplican descuentos globales.""")
                 ref_lines.extend([{'Referencia': ref_line}])
                 lin_ref += 1
         dte['Detalles'] = invoice_lines['invoice_lines']
-        if global_discount < 0:
-            dte['DscRcgGlobal'] = self._discounts(
-                MntExe=MntExe, MntNeto=MntNeto, global_discount=global_discount)
+        if global_amounts['dcglobalaf'] > 0 or \
+                        global_amounts['dcglobalex'] > 0 or \
+                        global_amounts['dcglobalnf'] > 0:
+            dte['DscRcgGlobals'] = self._discounts(global_amounts)
         if len(ref_lines) > 0:
             dte['Referencias'] = ref_lines
         dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
@@ -1437,7 +1553,8 @@ signature.'''))
         xml_pret = etree.tostring(root, pretty_print=True).replace(
             '<' + tpo_dte + '_ID>', doc_id).replace(
             '</' + tpo_dte + '_ID>', '</' + tpo_dte + '>')
-        xml_pret = self.remove_plurals_xml(xml_pret)
+        xml_pret = self.remove_plurals_xml(xml_pret).replace(
+            '<IndExeDR>0</IndExeDR>', '')
         envelope_efact = self.convert_encoding(xml_pret, 'ISO-8859-1')
         envelope_efact = self.create_template_doc(envelope_efact)
         _logger.info('envelope_efact: {}'.format(envelope_efact))
