@@ -51,7 +51,7 @@ class GlobalDiscount(models.Model):
                         if tl.amount > 0:
                             afecto += line.price_subtotal
                 if afecto > 0:
-                    discount = ((self.global_discount * 100) / afecto )
+                    discount = ((self.global_discount * 100) / afecto)
             taxes = tax_grouped
             tax_grouped = {}
             for id, t in taxes.iteritems():
@@ -80,7 +80,7 @@ class GlobalDiscount(models.Model):
                         if t.amount > 0:
                             afecto += line.price_subtotal
                 if inv.global_discount_type in ['amount'] and afecto > 0:
-                    discount = ((inv.global_discount * 100) / afecto )
+                    discount = ((inv.global_discount * 100) / afecto)
                 inv.amount_untaxed = amount_untaxed
                 if afecto > 0 and discount > 0:
                     inv.amount_untaxed_global_discount = (
@@ -119,7 +119,7 @@ class GlobalDiscount(models.Model):
                 for t in line.invoice_line_tax_ids:
                     if t.amount > 0:
                         afecto += line.price_subtotal
-            discount = ((self.global_discount * 100) / afecto )
+            discount = ((self.global_discount * 100) / afecto)
         hold = False
         total = 0
         for line in move_lines:
@@ -128,7 +128,7 @@ class GlobalDiscount(models.Model):
                 if line[2]['tax_ids']:
                     for t in line[2]['tax_ids']:
                         imp = self.env['account.tax'].browse(t[1])
-                        if imp.amount > 0  and line[2]['debit'] > 0:
+                        if imp.amount > 0 and line[2]['debit'] > 0:
                             line[2]['debit'] -= int(
                                 round((line[2]['debit'] * (discount / 100))))
                             total += line[2]['debit']

@@ -270,7 +270,7 @@ class Invoice(models.Model):
         return sii_result
 
     @staticmethod
-    def _calc_discount_vat(discount, sii_code):
+    def _calc_discount_vat(discount, sii_code=0):
         """
         Función provisoria para calcular el descuento:
         TODO
@@ -1177,7 +1177,29 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             self.partner_id.city, 'CiudadRecep', 'safe')
         return receptor
 
-    def _totals(self, MntExe=0, no_product=False, tax_include=False):
+    def _discounts(self, MntExe=0, MntNeto=0, global_discount=0):
+        discounts = collections.OrderedDict()
+        discounts['NroLinDR'] = 1
+        discounts['TpoMov'] = 'D' if global_discount < 0 else 'Receptor'
+        # discounts['GlosaDR'] =
+        discounts['TpoValor'] = '%'
+        _logger.info('global_discount: {}, mntexe: {}. mntneto: {}'.format(
+            global_discount, MntExe, MntNeto
+        ))
+        # raise UserError('dddddddddd')
+        try:
+            discounts['ValorDR'] = round(
+                100 * abs(global_discount)/float(MntExe + MntNeto), 2)
+        except:
+            raise UserError(u"""Imposible calcular porcentaje de descuentos \
+sobre totales de factura cero. Monto neto: {}, Monto exento: {}""".format(
+                MntNeto, MntExe))
+        if self.sii_document_class_id.sii_code in [34, 61] and MntExe > 0:
+            discounts['IndExeDR'] = 1
+        return discounts
+
+    def _totals(self, MntExe=0, no_product=False, tax_include=False,
+                global_discount=0):
         totals = collections.OrderedDict()
         if self.sii_document_class_id.sii_code == 34 or (
                 self.referencias and self.referencias[0].
@@ -1210,26 +1232,48 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 totals['ImptoReten']['TpoImp'] = IVA.tax_id.sii_code
                 totals['ImptoReten']['TasaImp'] = round(IVA.tax_id.amount, 2)
                 totals['ImptoReten']['MontoImp'] = int(round(IVA.amount))
+        _logger.info('_totals: {}'.format(global_discount))
+        # raise UserError('_totals:')
         monto_total = int(round(self.amount_total, 0))
         if no_product:
             monto_total = 0
         totals['MntTotal'] = monto_total
         return totals
 
-    def _encabezado(self, MntExe=0, no_product=False, tax_include=False):
+    def _encabezado(self, MntExe=0, no_product=False, tax_include=False,
+                    global_discount=0):
         encabezado = collections.OrderedDict()
         encabezado['IdDoc'] = self._id_doc(tax_include, MntExe)
         encabezado['Emisor'] = self._sender()
         encabezado['Receptor'] = self._receptor()
-        encabezado['Totales'] = self._totals(MntExe, no_product)
+        encabezado['Totales'] = self._totals(
+            MntExe=MntExe, no_product=no_product,
+            global_discount=global_discount)
         return encabezado
 
-    def _invoice_lines(self):
+    def _invoice_lines(self, global_discount=0):
         line_number = 1
         invoice_lines = []
         no_product = False
         MntExe = 0
         for line in self.invoice_line_ids:
+            try:
+                if line.product_id.is_discount:
+                    global_discount += int(round(line.price_subtotal, 0))
+                    global_discount = self._calc_discount_vat(
+                        global_discount)
+                    # sum_lines += line.price_subtotal
+                    continue
+            except:
+                if u'descuento' in line.product_id.name.lower() \
+                        or u'discount' in line.product_id.name.lower():
+                    global_discount += int(round(line.price_subtotal, 0))
+                    global_discount = self._calc_discount_vat(
+                        global_discount)
+                    # sum_lines += line.price_subtotal
+                    continue
+                else:
+                    pass
             if line.product_id.default_code == 'NO_PRODUCT':
                 no_product = True
             lines = collections.OrderedDict()
@@ -1264,12 +1308,20 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                     'NmbItem', 'truncate')
             # lines['InfoTicket']
             qty = round(line.quantity, 4)
+            if line.price_unit < 0:
+                raise UserError(u"""El valor unitario no puede ser menor que 0.
+Si necesita representar un descuento global, deberá utilizar el item \
+'descuento', en cuyo caso las unidades deben ser negativas.""")
             if not no_product:
                 lines['QtyItem'] = qty
             if qty == 0 and not no_product:
                 lines['QtyItem'] = 1
-            elif qty < 0:
-                raise UserError("NO puede ser menor que 0")
+            elif qty < 0 and global_discount >= 0:
+                raise UserError(u"""La cantidad puede ser menor que 0 solamente
+para ítems tipo 'descuento'""")
+            elif qty > 0 and global_discount < 0:
+                raise UserError(u"""La cantidad siempre debe ser menor que 0 \
+cuando se aplican descuentos globales.""")
             if not no_product:
                 lines['UnmdItem'] = line.uom_id.name[:4]
                 lines['PrcItem'] = int(round(line.price_unit, 2))
@@ -1292,14 +1344,22 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             'invoice_lines': invoice_lines,
             'MntExe': MntExe,
             'no_product': no_product,
-            'tax_include': tax_include}
+            'tax_include': tax_include,
+            'global_discount': global_discount, }
 
     def _dte(self, att_number=None):
         dte = collections.OrderedDict()
         invoice_lines = self._invoice_lines()
+        global_discount = invoice_lines['global_discount']
+        MntExe = invoice_lines['MntExe']
         dte['Encabezado'] = self._encabezado(
-            invoice_lines['MntExe'], invoice_lines['no_product'],
-            invoice_lines['tax_include'])
+            MntExe, invoice_lines['no_product'], invoice_lines['tax_include'],
+            global_discount)
+        try:
+            MntNeto = dte['Encabezado']['Totales']['MntNeto']
+        except:
+            MntNeto = 0
+        _logger.info('_dte: global_discount: {}'.format(global_discount))
         lin_ref = 1
         ref_lines = []
         if self.company_id.dte_service_provider == 'SIIHOMO' and isinstance(
@@ -1316,8 +1376,6 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             lin_ref += 1
             # ref_lines.extend([ref_line])
             ref_lines.extend([{'Referencia': ref_line}])
-        # raise UserError('referencias...: {}, ref anteriores'.format(
-        #     self.referencias, json.dumps(ref_lines)))
         if self.referencias:
             for ref in self.referencias:
                 ref_line = collections.OrderedDict()
@@ -1340,6 +1398,9 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
                 ref_lines.extend([{'Referencia': ref_line}])
                 lin_ref += 1
         dte['Detalles'] = invoice_lines['invoice_lines']
+        if global_discount < 0:
+            dte['DscRcgGlobal'] = self._discounts(
+                MntExe=MntExe, MntNeto=MntNeto, global_discount=global_discount)
         if len(ref_lines) > 0:
             dte['Referencias'] = ref_lines
         dte['TEDd'] = self.get_barcode(invoice_lines['no_product'])
