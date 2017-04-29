@@ -10,6 +10,7 @@
                     <field name="model"/>
                     <field name="user_id" />
                     <field name='tipo_trabajo'/>
+                    <field name='att_number'/>
                     <field name="active"/>
                     <field name="xml_sending"/>
                   </group>
@@ -26,8 +27,8 @@
                   <field name="model"/>
                   <field name="user_id" />
                   <field name='tipo_trabajo'/>
+                  <field name='att_number'/>
                   <field name="active"/>
-
               </tree>
           </field>
       </record>

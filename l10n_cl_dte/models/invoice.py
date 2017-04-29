@@ -243,6 +243,63 @@ class Invoice(models.Model):
     _inherit = "account.invoice"
 
     @db_query
+    def get_net_ex_detail(self):
+        return """
+        /*
+        DETALLE DE MONTOS
+        */
+        select
+        invoice_id,
+        line_id,
+        price_subtotal,
+        /* al_pname, */
+        /* at_name, */
+        tax_amount,
+        (CASE
+        WHEN tax_amount != 0 THEN 0
+        ELSE (CASE
+            WHEN price_subtotal > 0 THEN price_subtotal
+            ELSE 0
+        END)
+        END) as mntexe,
+        (CASE
+        WHEN tax_amount > 0 THEN price_subtotal
+        ELSE 0
+        END) as mntneto,
+        (CASE
+        WHEN price_subtotal < 0 and tax_amount < 0 then abs(price_subtotal)
+        ELSE 0
+        END) as dcglobalaf,
+        (CASE
+        WHEN price_subtotal < 0 and tax_amount is null THEN abs(price_subtotal)
+        ELSE 0
+        END) as dcglobalex
+        from
+        (select
+        al.invoice_id as invoice_id,
+        al.id as line_id,
+        al.price_subtotal,
+        al.product_id,
+        al.name as al_pname,
+        at.name as at_name,
+        at.tax_group_id,
+        at.amount,
+        round(al.price_subtotal * at.amount / 100) as tax_amount,
+        at.no_rec,
+        at.retencion,
+        at.sii_code,
+        at.type_tax_use
+        from account_invoice_line al
+        left join account_invoice_line_tax alt
+        on al.id = alt.invoice_line_id
+        left join account_tax at
+        on alt.tax_id = at.id
+        where al.company_id = 1
+        and al.invoice_id = %s) as a
+        order by line_id
+        """ % self.id
+
+    @db_query
     def get_net_ex_amount(self):
         return """
         /*
@@ -446,6 +503,8 @@ class Invoice(models.Model):
 </SetDTE>'''.format(RutEmisor, signature_d['subject_serial_number'],
                     RutReceptor, FchResol, NroResol, TmstFirmaEnv, SubTotDTE,
                     EnvioDTE)
+        print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
+        _logger.error(xml)
         return xml
 
     @staticmethod
@@ -1289,7 +1348,7 @@ sobre un valor afecto o a la inversa. Revise los descuentos que intenta \
 realizar en su documento.""")
             discount['DscRcgGlobal']['IndExeDR'] = i
             j += 1
-        discounts.append(discount)
+            discounts.append(discount)
         # raise UserError(json.dumps(discounts))
         return discounts
 
@@ -1367,6 +1426,7 @@ incorrecto para facturación exenta. Seleccione el documento adecuado.""")
         invoice_lines = []
         no_product = False
         MntExe = 0
+        prexe = self.get_net_ex_detail()
         for line in self.invoice_line_ids:
             try:
                 if line.product_id.is_discount:
@@ -1378,13 +1438,13 @@ incorrecto para facturación exenta. Seleccione el documento adecuado.""")
             except:
                 if u'descuento' in line.product_id.name.lower() \
                         or u'discount' in line.product_id.name.lower():
-                    global_discount += int(round(line.price_subtotal, 0))
-                    global_discount = self._calc_discount_vat(
-                        global_discount)
-                    # sum_lines += line.price_subtotal
+                    if line.quantity > 0:
+                        raise UserError(u'Para aplicar un descuento la \
+cantidad debe ser negativa.')
+                    global_discount = True
                     continue
                 else:
-                    pass
+                    global_discount = False
             if line.product_id.default_code == 'NO_PRODUCT':
                 no_product = True
             lines = collections.OrderedDict()
@@ -1394,19 +1454,11 @@ incorrecto para facturación exenta. Seleccione el documento adecuado.""")
                 lines['CdgItem']['TpoCodigo'] = 'INT1'
                 lines['CdgItem']['VlrCodigo'] = line.product_id.default_code
             tax_include = False
-            for t in line.invoice_line_tax_ids:
-                tax_include = t.price_include
-                if t.amount == 0 or t.sii_code in [0]:
-                    # TODO: mejor manera de identificar exento de afecto
-                    lines['IndExe'] = 1
-                    MntExe += int(round(line.price_tax_included, 0))
-            if not tax_include:
-                lines['IndExe'] = 1
-                MntExe += int(round(line.price_tax_included, 0))
-                # if line.product_id.type == 'events':
-                #   lines['ItemEspectaculo'] =
-                #            if self.is_doc_type_b():
-                #                lines['RUTMandante']
+            for pr in prexe:
+                if pr['line_id'] == line.id:
+                    if pr['mntexe'] != 0:
+                        lines['IndExe'] = 1
+                        break
             lines['NmbItem'] = self.normalize_string(
                 line.product_id.name, 'NmbItem', 'safe')
             lines['DscItem'] = self.normalize_string(
@@ -1427,12 +1479,6 @@ Si necesita representar un descuento global, deberá utilizar el item \
                 lines['QtyItem'] = qty
             if qty == 0 and not no_product:
                 lines['QtyItem'] = 1
-            elif qty < 0 and global_discount >= 0:
-                raise UserError(u"""La cantidad puede ser menor que 0 solamente
-para ítems tipo 'descuento'""")
-            elif qty > 0 and global_discount < 0:
-                raise UserError(u"""La cantidad siempre debe ser menor que 0 \
-cuando se aplican descuentos globales.""")
             if not no_product:
                 lines['UnmdItem'] = line.uom_id.name[:4]
                 lines['PrcItem'] = int(round(line.price_unit, 2))
@@ -1674,6 +1720,8 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
         :param file_name:
         :return:
         """
+        _logger.warning('save_xml_record %%%%%%%%%%%%%%%%%%%%%%%% {}'.format(
+            self._context))
         self.write(
             {'sii_xml_response': result['sii_xml_response'],
              'sii_send_ident': result['sii_send_ident'],
@@ -1710,6 +1758,7 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
     def send_envelope_sii(
             self, RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
             file_name, company_id, certp):
+        _logger.error('send_envelope_sii (antes de crear envelope)')
         dtes = self.create_template_envelope(
             RUTEmisor, "60803000-K", resol_data['dte_resolution_date'],
             resol_data['dte_resolution_number'], self.time_stamp(), documentos,
@@ -1894,8 +1943,9 @@ hacer eso en un envío')
         for key in sorted(dtes.iterkeys()):
             documentos += '\n' + dtes[key]
         # raise UserError(documentos)
+        envelope = False
         if not is_doc_type_b:
-            self.send_envelope_sii(
+            envelope = self.send_envelope_sii(
                 RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
                 file_name, company_id, certp)
         for inv in self:
@@ -1906,6 +1956,7 @@ hacer eso en un envío')
                     RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
                     is_doc_type_b, file_name, company_id, certp)
                 inv.get_pdf_docsonline()
+        return envelope
 
     @api.multi
     def ask_for_dte_status(self):

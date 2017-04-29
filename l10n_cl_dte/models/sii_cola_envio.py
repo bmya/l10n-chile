@@ -12,7 +12,9 @@ class ColaEnvio(models.Model):
     model = fields.Char(string="Model destino")
     user_id = fields.Many2one('res.users')
     tipo_trabajo = fields.Selection(
-        [('envio', 'Envío'), ('consulta', 'Consulta')],
+        [('envio', 'Envío'),
+         ('consulta', 'Consulta'),
+         ('rechazado', 'Rechazado')],
         string='Tipo de trabajo')
     active = fields.Boolean(string="Active", default=True)
     att_number = fields.Char(string="Número de atención")
@@ -20,11 +22,11 @@ class ColaEnvio(models.Model):
 
     @api.model
     def _cron_process_queue(self):
-        _logger.info(u'ingreso en la cola de envío')
+        _logger.info(u'Ingreso en la cola de envío')
         ids = self.search([('active', '=', True)])
         if ids:
             _logger.info(
-                u'se encontraron registros para procesar: {}'.format(ids))
+                u'Se encontraron registros para procesar: {}'.format(ids))
             for c in ids:
                 _logger.info(u'Procesando registros de {} ids: {}'.format(
                     c.model, c.doc_ids))
@@ -51,7 +53,7 @@ en estado: {}. Se descarta el envío de este grupo. No se consultará nuevamente
 {}'.format(docs, c.att_number))
                         c.xml_sending = docs.do_dte_send(c.att_number)
                         c.tipo_trabajo = 'consulta'
-                    else:
+                    elif c.tipo_trabajo == 'consulta':
                         _logger.info(u'Realizando consulta para {}'.format(
                             docs))
                         docs[0].ask_for_dte_status()
