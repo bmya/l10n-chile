@@ -319,111 +319,253 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
     @db_handler
     def _summary_by_period(self):
         return """
-        /*
-        NO LOS TUVE EN CUENTA
-        TotOpIVAUsoComun
-        TotIVAUsoComun
-        VAN ANTES DE:
-        TotImpSinCredito
-        */
         select
-        dc.sii_code as "TpoDoc",
-        1 as "TpoImp",
-        count(*) as "TotDoc",
-        sum (case when mnt_exe > 0 then 1 else 0 end) as "TotOpExe",
-        sum(cast(ai.mnt_exe as integer)) as "TotMntExe",
-        sum(cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer)) as
-        "TotMntNeto",
-	    sum(cast(round((case when ax.no_rec is False then 1 else 0 end), 0)
-	    as integer)) as "TotOpIVARec",
-        sum(cast(round((case when ax.no_rec is False then at.amount
-        else 0 end), 0) as integer)) as "TotMntIVA",
-        max((case when ax.no_rec then 1 else 0 end)) as "TotIVANoRec",
-        max((case when ax.no_rec then ax.sii_code else 0 end)) as "CodIVANoRec",
-        sum((case when ax.no_rec then 1 else 0 end)) as "TotOpIVANoRec",
-        sum(cast(round((case when ax.no_rec then at.amount else 0 end), 0)
+        "TpoDoc",
+        max("TpoImp") as "TpoImp",
+        count("TpoImp") as "TotDoc",
+        sum(case when "MntExe" > 0 then 1 else 0 end) as "TotOpExe",
+        sum(cast("MntExe" as integer)) as "TotMntExe",
+        sum(cast("MntNeto" as integer)) as "TotMntNeto",
+        sum(case when "IVANoRec" > 0 then 0 else
+        (case when "MntIVA" = 0 then 0 else 1 end)
+        end) as "TotOpIVARec",
+        sum(cast("MntIVA" as integer)) as "TotMntIVA",
+        sum(case when "IVANoRec" > 0 then 1 else 0 end) as "TotOpIVANoRec",
+        max((case when "IVANoRec" > 0 then at_sii_code else 0 end))
+        as "CodIVANoRec",
+        sum((case when "IVANoRec" > 0 then 1 else 0 end)) as "TotOpIVANoRec",
+        sum(cast(round((case when "IVANoRec" > 0 then taxz_amount else 0 end),
+        0)
         as integer)) as "TotMntIVANoRec",
-        sum(cast(round((case when ax.no_rec then 0 else 0 end), 0)
+        sum(cast(round((case when "IVANoRec" > 0 then 0 else 0 end), 0)
         as integer)) as "TotImpSinCredito",
-        sum(cast(ai.amount_total as integer)) as "TotMntTotal"
-        from account_invoice ai
-        left join sii_document_class dc
-        on ai.sii_document_class_id = dc.id
-        left join
-        (select ar.invoice_id, ar.origen, dcl.sii_code from
-        (select
-        invoice_id,
-        origen,
-        "sii_referencia_TpoDocRef" as tipo
-        from account_invoice_referencias) ar
-        left join sii_document_class dcl
-        on ar.tipo = dcl.id) as ref
-        on ref.invoice_id = ai.id
-        left join res_partner rp
-        on rp.id = ai.partner_id
-        left join account_invoice_tax at
-        on at.invoice_id = ai.id
-        left join account_tax ax
-        on ax.id = at.tax_id
-        where ai.id in (%s)
-        group by dc.sii_code
-        """
-
-    @db_handler
-    def _detail_by_period(self):
-        return """
+        sum(cast("MntExe" + "MntNeto" + "MntIVA" as integer)) as "TotMntTotal"
+        from
+        (
         select
+        /*line_id,*/
+        max("TpoDoc") as "TpoDoc",
+        max("NroDoc") as "NroDoc",
+        max(1) as "TpoImp",
+        sum(cast((CASE
+        WHEN tax_amount is not null THEN 0
+        ELSE price_subtotal
+        END) as integer)) as "MntExe",
+        sum(cast((CASE
+        WHEN tax_amount is null THEN 0
+        ELSE price_subtotal
+        END) as integer)) as "MntNeto",
+        /*sum(cast((CASE
+        WHEN tax_amount > 0 THEN tax_amount
+        ELSE 0
+        END) as integer)) as "MntIVA",*/
+        sum(cast(tax_amount as integer)) as "MntIVA",
+        /* ivanorec */
+        sum("IVANoRec") as "IVANoRec",
+        sum("CodIVANoRec") as "CodIVANoRec",
+        sum("MntIVANoRec") as "MntIVANoRec",
+        /*"IVAUsoComun",*/
+        sum("MntSinCred") as "MntSinCred",
+        max("MntTotal") as "MntTotal",
+        /* fin ivanorec */
+        /*cast(price_subtotal as integer)*/
+        /*line_id,*/
+        /* al_pname, */
+        /* at_name, */
+        /*(CASE
+        WHEN price_subtotal < 0 and tax_amount < 0 then abs(price_subtotal)
+        ELSE 0
+        END) as dcglobalaf,
+        (CASE
+        WHEN price_subtotal < 0 and tax_amount is null THEN abs(price_subtotal)
+        ELSE 0
+        END) as dcglobalex*/
+        max(at_sii_code) as at_sii_code,
+        max(taxz_amount) as taxz_amount
+        from
+        (select
         dc.sii_code as "TpoDoc",
+        al.invoice_id as invoice_id,
         cast(ai.sii_document_number as integer) as "NroDoc",
-        1 as "TpoImp",
-        round(ax.amount, 2) as "TasaImp",
+        at.amount as "TasaImp",
         ai.date_invoice as "FchDoc",
         trim(leading '0' from substring(rp.vat from 3 for 8)) || '-' ||
         right(rp.vat, 1) as "RUTDoc",
         left(rp.name, 50) as "RznSoc",
         ref.sii_code as "TpoDocRef",
         ref.origen as "FolioDocRef",
-        (case when ai.mnt_exe != 0 then cast(ai.mnt_exe as integer) else 0 end)
-         as "MntExe",
-        (case when (ai.amount_untaxed - ai.mnt_exe) != 0 then
-        cast(ai.amount_untaxed as integer) - cast(ai.mnt_exe as integer)
-        else 0 end) as "MntNeto",
-        cast((case when ax.no_rec is False then at.amount else 0 end)
-        as integer) as "MntIVA",
-        (case when ax.no_rec then 1 else 0 end) as "IVANoRec",
-        (case when ax.no_rec then ax.sii_code else 0 end) as "CodIVANoRec",
-        cast(round((case when ax.no_rec then at.amount else 0 end), 0) as
+        al.id as line_id,
+        al.price_subtotal,
+        al.product_id,
+        al.name as al_pname,
+        at.name as at_name,
+        at.tax_group_id,
+        at.amount as taxz_amount,
+        round(al.price_subtotal * at.amount / 100) as tax_amount,
+        at.no_rec as no_rec,
+        at.retencion,
+        at.sii_code as at_sii_code,
+        at.amount,
+        at.sii_code,
+        at.type_tax_use,
+        /* ivanorec */
+        (case when at.no_rec then 1 else 0 end) as "IVANoRec",
+        (case when at.no_rec then at.sii_code else 0 end) as "CodIVANoRec",
+        cast(round((case when at.no_rec then at.amount else 0 end), 0) as
         integer) as "MntIVANoRec",
-        /*cast(round((case when ax.no_rec then 0 else 0 end), 0) as
+        /*cast(round((case when at.no_rec then 0 else 0 end), 0) as
         integer) as "IVAUsoComun",*/
-        cast(round((case when ax.no_rec then 0 else 0 end), 0) as
+        cast(round((case when at.no_rec then 0 else 0 end), 0) as
         integer) as "MntSinCred",
         cast(ai.amount_total as integer) as "MntTotal"
+        /* fin ivanorec */
         from account_invoice ai
+        left join account_invoice_line al
+        on ai.id = al.invoice_id
         left join sii_document_class dc
         on ai.sii_document_class_id = dc.id
         left join
         (select ar.invoice_id, ar.origen, dcl.sii_code from
-        (select
-        invoice_id,
-        origen,
-        "sii_referencia_TpoDocRef" as tipo
-        from account_invoice_referencias) ar
+            (select
+            invoice_id,
+            origen,
+            "sii_referencia_TpoDocRef" as tipo
+            from account_invoice_referencias) ar
         left join sii_document_class dcl
         on ar.tipo = dcl.id) as ref
         on ref.invoice_id = ai.id
+        left join account_invoice_line_tax alt
+        on al.id = alt.invoice_line_id
+        left join account_tax at
+        on alt.tax_id = at.id
         left join res_partner rp
         on rp.id = ai.partner_id
-        /*left join account_invoice_line al
-        on al.invoice_id = ai.id
+        where al.company_id = 1
+        and al.invoice_id in (%s)
+        order by "TpoDoc", "NroDoc") as a
+        group by "TpoDoc", "NroDoc"
+        /*group by line_id
+        order by line_id*/) as b
+        group by "TpoDoc"
+        order by "TpoDoc"
+        """
+
+    @db_handler
+    def _detail_by_period(self):
+        return """
+        /*
+        SUMA DE DETALLE DE MONTOS nueva!
+        Esta no necesita que esté guardado el
+        "mnt_exe" en la factura
+        */
+        select
+        /*line_id,*/
+        max("TpoDoc") as "TpoDoc",
+        max("NroDoc") as "NroDoc",
+        max(1) as "TpoImp",
+        max(round("TasaImp", 2)) as "TasaImp",
+        max("FchDoc") as "FchDoc",
+        max("RUTDoc") as "RUTDoc",
+        max("RznSoc") as "RznSoc",
+        max("TpoDocRef") as "TpoDocRef",
+        max("FolioDocRef") as "FolioDocRef",
+        sum(cast((CASE
+        WHEN tax_amount is not null THEN 0
+        ELSE price_subtotal
+        END) as integer)) as "MntExe",
+        sum(cast((CASE
+        WHEN tax_amount is null THEN 0
+        ELSE price_subtotal
+        END) as integer)) as "MntNeto",
+        /*sum(cast((CASE
+        WHEN tax_amount > 0 THEN tax_amount
+        ELSE 0
+        END) as integer)) as "MntIVA",*/
+        sum(cast(tax_amount as integer)) as "MntIVA",
+        /* ivanorec */
+                sum("IVANoRec") as "IVANoRec",
+                sum("CodIVANoRec") as "CodIVANoRec",
+                sum("MntIVANoRec") as "MntIVANoRec",
+                /*"IVAUsoComun",*/
+                sum("MntSinCred") as "MntSinCred",
+                max("MntTotal") as "MntTotal"
+        /* fin ivanorec */
+        /*cast(price_subtotal as integer)*/
+        /*line_id,*/
+        /* al_pname, */
+        /* at_name, */
+        /*(CASE
+        WHEN price_subtotal < 0 and tax_amount < 0 then abs(price_subtotal)
+        ELSE 0
+        END) as dcglobalaf,
+        (CASE
+        WHEN price_subtotal < 0 and tax_amount is null THEN abs(price_subtotal)
+        ELSE 0
+        END) as dcglobalex*/
+        from
+        (select
+        dc.sii_code as "TpoDoc",
+        al.invoice_id as invoice_id,
+        cast(ai.sii_document_number as integer) as "NroDoc",
+        at.amount as "TasaImp",
+        ai.date_invoice as "FchDoc",
+        trim(leading '0' from substring(rp.vat from 3 for 8)) || '-' ||
+        right(rp.vat, 1) as "RUTDoc",
+        left(rp.name, 50) as "RznSoc",
+        ref.sii_code as "TpoDocRef",
+        ref.origen as "FolioDocRef",
+        al.id as line_id,
+        al.price_subtotal,
+        al.product_id,
+        al.name as al_pname,
+        at.name as at_name,
+        at.tax_group_id,
+        at.amount,
+        round(al.price_subtotal * at.amount / 100) as tax_amount,
+        at.no_rec,
+        at.retencion,
+        at.sii_code,
+        at.amount,
+        at.sii_code,
+        at.type_tax_use,
+        /* ivanorec */
+        (case when at.no_rec then 1 else 0 end) as "IVANoRec",
+        (case when at.no_rec then at.sii_code else 0 end) as "CodIVANoRec",
+        cast(round((case when at.no_rec then at.amount else 0 end), 0) as
+        integer) as "MntIVANoRec",
+        /*cast(round((case when at.no_rec then 0 else 0 end), 0) as
+        integer) as "IVAUsoComun",*/
+        cast(round((case when at.no_rec then 0 else 0 end), 0) as
+        integer) as "MntSinCred",
+        cast(ai.amount_total as integer) as "MntTotal"
+        /* fin ivanorec */
+        from account_invoice ai
+        left join account_invoice_line al
+        on ai.id = al.invoice_id
+        left join sii_document_class dc
+        on ai.sii_document_class_id = dc.id
+        left join
+        (select ar.invoice_id, ar.origen, dcl.sii_code from
+            (select
+            invoice_id,
+            origen,
+            "sii_referencia_TpoDocRef" as tipo
+            from account_invoice_referencias) ar
+        left join sii_document_class dcl
+        on ar.tipo = dcl.id) as ref
+        on ref.invoice_id = ai.id
         left join account_invoice_line_tax alt
-        on alt.invoice_line_id = al.id*/
-        left join account_invoice_tax at
-        on at.invoice_id = ai.id
-        left join account_tax ax
-        on ax.id = at.tax_id
-        where ai.id in (%s)
-        order by ai.id
+        on al.id = alt.invoice_line_id
+        left join account_tax at
+        on alt.tax_id = at.id
+        left join res_partner rp
+        on rp.id = ai.partner_id
+        where al.company_id = 1
+        and al.invoice_id in (%s)
+        order by "TpoDoc", "NroDoc") as a
+        group by "TpoDoc", "NroDoc"
+        /*group by line_id
+        order by line_id*/
         """
 
     def _record_totals(self, jvalue):
