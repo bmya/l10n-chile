@@ -9,8 +9,7 @@ class SIISucursal(models.Model):
     sii_code = fields.Char(string="Código SII de la Sucursal", )
     company_id = fields.Many2one(
         'res.company', 'Company', required=True,
-        default=lambda self: self.env.user.company_id.id,
-        )
+        default=lambda self: self.env.user.company_id.id, )
 
 class sii_point_of_sale(models.Model):
     _name = 'sii.point_of_sale'
@@ -47,7 +46,7 @@ class sii_document_class(models.Model):
         'Name', size=120)
     doc_code_prefix = fields.Char(
         'Document Code Prefix', help="Prefix for Documents Codes on Invoices \
-        and Account Moves. For eg. 'FAC' will build 'FAC 00001' Document Number")
+and Account Moves. For eg. 'FAC' will build 'FAC 00001' Document Number")
     code_template = fields.Char(
         'Code Template for Journal')
     sii_code = fields.Integer(
@@ -67,8 +66,8 @@ class sii_document_class(models.Model):
             ('other_document', 'Other Documents')
         ],
         string='Document Type',
-        help='It defines some behaviours on automatic journal selection and\
-        in menus where it is shown.')
+        help='It defines some behaviours on automatic journal selection and \
+in menus where it is shown.')
     active = fields.Boolean(
         'Active', default=True)
     dte = fields.Boolean(

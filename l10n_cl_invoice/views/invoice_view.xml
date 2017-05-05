@@ -3,7 +3,7 @@
     <data>
 
         <record id="view_account_invoice_filter" model="ir.ui.view">
-            <field name="name">l10n_cl.invoice.search</field>
+            <field name="name">l10n_cl_invoice.search</field>
             <field name="model">account.invoice</field>
             <field name="inherit_id" ref="account.view_account_invoice_filter"/>
             <field name="arch" type="xml">
@@ -21,7 +21,7 @@
         </record>
 
         <record id="invoice_tree" model="ir.ui.view">
-            <field name="name">l10n_cl.invoice.tree</field>
+            <field name="name">l10n_cl_invoice.tree</field>
             <field name="model">account.invoice</field>
             <field name="inherit_id" ref="account.invoice_tree"/>
             <field name="arch" type="xml">
@@ -29,7 +29,7 @@
                     <field name="reference"/>
                 </field>
                 <field name="origin" position="attributes">
-                    <attribute name="invisible">0</attribute>
+                    <attribute name="invisible">1</attribute>
                 </field>
                 <field name="number" position="attributes">
                     <attribute name="invisible">1</attribute>
@@ -42,7 +42,7 @@
         </record>
 
         <record id="view_invoice_form" model="ir.ui.view">
-            <field name="name">l10n_cl.invoice.form</field>
+            <field name="name">l10n_cl_invoice.form</field>
             <field name="model">account.invoice</field>
             <field name="inherit_id" ref="account.invoice_form"/>
             <field name="arch" type="xml">
@@ -63,13 +63,13 @@
                </form>
                <field name="date_invoice" position="after">
                     <!-- poner diario y documento -->
-                    <field name="journal_id"
+                    <!--<field name="journal_id"
                         attrs="{'readonly':[
                                 '|', '|', ('state', '!=', 'draft'),
                                          ('sii_document_number', '!=', False),
                                          ('move_name', '!=', False)]}"
                         options="{'no_create': True}"
-                        domains="[('journal_id', 'in', available_journals)]"/>
+                        domains="[('journal_id', 'in', available_journals)]"/>-->
                     <field name="journal_document_class_id"
                         attrs="{
                              'invisible':[('use_documents','=',False)],
@@ -85,7 +85,6 @@
                            attrs="{'invisible':[('use_documents','=',False)],'required':[('use_documents','=',True)],'readonly':['|',('state','!=','draft'),('sii_document_number','!=',False)]}"
                            options="{'no_create': True}"
                            domain="[('id','in',available_journal_document_class_ids[0][2])]"/>-->
-
                 </field>
                 <field name="account_id" position="attributes">
                     <attribute name="options">{'no_create': True}</attribute>
@@ -146,7 +145,7 @@
         </record>
 
         <record id="view_supplier_invoice_form" model="ir.ui.view">
-            <field name="name">l10n_cl.invoice.form</field>
+            <field name="name">l10n_cl_invoice.form</field>
             <field name="model">account.invoice</field>
             <field name="inherit_id" ref="account.invoice_supplier_form"/>
             <field name="arch" type="xml">
@@ -162,11 +161,15 @@
                     <field name="sii_document_number" invisible="1"/>
                     <field name="move_name" invisible="1"/>
                 </form>
-                <!-- posible deprecated
-                <field name="supplier_invoice_number" position="attributes">
-                    <attribute name="attrs">{'required':[('use_documents','=',True)]}</attribute>
+                <!-- posible deprecated-->
+                <field name="reference" position="after">
+                    <field name="supplier_invoice_number"
+                       attrs="{'required':[('use_documents','=',True)],
+                       'readonly':[('state', 'not in', ['open', 'draft'])]}"/>
                 </field>
-                -->
+                <field name="reference" position="attributes">
+                    <attribute name="invisible">0</attribute>
+                </field>
                 <field name="number" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </field>
@@ -177,7 +180,8 @@
                     <attribute name="attrs">{'readonly':['|','|',('state','!=','draft'),('sii_document_number','!=',False),('move_name','!=',False)]}</attribute>
                 </field>
 
-                <field name="journal_id" position="after">
+                <!--<field name="journal_id" position="after">-->
+                <field name="date_invoice" position="after">
                   <field name="turn_issuer"
                            domain="[('journal_ids', '=', journal_id)]"
                            attrs="{'required':[('use_documents','=',True)]}"
@@ -200,9 +204,9 @@
                     <field name="iva_uso_comun" />
                   </group>
                 </xpath>
-                <!--<field name="tax_line_ids" position="before">
+                <field name="tax_line_ids" position="before">
                     <field name="referencias" mode="tree">
-                    <form>
+                    <!--<form>
                         <group>
                           <field name="origen" required="True"/>
                           <field name="sii_referencia_TpoDocRef" required="True" />
@@ -210,8 +214,8 @@
                           <field name="motivo"/>
                           <field name="fecha_documento"/>
                         </group>
-                      </form>
-                      <tree>
+                      </form>-->
+                      <tree editable="bottom">
                         <field name="origen" required="True"/>
                         <field name="sii_referencia_TpoDocRef" required="True" />
                         <field name="sii_referencia_CodRef"/>
@@ -219,7 +223,7 @@
                         <field name="fecha_documento"/>
                       </tree>
                     </field>
-                </field>-->
+                </field>
 
             </field>
         </record>

@@ -355,11 +355,10 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         WHEN tax_amount is null THEN 0
         ELSE price_subtotal
         END) as integer)) as "MntNeto",
-        /*sum(cast((CASE
-        WHEN tax_amount > 0 THEN tax_amount
-        ELSE 0
-        END) as integer)) as "MntIVA",*/
-        sum(cast(tax_amount as integer)) as "MntIVA",
+        cast(sum(CASE
+        WHEN tax_amount is null THEN 0
+        ELSE tax_amount
+        END) as integer) as "MntIVA",
         /* ivanorec */
         sum("IVANoRec") as "IVANoRec",
         sum("CodIVANoRec") as "CodIVANoRec",
@@ -401,7 +400,7 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         at.name as at_name,
         at.tax_group_id,
         at.amount as taxz_amount,
-        round(al.price_subtotal * at.amount / 100) as tax_amount,
+        round(al.price_subtotal * at.amount / 100, 2) as tax_amount,
         at.no_rec as no_rec,
         at.retencion,
         at.sii_code as at_sii_code,
@@ -469,10 +468,10 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         max("RznSoc") as "RznSoc",
         max("TpoDocRef") as "TpoDocRef",
         max("FolioDocRef") as "FolioDocRef",
-        sum(cast((CASE
+        cast(sum(CASE
         WHEN tax_amount is not null THEN 0
         ELSE price_subtotal
-        END) as integer)) as "MntExe",
+        END) as integer) as "MntExe",
         sum(cast((CASE
         WHEN tax_amount is null THEN 0
         ELSE price_subtotal
@@ -481,14 +480,17 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         WHEN tax_amount > 0 THEN tax_amount
         ELSE 0
         END) as integer)) as "MntIVA",*/
-        sum(cast(tax_amount as integer)) as "MntIVA",
+        cast(sum((CASE
+        WHEN tax_amount is null then 0
+        ELSE tax_amount
+        END)) as integer) as "MntIVA",
         /* ivanorec */
-                sum("IVANoRec") as "IVANoRec",
-                sum("CodIVANoRec") as "CodIVANoRec",
-                sum("MntIVANoRec") as "MntIVANoRec",
-                /*"IVAUsoComun",*/
-                sum("MntSinCred") as "MntSinCred",
-                max("MntTotal") as "MntTotal"
+        sum("IVANoRec") as "IVANoRec",
+        sum("CodIVANoRec") as "CodIVANoRec",
+        sum("MntIVANoRec") as "MntIVANoRec",
+        /*"IVAUsoComun",*/
+        sum("MntSinCred") as "MntSinCred",
+        max("MntTotal") as "MntTotal"
         /* fin ivanorec */
         /*cast(price_subtotal as integer)*/
         /*line_id,*/
@@ -521,7 +523,7 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         at.name as at_name,
         at.tax_group_id,
         at.amount,
-        round(al.price_subtotal * at.amount / 100) as tax_amount,
+        round(al.price_subtotal * at.amount / 100, 2) as tax_amount,
         at.no_rec,
         at.retencion,
         at.sii_code,

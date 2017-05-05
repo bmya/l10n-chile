@@ -264,6 +264,7 @@ class AccountMoveLine(models.Model):
         readonly=True,
         )
 
+
 class account_journal_sii_document_class(models.Model):
     _name = "account.journal.sii_document_class"
     _description = "Journal SII Documents"
@@ -276,9 +277,8 @@ class account_journal_sii_document_class(models.Model):
             result.append((record.id, record.sii_document_class_id.name))
         return result
 
-
-    sii_document_class_id = fields.Many2one('sii.document_class',
-                                                'Document Type', required=True)
+    sii_document_class_id = fields.Many2one(
+        'sii.document_class', 'Document Type', required=True)
     sequence_id = fields.Many2one(
         'ir.sequence', 'Entry Sequence', required=False,
         help="""This field contains the information related to the numbering \
@@ -292,43 +292,44 @@ class account_journal_sii_document_class(models.Model):
 class AccountJournal(models.Model):
     _inherit = "account.journal"
 
+    # redefine el type original para que sea igual que 8 y no haga falta cambiar
+    # el tratamiento
+    type = fields.Selection(
+        [('sale', 'Sale'),
+         ('sale_refund', 'Sale Refunds'),
+         ('purchase', 'Purchase'),
+         ('purchase_refund', 'Purchase Refunds'),
+         ('cash', 'Cash'),
+         ('bank', 'Bank'),
+         ('general', 'General'), ], string='Type')
     sucursal_id = fields.Many2one(
         'sii.sucursal',
         string="Sucursal")
-
     sii_code = fields.Char(
         related='sucursal_id.name',
         string="Código SII Sucursal",
         readonly=True)
-
     journal_document_class_ids = fields.One2many(
             'account.journal.sii_document_class', 'journal_id',
             'Documents Class',)
-
     point_of_sale_id = fields.Many2one('sii.point_of_sale','Point of sale')
-
     point_of_sale = fields.Integer(
         related='point_of_sale_id.number', string='Point of sale',
         readonly=True)
-
     use_documents = fields.Boolean(
         'Use Documents?', default='_get_default_doc')
-
     document_sequence_type = fields.Selection(
             [('own_sequence', 'Own Sequence'),
              ('same_sequence', 'Same Invoice Sequence')],
             string='Document Sequence Type',
             help="Use own sequence or invoice sequence on Debit and Credit \
                  Notes?")
-
     journal_activities_ids = fields.Many2many(
             'partner.activities',id1='journal_id', id2='activities_id',
             string='Journal Turns', help="""Select the turns you want to \
             invoice in this Journal""")
-
     excempt_documents = fields.Boolean(
-        'Excempt Documents Available', compute='_check_activities')
-
+        'Exempt Documents Available', compute='_check_activities')
 
     @api.multi
     def _get_default_doc(self):

@@ -9,8 +9,8 @@ _logger = logging.getLogger(__name__)
 TYPE2JOURNAL = {
     'out_invoice': 'sale',
     'in_invoice': 'purchase',
-    'out_refund': 'sale',
-    'in_refund': 'purchase'}
+    'out_refund': 'sale_refund',
+    'in_refund': 'purchase_refund', }
 
 
 class AccountInvoiceLine(models.Model):
@@ -283,7 +283,7 @@ class AccountInvoice(models.Model):
         return tax
 
     @api.onchange('company_id')
-    def _refreshRecords(self):
+    def _refresh_records(self):
         if self.journal_id and self.journal_id.company_id != self.company_id.id:
             inv_type = self._context.get('type', 'out_invoice')
             inv_types = inv_type if isinstance(inv_type, list) else [inv_type]
@@ -348,7 +348,6 @@ class AccountInvoice(models.Model):
                 # If document_type in context we try to serch specific document
                 # domain modificado
                 document_type = self._context.get('document_type', False)
-
                 if document_type:
                     document_classes = self.env[
                         'account.journal.sii_document_class'].search(
@@ -427,31 +426,26 @@ a VAT."""))
             document_number = self.number
         self.document_number = document_number
 
+    supplier_invoice_number = fields.Char(
+        copy=False)
     turn_issuer = fields.Many2one(
         'partner.activities',
         'Giro Emisor', readonly=True, store=True, required=False,
-        states={'draft': [('readonly', False)]},
-        )
-
+        states={'draft': [('readonly', False)]}, )
     vat_discriminated = fields.Boolean(
         'Discriminate VAT?',
         compute="get_vat_discriminated",
         store=True,
         readonly=False,
         help="Discriminate VAT on Quotations and Sale Orders?")
-
     available_journals = fields.Many2one(
         'account.journal',
         compute='_get_available_journal_document_class',
         string='Available Journals')
-
     available_journal_document_class_ids = fields.Many2many(
         'account.journal.sii_document_class',
         compute='_get_available_journal_document_class',
         string='Available Journal Document Classes')
-
-    supplier_invoice_number = fields.Char(
-        copy=False)
     journal_document_class_id = fields.Many2one(
         'account.journal.sii_document_class',
         'Documents Type',
@@ -474,14 +468,13 @@ a VAT."""))
         'sii.responsability',
         string='Responsability',
         related='commercial_partner_id.responsability_id',
-        store=True,
-        )
+        store=True, )
     formated_vat = fields.Char(
         string='Responsability',
-        related='commercial_partner_id.formated_vat',)
+        related='commercial_partner_id.formated_vat')
     iva_uso_comun = fields.Boolean(
         string="Uso Común", readonly=True,
-        states={'draft': [('readonly', False)]})
+        states={'draft': [('readonly', False)], })
     # solamente para compras tratamiento del iva
     no_rec_code = fields.Selection([
         ('1', 'Compras destinadas a IVA a generar operaciones no gravados \
@@ -490,13 +483,10 @@ o exentas.'),
         ('3', 'Gastos rechazados.'), ('4', 'Entregas gratuitas (premios, \
 bonificaciones, etc.) recibidos.'), ('9', 'Otros.')], string="Código No \
 recuperable", readonly=True, states={'draft': [('readonly', False)]})
-    # TODO select 1 automático si es emisor 2Categoría
-
     document_number = fields.Char(
         compute='_get_document_number',
         string='Document Number',
-        readonly=True,
-    )
+        readonly=True, )
     next_invoice_number = fields.Integer(
         related='journal_document_class_id.sequence_id.number_next_actual',
         string='Next Document Number',
@@ -553,7 +543,8 @@ sequence on the journal related documents to this invoice.'))
                         prefix + str(sii_document_number)).replace(' ', '')
                     obj_inv.write({'move_name': move_name})
                 elif invtype in ('in_invoice', 'in_refund'):
-                    sii_document_number = obj_inv.supplier_invoice_number
+                    sii_document_number = \
+                        obj_inv.supplier_invoice_number.zfill(6)
         super(AccountInvoice, self).action_move_create()
         for obj_inv in self:
             invtype = obj_inv.type
@@ -663,7 +654,7 @@ facturas o facturas no afectas')
                                 ('type', '=', invoice.type),
                                 ('id', '!=', invoice.id)]):
                     raise UserError(
-                        'Doc {} Folio {} de {} ya se registro'.format(
+                        'Doc %s Folio %s de %s ya se registro' % (
                             invoice.journal_document_class_id.
                             sii_document_class_id.name,
                             invoice.reference, invoice.partner_id.name))
