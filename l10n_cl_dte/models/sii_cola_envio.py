@@ -59,3 +59,13 @@ en estado: {}. Se descarta el envío de este grupo. No se consultará nuevamente
                         docs[0].ask_for_dte_status()
         else:
             _logger.info(u'NO se encontraron ids para enviar')
+
+    @api.model
+    def _cron_check_inprocess_invoices(self):
+        _logger.info(u'Buscando comprobantes en proceso...')
+        inv_obj = self.env['account.invoice']
+        inprocess_ids = inv_obj.search([
+            ('sii_result', 'in', ['Enviado', 'Proceso'])])
+        for inprocess_id in inprocess_ids:
+            _logger.info(u'Procesando invoice id: {}', format(inprocess_id))
+            inprocess_id.ask_for_dte_status()

@@ -330,11 +330,15 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         (case when "MntIVA" = 0 then 0 else 1 end)
         end) as "TotOpIVARec",
         sum(cast("MntIVA" as integer)) as "TotMntIVA",
-        sum(case when "IVANoRec" > 0 then 1 else 0 end) as "TotOpIVANoRec",
-        max((case when "IVANoRec" > 0 then at_sii_code else 0 end))
+        /* TotOpActivoFijo, TotMntActivoFijo, TotMntIVAActivoFijo */
+        sum((case when "IVANoRec" > 0 then 1 else 0 end)) as "TotIVANoRec",
+        /*max((case when "IVANoRec" > 0 then at_sii_code else 0 end))
+        as "CodIVANoRec",*/
+        /* revisar repeticion y revisar de donde obtener el codigo */
+        max((case when "IVANoRec" > 0 then 1 else 0 end))
         as "CodIVANoRec",
         sum((case when "IVANoRec" > 0 then 1 else 0 end)) as "TotOpIVANoRec",
-        sum(cast(round((case when "IVANoRec" > 0 then taxz_amount else 0 end),
+        sum(cast(round((case when "IVANoRec" > 0 then "MntIVANoRec" else 0 end),
         0)
         as integer)) as "TotMntIVANoRec",
         sum(cast(round((case when "IVANoRec" > 0 then 0 else 0 end), 0)
@@ -409,8 +413,10 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         at.type_tax_use,
         /* ivanorec */
         (case when at.no_rec then 1 else 0 end) as "IVANoRec",
-        (case when at.no_rec then at.sii_code else 0 end) as "CodIVANoRec",
-        cast(round((case when at.no_rec then at.amount else 0 end), 0) as
+        /*(case when at.no_rec then at.sii_code else 0 end) as "CodIVANoRec",*/
+        /* para exento siemepre es 1*/
+        (case when at.no_rec then 1 else 0 end) as "CodIVANoRec",
+        cast(round((case when at.no_rec then round(al.price_subtotal * at.amount / 100, 2) else 0 end), 0) as
         integer) as "MntIVANoRec",
         /*cast(round((case when at.no_rec then 0 else 0 end), 0) as
         integer) as "IVAUsoComun",*/
@@ -464,6 +470,7 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         max(1) as "TpoImp",
         max(round("TasaImp", 2)) as "TasaImp",
         max("FchDoc") as "FchDoc",
+        /*CdgSIISucur*/
         max("RUTDoc") as "RUTDoc",
         max("RznSoc") as "RznSoc",
         max("TpoDocRef") as "TpoDocRef",
@@ -476,36 +483,27 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         WHEN tax_amount is null THEN 0
         ELSE price_subtotal
         END) as integer)) as "MntNeto",
-        /*sum(cast((CASE
-        WHEN tax_amount > 0 THEN tax_amount
-        ELSE 0
-        END) as integer)) as "MntIVA",*/
         cast(sum((CASE
         WHEN tax_amount is null then 0
-        ELSE tax_amount
-        END)) as integer) as "MntIVA",
-        /* ivanorec */
+        ELSE tax_amount - "MntIVANoRec" - "IVAUsoComun"
+        END)) as integer) as "MntIVA", /* OJO RECALCULAR EN BASE A DIFERENCIA CON EL RESTO */
+        /*MntActivoFijo*/
+        /*MntIVAActivoFijo*/
         sum("IVANoRec") as "IVANoRec",
-        sum("CodIVANoRec") as "CodIVANoRec",
+        max("CodIVANoRec") as "CodIVANoRec",
         sum("MntIVANoRec") as "MntIVANoRec",
-        /*"IVAUsoComun",*/
+        sum("IVAUsoComun") as "IVAUsoComun",
+        /*"OtrosImp--",*/
         sum("MntSinCred") as "MntSinCred",
         max("MntTotal") as "MntTotal"
-        /* fin ivanorec */
-        /*cast(price_subtotal as integer)*/
-        /*line_id,*/
-        /* al_pname, */
-        /* at_name, */
-        /*(CASE
-        WHEN price_subtotal < 0 and tax_amount < 0 then abs(price_subtotal)
-        ELSE 0
-        END) as dcglobalaf,
-        (CASE
-        WHEN price_subtotal < 0 and tax_amount is null THEN abs(price_subtotal)
-        ELSE 0
-        END) as dcglobalex*/
+        /*IVANoRetenido*/
+        /*TabPuros*/
+        /*TabCigarrillos*/
+        /*TabElaborado*/
+        /*ImpVehiculo*/
         from
-        (select
+        (
+        select
         dc.sii_code as "TpoDoc",
         al.invoice_id as invoice_id,
         cast(ai.sii_document_number as integer) as "NroDoc",
@@ -524,23 +522,31 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         at.tax_group_id,
         at.amount,
         round(al.price_subtotal * at.amount / 100, 2) as tax_amount,
+        /*MntActivoFijo*/
+        /*MntIVAActivoFijo*/
         at.no_rec,
         at.retencion,
         at.sii_code,
         at.amount,
         at.sii_code,
         at.type_tax_use,
-        /* ivanorec */
-        (case when at.no_rec then 1 else 0 end) as "IVANoRec",
-        (case when at.no_rec then at.sii_code else 0 end) as "CodIVANoRec",
-        cast(round((case when at.no_rec then at.amount else 0 end), 0) as
+        (case when ai.no_rec_code != '0' then 1 else 0 end) as "IVANoRec",
+    ai.no_rec_code as "CodIVANoRec",
+        cast(round((case when ai.no_rec_code != '0' then
+        round(al.price_subtotal * at.amount / 100, 2)
+        else 0 end), 0) as
         integer) as "MntIVANoRec",
-        /*cast(round((case when at.no_rec then 0 else 0 end), 0) as
-        integer) as "IVAUsoComun",*/
+        cast(round((case when ai.iva_uso_comun then
+        round(al.price_subtotal * at.amount / 100, 2)
+        else 0 end), 0) as integer) as "IVAUsoComun",
         cast(round((case when at.no_rec then 0 else 0 end), 0) as
         integer) as "MntSinCred",
         cast(ai.amount_total as integer) as "MntTotal"
-        /* fin ivanorec */
+        /*IVANoRetenido*/
+        /*TabPuros*/
+        /*TabCigarrillos*/
+        /*TabElaborado*/
+        /*ImpVehiculo*/
         from account_invoice ai
         left join account_invoice_line al
         on ai.id = al.invoice_id
@@ -564,7 +570,8 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         on rp.id = ai.partner_id
         where al.company_id = 1
         and al.invoice_id in (%s)
-        order by "TpoDoc", "NroDoc") as a
+        order by "TpoDoc", "NroDoc"
+        ) as a
         group by "TpoDoc", "NroDoc"
         /*group by line_id
         order by line_id*/

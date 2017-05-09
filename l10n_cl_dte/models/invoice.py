@@ -3,27 +3,32 @@
 # For copyright and license notices, see __openerp__.py file in module root
 # directory
 ##############################################################################
-from odoo import fields, models, api, _
-from odoo.exceptions import UserError
-from datetime import datetime, timedelta
-import logging
-import json
-from lxml import etree
-from lxml.etree import Element, SubElement
-import pytz
+import base64
 import collections
+import hashlib
+import json
+import logging
+import os
+import textwrap
+from datetime import datetime, timedelta
+
+import cchardet
+import dicttoxml
+import M2Crypto
+import pysiidte
+import pytz
+import requests
 import urllib3
 import xmltodict
-import dicttoxml
-import base64
-import M2Crypto
 from elaphe import barcode
-import hashlib
-import textwrap
-import cchardet
+from lxml import etree
+from lxml.etree import Element, SubElement
+from signxml import XMLSigner, methods
 from SOAPpy import SOAPProxy
-from signxml import XMLSigner, XMLVerifier, methods
-from bs4 import BeautifulSoup as bs
+
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+
 try:
     urllib3.disable_warnings()
 except:
@@ -33,166 +38,23 @@ try:
     from cStringIO import StringIO
 except:
     from StringIO import StringIO
-import requests
 
-normalize_tags = collections.OrderedDict()
-normalize_tags['RutEmisor'] = [10]
-normalize_tags['RznSoc'] = [100]
-normalize_tags['GiroEmis'] = [80]
-normalize_tags['Telefono'] = [20]
-normalize_tags['CorreoEmisor'] = [80, u'variable correo del emisor']
-normalize_tags['Actecos'] = collections.OrderedDict()
-normalize_tags['Actecos']['Acteco'] = [6]
-normalize_tags['CdgTraslado'] = [1]
-normalize_tags['FolioAut'] = [5]
-normalize_tags['FchAut'] = [10]
-normalize_tags['Sucursal'] = [20]
-normalize_tags['CdgSIISucur'] = [9]
-normalize_tags['CodAdicSucur'] = [20]
-normalize_tags['DirOrigen'] = [60, u'dirección de la compañía']
-normalize_tags['CmnaOrigen'] = [20, u'comuna de la compañía']
-normalize_tags['CiudadOrigen'] = [20, u'ciudad de la compañía']
-normalize_tags['CdgVendedor'] = [60]
-normalize_tags['IdAdicEmisor'] = [20]
-normalize_tags['IdAdicEmisor'] = [20]
-normalize_tags['RUTRecep'] = [10, u'RUT del receptor']
-normalize_tags['CdgIntRecep'] = [20]
-normalize_tags['RznSocRecep'] = [100, u'Razón social o nombre receptor']
-normalize_tags['NumId'] = [20]
-normalize_tags['Nacionalidad'] = [3]
-normalize_tags['IdAdicRecep'] = [20]
-normalize_tags['GiroRecep'] = [40, u'variable con giro del receptor']
-normalize_tags['Contacto'] = [80]
-normalize_tags['CorreoRecep'] = [80, u'variable correo del receptor']
-normalize_tags['DirRecep'] = [70, u'dirección del receptor']
-normalize_tags['CmnaRecep'] = [20, u'comuna del receptor']
-normalize_tags['CiudadRecep'] = [20, u'ciudad del receptor']
-normalize_tags['DirPostal'] = [70]
-normalize_tags['CmnaPostal'] = [20]
-normalize_tags['CiudadPostal'] = [20]
-normalize_tags['Patente'] = [8]
-normalize_tags['RUTTrans'] = [10]
-normalize_tags['RUTChofer'] = [10]
-normalize_tags['NombreChofer'] = [30]
-normalize_tags['DirDest'] = [70]
-normalize_tags['CmnaDest'] = [20]
-normalize_tags['CiudadDest'] = [20]
-normalize_tags['CiudadDest'] = [20]
-normalize_tags['MntNeto'] = [18]
-normalize_tags['MntExe'] = [18]
-normalize_tags['MntBase'] = [18]
-normalize_tags['MntMargenCom'] = [18]
-normalize_tags['TasaIVA'] = [5]
-normalize_tags['IVA'] = [18]
-normalize_tags['IVAProp'] = [18]
-normalize_tags['IVATerc'] = [18]
-normalize_tags['TipoImp'] = [3]
-normalize_tags['TasaImp'] = [5]
-normalize_tags['MontoImp'] = [18]
-normalize_tags['IVANoRet'] = [18]
-normalize_tags['CredEC'] = [18]
-normalize_tags['GmtDep'] = [18]
-normalize_tags['ValComNeto'] = [18]
-normalize_tags['ValComExe'] = [18]
-normalize_tags['ValComIVA'] = [18]
-normalize_tags['MntTotal'] = [18]
-normalize_tags['MontoNF'] = [18]
-normalize_tags['MontoPeriodo'] = [18]
-normalize_tags['SaldoAnterior'] = [18]
-normalize_tags['VlrPagar'] = [18]
-normalize_tags['TpoMoneda'] = [15]
-normalize_tags['TpoCambio'] = [10]
-normalize_tags['MntNetoOtrMnda'] = [18]
-normalize_tags['MntExeOtrMnda'] = [18]
-normalize_tags['MntFaeCarneOtrMnda'] = [18]
-normalize_tags['MntMargComOtrMnda'] = [18]
-normalize_tags['IVAOtrMnda'] = [18]
-# pluralizado deliberadamente 'Detalles' en lugar de ImptoReten
-# se usó 'Detalles' (plural) para diferenciar del tag real 'Detalle'
-# el cual va aplicado a cada elemento de la lista o tabla.
-# según el tipo de comunicación, se elimina el tag Detalles o se le quita el
-# plural en la conversion a xml
-normalize_tags['NroLinDet'] = [4]
-# ojo qu este que sigue es tabla tambien
-normalize_tags['TpoCodigo'] = [10]
-normalize_tags['VlrCodigo'] = [35]
-normalize_tags['TpoDocLiq'] = [3]
-normalize_tags['IndExe'] = [3]
-# todo: falta retenedor
-normalize_tags['NmbItem'] = [80]
-normalize_tags['DscItem'] = [1000]
-normalize_tags['QtyRef'] = [18]
-normalize_tags['UnmdRef'] = [4]
-normalize_tags['PrcRef'] = [18]
-normalize_tags['QtyItem'] = [18]
-# todo: falta tabla subcantidad
-normalize_tags['FchElabor'] = [10]
-normalize_tags['FchVencim'] = [10]
-normalize_tags['UnmdItem'] = [10]
-normalize_tags['PrcItem'] = [18]
-# todo: falta tabla OtrMnda
-normalize_tags['DescuentoOct'] = [5]
-normalize_tags['DescuentoMonto'] = [18]
-# todo: falta tabla distrib dcto
-# todo: falta tabla distrib recargo
-# todo: falta tabla cod imp adicional y retenciones
-normalize_tags['MontoItem'] = [18]
-# todo: falta subtotales informativos
-# ojo que estos descuentos podrían ser globales más de uno,
-# pero la implementación soporta uno solo
-normalize_tags['NroLinDR'] = [2]
-normalize_tags['TpoMov'] = [1]
-normalize_tags['GlosaDR'] = [45]
-normalize_tags['TpoValor'] = [1]
-normalize_tags['ValorDR'] = [18]
-normalize_tags['ValorDROtrMnda'] = [18]
-normalize_tags['IndExeDR'] = [1]
-# pluralizado deliberadamente
-normalize_tags['NroLinRef'] = [2]
-normalize_tags['TpoDocRef'] = [3]
-normalize_tags['IndGlobal'] = [3]
-normalize_tags['FolioRef'] = [18]
-normalize_tags['RUTOtr'] = [10]
-normalize_tags['IdAdicOtr'] = [20]
-normalize_tags['FchRef'] = [10]
-normalize_tags['CodRef'] = [1]
-normalize_tags['RazonRef'] = [1]
-# todo: faltan comisiones y otros cargos
-pluralizeds = ['Actecos', 'Detalles', 'Referencias', 'DscRcgGlobals', 'ImptoRetens']
-# timbre patrón. Permite parsear y formar el
-# ordered-dict patrón corespondiente al documento
-# Public vars definition
-timbre = """<TED version="1.0"><DD><RE/><TD/><F/>\
-<FE/><RR/><RSR/><MNT/><IT1/><CAF version="1.0"><DA><RE/><RS/>\
-<TD/><RNG><D/><H/></RNG><FA/><RSAPK><M/><E/></RSAPK>\
-<IDK/></DA><FRMA algoritmo="SHA1withRSA"/></CAF><TSTED/></DD>\
-<FRMT algoritmo="SHA1withRSA"/></TED>"""
+normalize_tags = pysiidte.normalize_tags
+pluralizeds = pysiidte.pluralizeds
+result = xmltodict.parse(pysiidte.stamp)
+server_url = pysiidte.server_url
+BC = pysiidte.BC
+EC = pysiidte.EC
 
-result = xmltodict.parse(timbre)
-server_url = {
-    'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
-    'SII': 'https://palena.sii.cl/DTEWS/', }
-BC = '''-----BEGIN CERTIFICATE-----\n'''
-EC = '''\n-----END CERTIFICATE-----\n'''
 try:
     pool = urllib3.PoolManager()
 except:
     pass
-import os
-connection_status = {
-    '0': 'Upload OK',
-    '1': 'El remitente no tiene permiso para enviar',
-    '2': 'Error en tamaño del archivo (muy grande o muy chico)',
-    '3': 'Archivo cortado (tamaño <> al parámetro size)',
-    '5': 'No está autenticado',
-    '6': 'Empresa no autorizada a enviar archivos',
-    '7': 'Esquema Invalido',
-    '8': 'Firma del Documento',
-    '9': 'Sistema Bloqueado',
-    'Otro': 'Error Interno.', }
+connection_status = pysiidte.connection_status
 xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
     '/models', '/static/xsd/')
 no_product = False
+
 
 def to_json(colnames, rows):
     all_data = []
@@ -204,6 +66,7 @@ def to_json(colnames, rows):
             i += 1
         all_data.append(each_row)
     return all_data
+
 
 def db_query(method):
     def call(self, *args, **kwargs):
@@ -219,6 +82,7 @@ def db_query(method):
         _logger.info('rows: {}'.format(rows))
         return to_json(colnames, rows)
     return call
+
 
 class Signer(XMLSigner):
     def __init__(self):
@@ -379,35 +243,6 @@ class Invoice(models.Model):
         return value
 
     @staticmethod
-    def analyze_sii_result(sii_result, sii_message, sii_receipt):
-        _logger.info(
-            'analizando sii result: {} - message: {} - receipt: {}'.format(
-                sii_result, sii_message, sii_receipt))
-        if not sii_result or not sii_message or not sii_receipt:
-            return sii_result
-        soup_message = bs(sii_message, 'xml')
-        soup_receipt = bs(sii_receipt, 'xml')
-        _logger.info(soup_message)
-        _logger.info(soup_receipt)
-        if soup_message.ESTADO.text == '2':
-            raise UserError(
-                'Error code: 2: {}'.format(soup_message.GLOSA_ERR.text))
-        if soup_message.ESTADO.text in ['SOK', 'CRT', 'PDR', 'FOK', '-11']:
-            return 'Proceso'
-        elif soup_message.ESTADO.text in ['RCH', 'RFR', 'RSC', 'RCT']:
-            return 'Rechazado'
-        elif soup_message.ESTADO.text in ['RLV']:
-            return 'Reparo'
-        elif soup_message.ESTADO.text in ['EPR', 'DNK']:
-            if soup_receipt.ACEPTADOS.text == soup_receipt.INFORMADOS.text:
-                return 'Aceptado'
-            if soup_receipt.REPAROS.text >= '1':
-                return 'Reparo'
-            if soup_receipt.RECHAZADOS.text >= '1':
-                return 'Rechazado'
-        return sii_result
-
-    @staticmethod
     def _calc_discount_vat(discount, sii_code=0):
         """
         Función provisoria para calcular el descuento:
@@ -438,7 +273,6 @@ class Invoice(models.Model):
             var = self.safe_variable(var[:size], key)
         return var
 
-    # metodos de sii
     @api.model
     def check_if_not_sent(self, ids, model, job):
         queue_obj = self.env['sii.cola_envio']
@@ -446,25 +280,6 @@ class Invoice(models.Model):
             [('doc_ids', 'like', ids), ('model', '=', model),
              ('tipo_trabajo', '=', job)])
         return len(item_ids) <= 0
-
-    @staticmethod
-    def remove_plurals_xml(xml):
-        for k in pluralizeds:
-            print k
-            xml = xml.replace('<%s>' % k, '').replace('</%s>' % k, '')
-        return xml
-
-    @staticmethod
-    def create_template_doc(doc):
-        """
-        Creacion de plantilla xml para envolver el DTE
-        Previo a realizar su firma (1)
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2016-06-01
-        """
-        xml = '''<DTE xmlns="http://www.sii.cl/SiiDte" version="1.0">
-    {}</DTE>'''.format(doc)
-        return xml
 
     @staticmethod
     def split_cert(cert):
@@ -506,29 +321,6 @@ class Invoice(models.Model):
         print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
         _logger.error(xml)
         return xml
-
-    @staticmethod
-    def get_seed(company_id):
-        """
-        Funcion usada en autenticacion en SII
-        Obtencion de la semilla desde el SII.
-        Basada en función de ejemplo mostrada en el sitio edreams.cl
-         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-         @version: 2015-04-01
-        """
-        try:
-            import ssl
-            ssl._create_default_https_context = ssl._create_unverified_context
-        except:
-            pass
-        url = server_url[
-                  company_id.dte_service_provider] + 'CrSeed.jws?WSDL'
-        ns = 'urn:' + server_url[
-            company_id.dte_service_provider] + 'CrSeed.jws'
-        _server = SOAPProxy(url, ns)
-        root = etree.fromstring(_server.getSeed())
-        semilla = root[0][0].text
-        return semilla
 
     @staticmethod
     def create_template_seed(seed):
@@ -634,26 +426,6 @@ version="1.0">
             signed_node, pretty_print=True).replace('ds:', '')
         _logger.info('message: {}'.format(msg))
         return msg
-
-    @staticmethod
-    def get_token(seed_file, company_id):
-        """
-        Funcion usada en autenticacion en SII
-        Obtencion del token a partir del envio de la semilla firmada
-        Basada en función de ejemplo mostrada en el sitio edreams.cl
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2016-06-01
-        """
-        url = server_url[
-                  company_id.dte_service_provider] + 'GetTokenFromSeed.jws?WSDL'
-        ns = 'urn:' + server_url[
-            company_id.dte_service_provider] + 'GetTokenFromSeed.jws'
-        _server = SOAPProxy(url, ns)
-        tree = etree.fromstring(seed_file)
-        ss = etree.tostring(tree, pretty_print=True, encoding='iso-8859-1')
-        respuesta = etree.fromstring(_server.getToken(ss))
-        token = respuesta[0][0].text
-        return token
 
     @staticmethod
     def long_to_bytes(n, blocksize=0):
@@ -772,12 +544,17 @@ version="1.0">
             raise UserError(_("Not Service provider selected!"))
         signature_d = self.get_digital_signature_pem(
             company_id)
-        seed = self.get_seed(company_id)
-        template_string = self.create_template_seed(seed)
-        seed_firmado = self.sign_seed(
-            template_string, signature_d['priv_key'],
+        # template_string = pysiidte.get_seed(
+        #     self.company_id.dte_service_provider)
+        # # template_string = self.create_template_seed(seed)
+        # seed_firmado = self.sign_seed(
+        #     template_string, signature_d['priv_key'],
+        #     signature_d['cert'])
+        # token = pysiidte.get_token(
+        #     seed_firmado, company_id.dte_service_provider)
+        token = pysiidte.sii_token(
+            company_id.dte_service_provider, signature_d['priv_key'],
             signature_d['cert'])
-        token = self.get_token(seed_firmado, company_id)
         url = server_url[company_id.dte_service_provider].replace(
             '/DTEWS/', '')
         post = '/cgi_dte/UPL/DTEUpload'
@@ -1599,10 +1376,10 @@ signature.'''))
         xml_pret = etree.tostring(root, pretty_print=True).replace(
             '<' + tpo_dte + '_ID>', doc_id).replace(
             '</' + tpo_dte + '_ID>', '</' + tpo_dte + '>')
-        xml_pret = self.remove_plurals_xml(xml_pret).replace(
+        xml_pret = pysiidte.remove_plurals_xml(xml_pret).replace(
             '<IndExeDR>0</IndExeDR>', '')
         envelope_efact = self.convert_encoding(xml_pret, 'ISO-8859-1')
-        envelope_efact = self.create_template_doc(envelope_efact)
+        envelope_efact = pysiidte.create_template_doc(envelope_efact)
         _logger.info('envelope_efact: {}'.format(envelope_efact))
         type = 'bol' if self.is_doc_type_b() else 'doc'
         #    type = 'bol'
@@ -1680,7 +1457,8 @@ del servidor. Se toma el varlor preexistente en el mensaje')
         if self.sii_message:
             # cambiar esto para hacerlo desde la funcion de "analyze"
             resp = xmltodict.parse(self.sii_message)
-            try:
+            if True:  # try:
+                _logger.info('entrando en linea 1684')
                 if resp['SII:RESPUESTA']['SII:RESP_HDR']['ESTADO'] == '2':
                     status = {
                         'warning': {
@@ -1707,7 +1485,7 @@ del servidor. Se toma el varlor preexistente en el mensaje')
                     if resp['SII:RESPUESTA']['SII:RESP_BODY'][
                     'RECHAZADOS'] == '1':
                         self.sii_result = 'Rechazado'
-            except:
+            else:  # except:
                 raise UserError('_get_dte_status: no se pudo obtener una \
 respuesta satisfactoria por conexión ni de respuesta previa.')
 
@@ -1949,7 +1727,7 @@ hacer eso en un envío')
                 RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
                 file_name, company_id, certp)
         for inv in self:
-            inv.sii_result = inv.analyze_sii_result(
+            inv.sii_result = pysiidte.analyze_sii_result(
                 inv.sii_result, inv.sii_message, inv.sii_receipt)
             if inv.sii_result == 'Aceptado':
                 inv.send_envelope_recipient(
@@ -1964,51 +1742,46 @@ hacer eso en un envío')
         Este proceso realiza las consultas desde la cola de envío.
         :return:
         """
+        #if not self.sii_send_ident:
+        #    raise UserError(
+        #        'No se ha enviado aún el documento, aún está en cola de \
+        # envío interna en odoo')
+        signature_d = self.get_digital_signature_pem(self.company_id)
+        certp = signature_d['cert'].replace(BC, '').replace(
+            EC, '').replace('\n', '')
         if self.sii_message and self.sii_receipt:
-            _logger.info('ask_for_dte_status %%%%%%%%%% ya hay estado....')
-            self.sii_result = self.analyze_sii_result(
+            _logger.info('ask_for_dte_status - ya hay estado....')
+            self.sii_result = pysiidte.analyze_sii_result(
                 self.sii_result, self.sii_message, self.sii_receipt)
             # aca hacer los procesos nuevos
             SubTotDTE = '''<SubTotDTE>
 <TpoDTE>{}</TpoDTE>
 <NroDTE>1</NroDTE>
 </SubTotDTE>'''.format(self.sii_document_class_id.sii_code)
-            signature_d = self.get_digital_signature_pem(self.company_id)
-            certp = signature_d['cert'].replace(BC, '').replace(
-                EC, '').replace('\n', '')
             if self.sii_result == 'Aceptado':
                 self.send_envelope_recipient(
                     self.format_vat(self.company_id.vat),
                     self.get_resolution_data(self.company_id),
                     self.sii_xml_request, signature_d, SubTotDTE, False,
                     self.sii_send_file_name, self.company_id, certp)
-                # prepara para poder enviar los archivos.
-            return
-
-        if True:  # try:
-            signature_d = self.get_digital_signature_pem(
-                self.company_id)
-            seed = self.get_seed(self.company_id)
-            template_string = self.create_template_seed(seed)
-            seed_firmado = self.sign_seed(
-                template_string, signature_d['priv_key'],
-                signature_d['cert'])
-            token = self.get_token(seed_firmado, self.company_id)
-            _logger.info('ask_for_dte_status token: {}'.format(token))
-        else:  # except:
-            _logger.info(connection_status)
-            raise UserError(connection_status)
-        if not self.sii_send_ident:
-            raise UserError(
-                'No se ha enviado aún el documento, aún está en cola de \
-envío interna en odoo')
+                return
+        # seed = pysiidte.get_seed(self.company_id.dte_service_provider)
+        # template_string = self.create_template_seed(seed)
+        # seed_firmado = self.sign_seed(
+        #     template_string, signature_d['priv_key'],
+        #     signature_d['cert'])
+        # token = pysiidte.get_token(
+        #     seed_firmado, self.company_id.dte_service_provider)
+        token = pysiidte.sii_token(
+            self.company_id.dte_service_provider, signature_d['priv_key'],
+            signature_d['cert'])
         if self.sii_result == 'Enviado':
+            _logger.info('token: {}'.format(token))
             status = self._get_send_status(
                 self.sii_send_ident, signature_d, token)
             if self.sii_result != 'Proceso':
                 return status
         return self._get_dte_status(signature_d, token)
-
 
     """
     Definicion de extension de modelo de datos para account.invoice
@@ -2179,6 +1952,7 @@ envío interna en odoo')
         result['TED']['DD']['RR'] = self.format_vat(self.partner_id.vat)
         result['TED']['DD']['RSR'] = self.normalize_string(
             self.partner_id.name, 40)
+        print result['TED']['DD']['RSR']
         result['TED']['DD']['MNT'] = int(round(self.amount_total))
         if no_product:
             result['TED']['DD']['MNT'] = 0
@@ -2212,7 +1986,8 @@ envío interna en odoo')
             ' algoritmo="SHA1withRSA">').replace(
             '<key name="#text">', '').replace(
             '</key>', '').replace('<CAF>', '<CAF version="1.0">')+'</DD>'
-        ddxml = self.convert_encoding(ddxml, 'utf-8')
+        # prueva a remover para que no recodifique dos veces
+        # ddxml = self.convert_encoding(ddxml, 'utf-8')
         keypriv = (resultcaf['AUTORIZACION']['RSASK']).encode(
             'latin-1').replace('\t', '')
         keypub = (resultcaf['AUTORIZACION']['RSAPUBK']).encode(

@@ -13,6 +13,36 @@
                 </form>
             </field>
         </record>
+        <record id="dte_tree" model="ir.ui.view">
+            <field name="name">l10n_cl_dte.tree</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="account.invoice_tree"/>
+            <field name="arch" type="xml">
+                <field name="state" position="after">
+                    <field name="sii_result"
+                           attrs="{'invisible':[
+                            ('state', 'in', ['draft'])]}"/>
+                    <button type="object" name="ask_for_dte_status"
+                            help="Consultar Estado de envío de DTE"
+                            icon="fa-caret-square-o-down"
+                            attrs="{'invisible':[
+                            '|', ('state', 'in', ['draft']),
+                            ('sii_result', 'in', ['NoEnviado', 'Aceptado'])]}"/>
+                    <button type="object" name="ask_for_dte_status"
+                            help="Respaldar y Traer PDF con www.documentosonline.com"
+                            icon="fa-file-pdf-o"
+                            attrs="{'invisible':[
+                            '|', ('state', 'in', ['draft']),
+                            ('sii_result', 'not in', ['Enviado', 'Proceso', 'Aceptado'])]}"/>
+                    <!--<button type="object" name="ask_for_dte_status"
+                            t-att-icon="'fa-file' if sii_result='Aceptado' else 'fa-magnet'"
+                            attrs="{'invisible':[
+                            '|', ('state', 'in', ['draft']),
+                            ('sii_result', 'not in', ['Aceptado'])]}"/>-->
+                    <!--<span class="fa fa-inbox fa-1x"></span>-->
+                </field>
+            </field>
+        </record>
         <record id="view_invoice_form" model="ir.ui.view">
             <field name="model">account.invoice</field>
             <field name="name">account.invoice.sii.form</field>
