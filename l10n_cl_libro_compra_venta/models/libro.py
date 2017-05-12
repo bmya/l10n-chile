@@ -1,3 +1,224 @@
+/ *
+SUMA
+DE
+DETALLE
+DE
+MONTOS
+nueva!
+Esta
+no
+necesita
+que
+esté
+guardado
+el
+"mnt_exe"
+en
+la
+factura
+* /
+select
+/ *line_id, * /
+max("TpoDoc") as "TpoDoc",
+max("NroDoc") as "NroDoc",
+max(1) as "TpoImp",
+max(round("TasaImp", 2)) as "TasaImp",
+max("FchDoc") as "FchDoc",
+/ *CdgSIISucur * /
+max("RUTDoc") as "RUTDoc",
+max("RznSoc") as "RznSoc",
+max("TpoDocRef") as "TpoDocRef",
+max("FolioDocRef") as "FolioDocRef",
+cast(sum(CASE
+WHEN
+tax_amount is not null
+THEN
+0
+ELSE
+price_subtotal
+END) as integer) as "MntExe",
+/ *es
+cast(sum
+aca
+y
+sum(cast
+en
+el
+resumen
+por
+redondeo * /
+sum(cast((CASE
+WHEN
+tax_amount is null
+THEN
+0
+ELSE
+price_subtotal
+END) as integer)) as "MntNeto",
+                     cast(sum((CASE
+WHEN
+tax_amount is null
+then
+0
+ELSE
+tax_amount - "MntIVANoRec" - "IVAUsoComun"
+END)) as integer) as "MntIVA",
+                     cast(sum((CASE
+WHEN
+rcn = 19
+THEN(rcn / 19) * tax_amount
+ELSE
+0
+END)) as integer) as "IVARetTotal",
+                     cast(sum((CASE
+WHEN
+rcn < 19
+THEN(rcn / 19) * tax_amount
+ELSE
+0
+END)) as integer) as "IVARetParcial",
+/ *OJO
+RECALCULAR
+EN
+BASE
+A
+DIFERENCIA
+CON
+EL
+RESTO * /
+/ * MntActivoFijo * /
+/ * MntIVAActivoFijo * /
+sum("IVANoRec") as "IVANoRec",
+                   max("CodIVANoRec") as "CodIVANoRec",
+                                         sum("MntIVANoRec") as "MntIVANoRec",
+                                                               sum(
+                                                                   "IVAUsoComun") as "IVAUsoComun",
+/ *"OtrosImp--", * /
+sum("MntSinCred") as "MntSinCred",
+/ *max(at_sii_code) as at_sii_code,
+                       max(taxz_amount) as taxz_amount
+at_sii_code
+y
+taxz_amount
+van
+solo
+en
+resumen
+para
+calculo
+auxiliar * /
+/ * IVANoRetenido * /
+/ * TabPuros * /
+/ * TabCigarrillos * /
+/ * TabElaborado * /
+/ * ImpVehiculo * /
+max("MntTotal") -
+cast(sum((CASE
+WHEN
+rcn = 19
+THEN(rcn / 19) * tax_amount
+ELSE
+0
+END)) as integer) -
+cast(sum((CASE
+WHEN
+rcn < 19
+THEN(rcn / 19) * tax_amount
+ELSE
+0
+END)) as integer) as "MntTotal",
+                     cast(sum((CASE
+WHEN
+rcn < 19
+AND
+at_sii_code = 15
+THEN(1 - rcn / 19) * tax_amount
+ELSE
+0
+END)) as integer) as "IVANoRetenido"
+from
+
+(select
+dc.sii_code as "TpoDoc",
+               al.invoice_id as invoice_id,
+                                cast(
+                                    ai.sii_document_number as integer) as "NroDoc",
+                                                                          at.amount as "TasaImp",
+                                                                                       ai.date_invoice as "FchDoc",
+                                                                                                          trim(
+                                                                                                              leading
+'0'
+from substring(rp.vat
+from
+
+3
+for 8)) | | '-' | |
+right(rp.vat, 1) as "RUTDoc",
+left(rp.name, 50) as "RznSoc",
+ref.sii_code as "TpoDocRef",
+ref.origen as "FolioDocRef",
+al.id as line_id,
+al.price_subtotal,
+al.product_id,
+al.name as al_pname,
+at.name as at_name,
+at.tax_group_id,
+at.amount,
+round(al.price_subtotal * at.amount / 100, 2) as tax_amount,
+/ * MntActivoFijo * /
+/ * MntIVAActivoFijo * /
+at.no_rec,
+at.retencion as rcn,
+at.sii_code as at_sii_code,
+at.amount,
+at.sii_code,
+at.type_tax_use,
+(case when ai.no_rec_code != '0' then 1 else 0 end) as "IVANoRec",
+(case when ai.no_rec_code != '0' then
+cast(ai.no_rec_code as integer) else 0 end) as "CodIVANoRec",
+cast(round((case when ai.no_rec_code != '0' then
+round(al.price_subtotal * at.amount / 100, 2)
+else 0 end), 0) as
+integer) as "MntIVANoRec",
+cast(round((case when ai.iva_uso_comun then
+round(al.price_subtotal * at.amount / 100, 2)
+else 0 end), 0) as integer) as "IVAUsoComun",
+cast(round((case when at.no_rec then 0 else 0 end), 0) as
+integer) as "MntSinCred",
+cast(ai.amount_total as integer) as "MntTotal"
+/ * IVANoRetenido * /
+/ * TabPuros * /
+/ * TabCigarrillos * /
+/ * TabElaborado * /
+/ * ImpVehiculo * /
+from account_invoice ai
+left join account_invoice_line al
+on ai.id = al.invoice_id
+left join sii_document_class dc
+on ai.sii_document_class_id = dc.id
+left join
+(select ar.invoice_id, ar.origen, dcl.sii_code from
+(select
+invoice_id,
+origen,
+"sii_referencia_TpoDocRef" as tipo
+from account_invoice_referencias) ar
+left join sii_document_class dcl
+on ar.tipo = dcl.id) as ref
+on ref.invoice_id = ai.id
+left join account_invoice_line_tax alt
+on al.id = alt.invoice_line_id
+left join account_tax at
+on alt.tax_id = at.id
+left join res_partner rp
+on rp.id = ai.partner_id
+where al.company_id = 1
+and al.invoice_id in (69, 70, 71, 78, 76, 77, 79)
+order by "TpoDoc", "NroDoc"
+) as a
+group by "TpoDoc", "NroDoc"
+/ * group by line_id
+order by line_id * /
 # -*- coding: utf-8 -*-
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError

@@ -537,13 +537,11 @@ version="1.0">
                 _('XML Malformed Error: {} - Validation: {}').format(
                     e.args, validacion))
 
-    def send_xml_file(
-            self, envio_dte=None, file_name="envio", company_id=False,
-            sii_result='NoEnviado', doc_ids=''):
+    def send_xml_file(self, envio_dte=None, file_name="envio", company_id=False,
+                      sii_result='NoEnviado', doc_ids=''):
         if not company_id.dte_service_provider:
             raise UserError(_("Not Service provider selected!"))
-        signature_d = self.get_digital_signature_pem(
-            company_id)
+        signature_d = self.get_digital_signature_pem(company_id)
         # template_string = pysiidte.get_seed(
         #     self.company_id.dte_service_provider)
         # # template_string = self.create_template_seed(seed)
@@ -1742,10 +1740,6 @@ hacer eso en un envío')
         Este proceso realiza las consultas desde la cola de envío.
         :return:
         """
-        #if not self.sii_send_ident:
-        #    raise UserError(
-        #        'No se ha enviado aún el documento, aún está en cola de \
-        # envío interna en odoo')
         signature_d = self.get_digital_signature_pem(self.company_id)
         certp = signature_d['cert'].replace(BC, '').replace(
             EC, '').replace('\n', '')

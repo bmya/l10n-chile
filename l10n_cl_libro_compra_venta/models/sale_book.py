@@ -2,10 +2,10 @@
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError
 from datetime import datetime, timedelta
-from lxml import etree
 import logging
 import json
 import collections
+import pysiidte
 try:
     from cStringIO import StringIO
 except:
@@ -70,54 +70,10 @@ except ImportError:
 import xml.dom.minidom
 from bs4 import BeautifulSoup as bs
 
-server_url = {
-    'SIIHOMO': 'https://maullin.sii.cl/DTEWS/',
-    'SII': 'https://palena.sii.cl/DTEWS/', }
-
-BC = '''-----BEGIN CERTIFICATE-----\n'''
-EC = '''\n-----END CERTIFICATE-----\n'''
-
-connection_status = {
-    '0': 'Upload OK',
-    '1': 'El Sender no tiene permiso para enviar',
-    '2': 'Error en tamaño del archivo (muy grande o muy chico)',
-    '3': 'Archivo cortado (tamaño <> al parámetro size)',
-    '5': 'No está autenticado',
-    '6': 'Empresa no autorizada a enviar archivos',
-    '7': 'Esquema Invalido',
-    '8': 'Firma del Documento',
-    '9': 'Sistema Bloqueado',
-    'Otro': 'Error Interno.', }
-
-
-def char_replace(text):
-    """
-    Funcion para reemplazar caracteres especiales
-    Esta funcion sirve para salvar bug en libreDTE con los recortes de
-    giros que están codificados en utf8 (cuando trunca, trunca la
-    codificacion)
-    @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-    @version: 2016-07-31
-    """
-    special_chars = [
-        [u'á', 'a'],
-        [u'é', 'e'],
-        [u'í', 'i'],
-        [u'ó', 'o'],
-        [u'ú', 'u'],
-        [u'ñ', 'n'],
-        [u'Á', 'A'],
-        [u'É', 'E'],
-        [u'Í', 'I'],
-        [u'Ó', 'O'],
-        [u'Ú', 'U'],
-        [u'Ñ', 'N']]
-    for char in special_chars:
-        try:
-            text = text.replace(char[0], char[1])
-        except:
-            pass
-    return text
+server_url = pysiidte.server_url
+BC = pysiidte.BC
+EC = pysiidte.EC
+connection_status = pysiidte.connection_status
 
 
 def to_json(colnames, rows):
@@ -126,7 +82,7 @@ def to_json(colnames, rows):
         each_row = collections.OrderedDict()
         i = 0
         for colname in colnames:
-            each_row[colname] = char_replace(row[i])
+            each_row[colname] = pysiidte.char_replace(row[i])
             i += 1
         all_data.append(each_row)
     return all_data
@@ -135,14 +91,10 @@ def to_json(colnames, rows):
 def db_handler(method):
     def call(self, *args, **kwargs):
         _logger.info(args)
-        if True:  # try:
-            account_invoice_ids = [str(x.id) for x in self.invoice_ids]
-        else:  # except:
-            return False
         query = method(self, *args, **kwargs)
         cursor = self.env.cr
         try:
-            cursor.execute(query % ', '.join(account_invoice_ids))
+            cursor.execute(query)
         except:
             return False
         rows = cursor.fetchall()
@@ -219,8 +171,7 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
     tipo_operacion = fields.Selection([
                 ('COMPRA', 'Compras'),
                 ('VENTA', 'Ventas'),
-                ('BOLETA', 'Boleta'),
-                ],
+                ('BOLETA', 'Boleta'), ],
                 string="Tipo de operación",
                 default="COMPRA",
                 required=True,
@@ -228,96 +179,66 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
                 states={'draft': [('readonly', False)]}
             )
     tipo_envio = fields.Selection([
-                ('AJUSTE', 'Ajuste'),
-                ('TOTAL', 'Total'),
-                ('PARCIAL', 'Parcial'),
-                ('TOTAL', 'Total'),
-                ],
-                string="Tipo de Envío",
-                default="TOTAL",
-                required=True,
-                readonly=True,
-                states={'draft': [('readonly', False)]}
-            )
+        ('AJUSTE', 'Ajuste'), ('TOTAL', 'Total'),
+        ('PARCIAL', 'Parcial'), ('TOTAL', 'Total'), ], string="Tipo de Envío",
+        default="TOTAL", required=True, readonly=True,
+        states={'draft': [('readonly', False)], })
     folio_notificacion = fields.Char(
-        string="Folio de Notificación",
-        readonly=True,
-        states={'draft': [('readonly', False)]})
-    impuestos = fields.One2many('account.move.book.tax',
-        'book_id',
-        string="Detalle Impuestos")
-    currency_id = fields.Many2one('res.currency',
-        string='Moneda',
+        string="Folio de Notificación", readonly=True,
+        states={'draft': [('readonly', False)], })
+    impuestos = fields.One2many(
+        'account.move.book.tax', 'book_id', string="Detalle Impuestos")
+    currency_id = fields.Many2one(
+        'res.currency', string='Moneda',
         default=lambda self: self.env.user.company_id.currency_id,
-        required=True,
-        track_visibility='always')
+        required=True, track_visibility='always')
     total_afecto = fields.Monetary(
-        string="Total Afecto",
-        readonly=True,
-        compute="set_values",
-        store=True,)
+        string="Total Afecto", readonly=True, compute="set_values",
+        store=True)
     total_exento = fields.Monetary(
-        string="Total Exento",
-        readonly=True,
-        compute='set_values',
-        store=True,)
+        string="Total Exento", readonly=True, compute='set_values', store=True)
     total_iva = fields.Monetary(
-        string="Total IVA",
-        readonly=True,
-        compute='set_values',
-        store=True,)
+        string="Total IVA", readonly=True, compute='set_values',
+        store=True)
     total_otros_imps = fields.Monetary(
-        string="Total Otros Impuestos",
-        readonly=True,
-        compute='set_values',
-        store=True,)
+        string="Total Otros Impuestos", readonly=True, compute='set_values',
+        store=True)
     total = fields.Monetary(
-        string="Total Otros Impuestos",
-        readonly=True,
-        compute='set_values',
-        store=True,)
+        string="Total Otros Impuestos", readonly=True, compute='set_values',
+        store=True)
     periodo_tributario = fields.Char(
-        string='Periodo Tributario',
-        required=True,
-        readonly=True,
+        string='Periodo Tributario', required=True, readonly=True,
         default=lambda x: datetime.now().strftime('%Y-%m'),
-        states={'draft': [('readonly', False)]})
+        states={'draft': [('readonly', False)], })
     company_id = fields.Many2one(
-        'res.company',
-        string="Compañía",
-        required=True,
-        default=lambda self: self.env.user.company_id.id,
-        readonly=True,
-        states={'draft': [('readonly', False)]})
+        'res.company', string="Compañía", required=True,
+        default=lambda self: self.env.user.company_id.id, readonly=True,
+        states={'draft': [('readonly', False)], })
     name = fields.Char(
-        string="Detalle",
-        required=True,
-        readonly=True,
-        states={'draft': [('readonly', False)]})
+        string="Detalle", required=True, readonly=True,
+        states={'draft': [('readonly', False)], })
     fact_prop = fields.Float(
-        string="Factor proporcionalidad",
-        readonly=True,
-        states={'draft': [('readonly', False)]})
+        string="Factor proporcionalidad", readonly=True,
+        states={'draft': [('readonly', False)], })
     nro_segmento = fields.Integer(
-        string="Número de Segmento",
-        readonly=True,
-        states={'draft': [('readonly', False)]},
+        string="Número de Segmento", readonly=True,
+        states={'draft': [('readonly', False)], },
         help=u"""Sólo si el TIPO DE ENVIO es PARCIAL.""")
     date = fields.Date(
-        string="Fecha",
-        required=True,
-        readonly=True,
+        string="Fecha", required=True, readonly=True,
         default=lambda x: datetime.now(),
-        states={'draft': [('readonly', False)]})
-    boletas = fields.One2many('account.move.book.boletas',
-        'book_id',
-        string="Boletas",
-        readonly=True,
+        states={'draft': [('readonly', False)], })
+    boletas = fields.One2many(
+        'account.move.book.boletas', 'book_id', string="Boletas", readonly=True,
         states={'draft': [('readonly', False)]})
     codigo_rectificacion = fields.Char(string="Código de Rectificación")
 
     @db_handler
     def _summary_by_period(self):
+        if True:  # try:
+            account_invoice_ids = [str(x.id) for x in self.invoice_ids]
+        else:  # except:
+            return False
         return """
         select
         "TpoDoc",
@@ -327,12 +248,23 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         sum(cast("MntExe" as integer)) as "TotMntExe",
         sum(cast("MntNeto" as integer)) as "TotMntNeto",
         sum(case when "IVANoRec" > 0 then 0 else
-        (case when "MntIVA" = 0 then 0 else 1 end)
+        (case when "MntIVA" = 0 then 0 else
+        (case when "TpoDoc" = 46 then Null else 1 end)
+        end)
         end) as "TotOpIVARec",
         sum(cast("MntIVA" as integer)) as "TotMntIVA",
+        sum(case when "IVARetTotal" > 0 then 1 else 0 end)
+        as "TotOpIVARetTotal",
+        sum(case when "IVARetTotal" > 0 then "IVARetTotal" else 0 end)
+        as "TotIVARetTotal",
+        sum(case when "IVARetParcial" > 0 then 1 else 0 end)
+        as "TotOpIVARetParcial",
+        sum(case when "IVARetParcial" > 0 then "IVARetParcial" else 0 end)
+        as "TotIVARetParcial",
         /* TotOpActivoFijo, TotMntActivoFijo, TotMntIVAActivoFijo */
         sum("IVANoRec") as "TotIVANoRec",
-        /* El TOT da la cantidad de iteraciones dentro de la matriz (normalmente 1)*/
+        /* El TOT da la cantidad de iteraciones dentro de
+        la matriz (normalmente 1)*/
         /*max((case when "IVANoRec" > 0 then at_sii_code else 0 end))
         as "CodIVANoRec",*/
         /* revisar repeticion y revisar de donde obtener el codigo */
@@ -343,11 +275,23 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         0) as integer)) as "TotMntIVANoRec",
         sum(cast(round((case when "IVAUsoComun" > 0 then 1 else 0 end),
         0) as integer)) as "TotOpIVAUsoComun",
-        sum(cast(round((case when "IVAUsoComun" > 0 then "IVAUsoComun" else 0 end),
+        sum(cast(round((case when "IVAUsoComun" > 0 then "IVAUsoComun" else
+        0 end),
         0) as integer)) as "TotIVAUsoComun",
+        sum(cast(round((case when "IVAUsoComun" > 0 then "IVAUsoComun"
+        * %s else 0 end),
+        0) as integer)) as "TotCredIVAUsoComun",
         sum(cast(round((case when "IVANoRec" > 0 then 0 else 0 end), 0)
         as integer)) as "TotImpSinCredito",
-        sum(cast("MntExe" + "MntNeto" + "MntIVA" + "MntIVANoRec" + "IVAUsoComun" as integer)) as "TotMntTotal"
+        sum(cast("MntExe" + "MntNeto" + "MntIVA" + "MntIVANoRec"
+        + "IVAUsoComun"
+        - (case when "IVARetTotal" > 0 then "IVARetTotal" else 0 end)
+        - (case when "IVARetParcial" > 0 then "IVARetParcial" else 0 end)
+        as integer)) as "TotMntTotal",
+        sum(case when "IVANoRetenido" > 0 then 1 else 0 end)
+        as "TotOpIVANoRetenido",
+        sum(case when "IVANoRetenido" > 0 then "IVANoRetenido" else 0 end)
+        as "TotIVANoRetenido"
         from
         (
         select
@@ -366,7 +310,7 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         WHEN tax_amount is not null THEN 0
         ELSE price_subtotal
         END) as integer)) as "MntExe",
-	/* es cast(sum aca y sum(cast en el resumen por redondeo */
+        /* es cast(sum aca y sum(cast en el resumen por redondeo */
         sum(cast((CASE
         WHEN tax_amount is null THEN 0
         ELSE price_subtotal
@@ -374,7 +318,20 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         cast(sum((CASE
         WHEN tax_amount is null then 0
         ELSE tax_amount - "MntIVANoRec" - "IVAUsoComun"
-        END)) as integer) as "MntIVA", /* OJO RECALCULAR EN BASE A DIFERENCIA CON EL RESTO */
+        END)) as integer) as "MntIVA",
+        cast(sum((CASE
+        WHEN rcn = 19 THEN (rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) as "IVARetTotal",
+        cast(sum((CASE
+        WHEN rcn < 19 THEN (rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) as "IVARetParcial",
+        cast(sum((CASE
+        WHEN rcn < 19 AND at_sii_code = 15 THEN (1 - rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) as "IVANoRetenido",
+        /* OJO RECALCULAR EN BASE A DIFERENCIA CON EL RESTO */
         /*MntActivoFijo*/
         /*MntIVAActivoFijo*/
         sum("IVANoRec") as "IVANoRec",
@@ -383,11 +340,19 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         sum("IVAUsoComun") as "IVAUsoComun",
         /*"OtrosImp--",*/
         sum("MntSinCred") as "MntSinCred",
-        max("MntTotal") as "MntTotal"
+        max("MntTotal") -
+        cast(sum((CASE
+        WHEN rcn = 19 THEN (rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) -
+        cast(sum((CASE
+        WHEN rcn < 19 THEN (rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) as "MntTotal"
         /*max(at_sii_code) as at_sii_code,
         max(taxz_amount) as taxz_amount
         at_sii_code y taxz_amount van solo en resumen
-	para calculo auxiliar*/
+        para calculo auxiliar*/
         /*IVANoRetenido*/
         /*TabPuros*/
         /*TabCigarrillos*/
@@ -416,13 +381,14 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         /*MntActivoFijo*/
         /*MntIVAActivoFijo*/
         at.no_rec,
-        at.retencion,
-        at.sii_code,
+        at.retencion as rcn,
+        at.sii_code as at_sii_code,
         at.amount,
         at.sii_code,
         at.type_tax_use,
         (case when ai.no_rec_code != '0' then 1 else 0 end) as "IVANoRec",
-    ai.no_rec_code as "CodIVANoRec",
+        (case when ai.no_rec_code != '0' then
+        cast(ai.no_rec_code as integer) else 0 end) as "CodIVANoRec",
         cast(round((case when ai.no_rec_code != '0' then
         round(al.price_subtotal * at.amount / 100, 2)
         else 0 end), 0) as
@@ -468,10 +434,14 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         order by line_id*/) as b
         group by "TpoDoc"
         order by "TpoDoc"
-        """
+        """ % (self.fact_prop, ', '.join(account_invoice_ids))
 
     @db_handler
     def _detail_by_period(self):
+        if True:  # try:
+            account_invoice_ids = [str(x.id) for x in self.invoice_ids]
+        else:  # except:
+            return False
         return """
         /*
         SUMA DE DETALLE DE MONTOS nueva!
@@ -502,7 +472,16 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         cast(sum((CASE
         WHEN tax_amount is null then 0
         ELSE tax_amount - "MntIVANoRec" - "IVAUsoComun"
-        END)) as integer) as "MntIVA", /* OJO RECALCULAR EN BASE A DIFERENCIA CON EL RESTO */
+        END)) as integer) as "MntIVA",
+        cast(sum((CASE
+        WHEN rcn = 19 THEN (rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) as "IVARetTotal",
+        cast(sum((CASE
+        WHEN rcn < 19 THEN (rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) as "IVARetParcial",
+        /* OJO RECALCULAR EN BASE A DIFERENCIA CON EL RESTO */
         /*MntActivoFijo*/
         /*MntIVAActivoFijo*/
         sum("IVANoRec") as "IVANoRec",
@@ -511,7 +490,6 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         sum("IVAUsoComun") as "IVAUsoComun",
         /*"OtrosImp--",*/
         sum("MntSinCred") as "MntSinCred",
-        max("MntTotal") as "MntTotal"
         /*max(at_sii_code) as at_sii_code,
         max(taxz_amount) as taxz_amount
         at_sii_code y taxz_amount van solo en resumen
@@ -521,6 +499,19 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         /*TabCigarrillos*/
         /*TabElaborado*/
         /*ImpVehiculo*/
+        max("MntTotal") -
+        cast(sum((CASE
+        WHEN rcn = 19 THEN (rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) -
+        cast(sum((CASE
+        WHEN rcn < 19 THEN (rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) as "MntTotal",
+	cast(sum((CASE
+        WHEN rcn < 19 AND at_sii_code = 15 THEN (1 - rcn / 19) * tax_amount
+        ELSE 0
+        END)) as integer) as "IVANoRetenido"
         from
         (select
         dc.sii_code as "TpoDoc",
@@ -544,13 +535,14 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         /*MntActivoFijo*/
         /*MntIVAActivoFijo*/
         at.no_rec,
-        at.retencion,
-        at.sii_code,
+        at.retencion as rcn,
+        at.sii_code as at_sii_code,
         at.amount,
         at.sii_code,
         at.type_tax_use,
         (case when ai.no_rec_code != '0' then 1 else 0 end) as "IVANoRec",
-        ai.no_rec_code as "CodIVANoRec",
+        (case when ai.no_rec_code != '0' then
+        cast(ai.no_rec_code as integer) else 0 end) as "CodIVANoRec",
         cast(round((case when ai.no_rec_code != '0' then
         round(al.price_subtotal * at.amount / 100, 2)
         else 0 end), 0) as
@@ -594,7 +586,7 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
         group by "TpoDoc", "NroDoc"
         /*group by line_id
         order by line_id*/
-        """
+        """ % ', '.join(account_invoice_ids)
 
     def _record_totals(self, jvalue):
         _logger.info(json.dumps(jvalue))
@@ -623,6 +615,8 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
             for k, v in d2.iteritems():
                 if k == parent_tag:
                     dict2nlist[k] = collections.OrderedDict()
+                    print 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE'
+                    print k, v
                 elif k in son_tags and int(v) != 0:
                     dict2nlist[parent_tag][k] = v
                 else:
@@ -631,7 +625,26 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
             dict2n[grand_parent_tag].append(dict2nlist)
         return dict2n
 
+    @staticmethod
+    def replace_tags(xml_part, tag_list, zero):
+        for tag in tag_list:
+            xml_part = xml_part.replace('<{0}>{1}</{0}>'.format(tag, zero), '')
+        return xml_part
+
     def _record_detail(self, dict1, dict2):
+        tag_replace01 = ['TotOpExe', 'TotOpIVARec', 'CodIVANoRec',
+                         'TotOpIVARetTotal', 'TotIVARetTotal',
+                         'TotOpIVARetParcial', 'TotIVARetParcial',
+                         'TotOpIVANoRetenido', 'TotIVANoRetenido',
+                         'TotOpIVANoRec', 'TotMntIVANoRec',
+                         'TotOpIVAUsoComun', 'TotCredIVAUsoComun',
+                         'TotIVAUsoComun', 'TotImpSinCredito']
+        tag_replace_1 = ['TpoImp', 'TotOpIVARec', 'TotIVANoRec']
+        tag_replace02 = ['CodIVANoRec', 'MntIVANoRec', 'IVAUsoComun',
+                         'MntSinCred', 'IVANoRetenido', 'IVARetTotal',
+                         'IVARetParcial']
+        tag_replace_2 = ['TpoDocRef', 'FolioDocRef', 'TpoImp', 'TasaImp',
+             'IVANoRec']
         if True:
             dicttoxml.set_debug(False)
             inv_obj = self.env['account.invoice']
@@ -639,21 +652,16 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
                 resol_data = inv_obj.get_resolution_data(self.company_id)
                 signature_d = inv_obj.get_digital_signature_pem(self.company_id)
             except:
-                return False
                 _logger.info(u'First entry: unknown company')
+                return False
             dict1n = self.insert_son_values(
                 dict1, 'ResumenPeriodo', 'TotIVANoRec',
                 ['CodIVANoRec', 'TotMntIVANoRec', 'TotOpIVANoRec'])
-            xml_detail1 = dicttoxml.dicttoxml(
-                dict1n, root=False, attr_type=False).replace(
-                'item', 'TotalesPeriodo').replace(
-                '<TotOpExe>0</TotOpExe>', '').replace(
-                '<TotOpIVARec>0</TotOpIVARec>', '').replace(
-                '<TpoImp></TpoImp>', '').replace(
-                '<CodIVANoRec>0</CodIVANoRec>', '').replace(
-                '<TotOpIVANoRec>0</TotOpIVANoRec>', '').replace(
-                '<TotMntIVANoRec>0</TotMntIVANoRec>', '').replace(
-                '<TotIVANoRec></TotIVANoRec>', '')
+            xml_detail1 = self.replace_tags(self.replace_tags(
+                dicttoxml.dicttoxml(
+                    dict1n, root=False, attr_type=False).replace(
+                    'item', 'TotalesPeriodo'), tag_replace01, '0'),
+                tag_replace_1, '')
             dict2n = self.insert_son_values(
                 dict2, 'Detalles', 'IVANoRec', ['CodIVANoRec', 'MntIVANoRec'])
             # print dict2n
@@ -661,15 +669,11 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
                 dict2n, root=False, attr_type=False).replace(
                 'item', 'Detalle').replace('<Detalles>', '').replace(
                 '</Detalles>', '')
-            xml_detail2 = xml_detail2.replace(
-                '<TpoDocRef/>', '').replace('<FolioDocRef/>', '').replace(
-                '<TpoDocRef></TpoDocRef>', '').replace(
-                '<FolioDocRef></FolioDocRef>', '').replace(
-                '<TpoImp></TpoImp>', '').replace(
-                '<TasaImp></TasaImp>', '').replace(
-                '<CodIVANoRec>0</CodIVANoRec>', '').replace(
-                '<MntIVANoRec>0</MntIVANoRec>', '').replace(
-                '<IVANoRec></IVANoRec>', '')
+            xml_detail2 = self.replace_tags(
+                self.replace_tags(xml_detail2.replace(
+                    '<TpoDocRef/>', '').replace(
+                    '<FolioDocRef/>', ''), tag_replace02, '0'),
+                tag_replace_2, '')
             print xml_detail2
             # raise UserError('xml_detail2')
             xml_envio_libro = """<EnvioLibro ID="{}">\
@@ -746,7 +750,7 @@ guardada del xml es la siguiente: {}'.format(xml_pret))
             # 'sii_xml_request': envio_dte
         })
 
-    def _get_send_status(self, track_id, signature_d,token):
+    def _get_send_status(self, track_id, signature_d, token):
         url = server_url[
                   self.company_id.dte_service_provider] + 'QueryEstUp.jws?WSDL'
         ns = 'urn:' + server_url[
@@ -780,17 +784,14 @@ SII, intente en 5s más")}}
     @api.multi
     def ask_for_dte_status(self):
         inv_obj = self.env['account.invoice']
-        try:
+        if True:  # try:
             signature_d = inv_obj.get_digital_signature_pem(
                 self.company_id)
-            seed = inv_obj.get_seed(self.company_id)
-            template_string = inv_obj.create_template_seed(seed)
-            seed_firmado = inv_obj.sign_seed(
-                template_string, signature_d['priv_key'],
+            token = pysiidte.sii_token(
+                self.company_id.dte_service_provider, signature_d['priv_key'],
                 signature_d['cert'])
-            token = inv_obj.get_token(seed_firmado, self.company_id)
-        except:
-            raise UserError(connection_status[response.e])
+        else:  # except:
+            raise UserError('Error de conexion')
         xml_response = xmltodict.parse(self.sii_xml_response)
         _logger.info(xml_response)
         if self.state == 'Enviado':
