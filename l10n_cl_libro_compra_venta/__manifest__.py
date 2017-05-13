@@ -16,7 +16,9 @@
     'description': u'''
 Chile - Libros mensuales de Compra y Venta
 ''',
-    'init_xml': [],
+    #  'init_xml': [
+    #     'line_tax_view.sql'
+    # ],
     'installable': True,
     'license': 'AGPL-3',
     'name': u'Chile - Libros mensuales de Compra y Venta',

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
+    <data noupdate="False">
         <record model="ir.ui.view" id="account_invoice_attach_button">
             <field name="name">account.invoice.attach.button</field>
             <field name="model">account.invoice</field>
