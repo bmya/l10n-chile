@@ -50,16 +50,25 @@ class ResPartner(models.Model):
                 re.sub('[^1234567890Kk]', '', str(
                     self.document_number))).zfill(9).upper()
             vat = 'CL{}'.format(document_number)
+            current_partner_id = self._origin.id
+            # quitar esta parte cuando el partner_vat_unique este portado
             exist = self.env['res.partner'].search(
-                [('vat', '=', vat), ('vat', '!=', 'CL55555555K')], limit=1)
-            if exist:
-                self.vat = self.document_number = ""
-                return {
-                    'warning': {
-                        'title': "El Rut ya está siendo usado",
-                        'message': _(
-                            "El usuario {} está utilizando este documento").
-                        format(exist.name)}}
+                [('vat', '=', vat), ('vat', 'not in', ['CL55555555K'])],
+                limit=1)
+            if current_partner_id:
+                if exist.id == current_partner_id:
+                    pass
+            elif exist:
+                raise UserError(
+                    "El usuario {} está utilizando este documento {}, \
+                    {}".format(exist.name, exist.id, current_partner_id))
+                # self.vat = self.document_number = ""
+                # return {
+                #     'warning': {
+                #         'title': "El RUT ya está siendo usado",
+                #         'message': _(
+                #             "El usuario {} está utilizando este documento {}, {}").
+                #         format(exist.name, exist.id, current_partner_id)}}
             # revision - fin
             self.vat = vat
             self.document_number = '{}.{}.{}-{}'.format(

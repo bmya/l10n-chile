@@ -222,21 +222,43 @@ class Invoice(models.Model):
     # metodos comunes
     @staticmethod
     def safe_variable(var, key):
+        len = normalize_tags[key][0]
         try:
-            msg = normalize_tags[key][1]
-            len = normalize_tags[key][0]
-            var = var[:len]
+            msg = normalize_tags[key][1][:len]
         except:
             msg = u'variable'
-        if not var:
+        try:
+            var = var[:len]
+        except:
             raise UserError(
-                u'{} no está configurada.'.format(msg))
+                u'{} - {} no está configurada.'.format(key, msg))
         return var
 
-    @staticmethod
-    def format_vat(value):
+    def default_variable(self, var, key):
+        defaults = {
+            'GiroEmis': 'invoice_turn'
+        }
+        len = normalize_tags[key][0]
+        try:
+            msg = normalize_tags[key][1]
+        except:
+            msg = u'variable'
+        try:
+            var = var[:len]
+        except:
+            var = getattr(self, defaults[key][0])
+        return var
+
+    def format_vat(self, value):
+        _logger.info('rut.....%%%%%%%%%%%%%'.format(value))
         if not value or value == '' or value == 0:
-            value = "CL666666666"
+            value = self.partner_id.document_number.replace('.', '')
+            if not value:
+                raise UserError(
+                    u'RUT no encontrado para este cliente o RUT \
+                    inválido {} - {} - {}'.format(
+                        self.partner_id.name, self.partner_id.vat,
+                        self.partner_id.document_number))
         else:
             value = (value[:10] + '-' + value[10:]).replace(
                 'CL0', '').replace('CL', '')
@@ -261,6 +283,7 @@ class Invoice(models.Model):
 
     def normalize_string(
             self, var, key, control='truncate'):
+        var = pysiidte.char_replace(var)
         _logger.info('var: {}, key: {}, control: {}')
         if isinstance(key, (int, long, float, complex)):
             size = key
@@ -270,7 +293,7 @@ class Invoice(models.Model):
         if control == 'truncate':
             var = var[:size]
         elif control == 'safe':
-            var = self.safe_variable(var[:size], key)
+            var = self.safe_variable(var, key)
         return var
 
     @api.model
@@ -745,36 +768,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
     # fin metodos independientes
 
     @staticmethod
-    def char_replace(text):
-        """
-        Funcion para reemplazar caracteres especiales
-        Esta funcion sirve para salvar bug en de recortes de
-        giros que están codificados en utf8 (cuando trunca, trunca la
-        codificacion)
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2016-07-31
-        """
-        special_chars = [
-            [u'á', 'a'],
-            [u'é', 'e'],
-            [u'í', 'i'],
-            [u'ó', 'o'],
-            [u'ú', 'u'],
-            [u'ñ', 'n'],
-            [u'Á', 'A'],
-            [u'É', 'E'],
-            [u'Í', 'I'],
-            [u'Ó', 'O'],
-            [u'Ú', 'U'],
-            [u'Ñ', 'N']]
-        for char in special_chars:
-            try:
-                text = text.replace(char[0], char[1])
-            except:
-                pass
-        return text
-
-    @staticmethod
     def get_object_record_id(inv, call_model):
         if call_model == 'stock.picking':
             try:
@@ -948,31 +941,41 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         estado ya que si se suben 2 CAF y uno está por terminar y se hace un
         evío masivo Deja fuera Los del antiguo CAF, que son válidos aún,
         porque no se han enviado; y arroja Error de que la secuencia no está
-        en el rango del CAF
+        en el rango del CAF.
+        Nota Daniel Blanco: Se agrega una opción para evitar el timbrado de un
+        folio anterior al caf actual.
         """
         caffiles = self.journal_document_class_id.sequence_id.dte_caf_ids
         folio = self.get_folio()
-        print '%%%%%%%%%%%%%%%%%%&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&'
-        print folio
-        print caffiles
         if not caffiles:
             raise UserError(_('''There is no CAF file available or in use \
 for this Document. Please enable one.'''))
-        for caffile in caffiles:
-            post = base64.b64decode(caffile.caf_file)
-            post = xmltodict.parse(post.replace(
-                '<?xml version="1.0"?>', '', 1))
-            folio_inicial = post['AUTORIZACION']['CAF']['DA']['RNG']['D']
-            folio_final = post['AUTORIZACION']['CAF']['DA']['RNG']['H']
-            if folio in range(int(folio_inicial), (int(folio_final)+1)):
-                return post
-        if folio > int(folio_final):
-            msg = '''El folio de este documento: {} está fuera de rango \
+        else:
+            for caffile in caffiles:
+                post = base64.b64decode(caffile.caf_file)
+                post = xmltodict.parse(post.replace(
+                    '<?xml version="1.0"?>', '', 1))
+                doc_type = post['AUTORIZACION']['CAF']['DA']['TD']
+                folio_inicial = post['AUTORIZACION']['CAF']['DA']['RNG']['D']
+                folio_final = post['AUTORIZACION']['CAF']['DA']['RNG']['H']
+                if int(self.sii_document_class_id.sii_code) != int(doc_type):
+                    raise UserError('''El tipo de documento del caf {} no es \
+igual al tipo de documento realizado {}'''.format(
+                        doc_type, self.sii_document_class_id.sii_code))
+                if folio in range(int(folio_inicial), (int(folio_final)+1)):
+                    return post
+            if folio > int(folio_final):
+                msg = '''El folio de este documento: {} está fuera de rango \
 del CAF vigente (desde {} hasta {}). Solicite un nuevo CAF en el sitio \
 www.sii.cl'''.format(folio, folio_inicial, folio_final)
-            # defino el status como "spent"
-            caffile.status = 'spent'
-            raise UserError(_(msg))
+                # defino el status como "spent"
+                caffile.status = 'spent'
+                raise UserError(_(msg))
+            elif folio < int(folio_inicial):
+                msg = '''El folio de este documento: {} es anterior al rango
+del CAF encontrado (desde {} hasta {}).'''.format(
+                    folio, folio_inicial, folio_final)
+                raise UserError(_(msg))
         return False
 
     def is_doc_type_b(self):
@@ -1026,7 +1029,9 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
         return IdDoc
 
     def _sender(self):
-        emisor= collections.OrderedDict()
+        if not self.turn_issuer.name:
+            self.turn_issuer = self.company_id.company_activities_ids[0]
+        emisor = collections.OrderedDict()
         emisor['RUTEmisor'] = self.format_vat(self.company_id.vat)
         if self.is_doc_type_b():
             emisor['RznSocEmisor'] = self.normalize_string(
@@ -1075,8 +1080,10 @@ www.sii.cl'''.format(folio, folio_inicial, folio_final)
             #    raise UserError(_('Seleccione giro del partner.'))
             # receptor['GiroRecep'] = self.normalize_string(
             #     self.activity_description.name, 'GiroRecep', 'safe')
+            # if not self.invoice_turn.name:
+            #     raise UserError('El giro del cliente no está definido')
             receptor['GiroRecep'] = self.normalize_string(
-                self.invoice_turn.name, 'GiroRecep', 'safe')
+                self.invoice_turn.name, 'GiroRecep', 'truncate')
         if self.partner_id.phone:
             receptor['Contacto'] = self.normalize_string(
                 self.partner_id.phone, 'Contacto', 'truncate')
@@ -1624,6 +1631,16 @@ dte/hgen/html/{}'.format(json.loads(r.text)['token'])
                 _logger.info(attachment_id)
                 _logger.info(record_id)
 
+    def send_to_recipient(self):
+        _logger.info('################3333333333333333333')
+        _logger.info(self._context)
+        raise UserError('kdkdkdkd')
+        # hice esta funcion para invocar desde un botón ambos metodos
+        self.send_envelope_recipient(
+            RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
+            is_doc_type_b, file_name, company_id, certp)
+        self.get_pdf_docsonline()
+
     @api.multi
     def do_dte_send(self, att_number=None):
         """
@@ -1662,8 +1679,6 @@ for you or make the signer to authorize you to use his signature.'''))
                 certp = signature_d['cert'].replace(
                     BC, '').replace(EC, '').replace('\n', '')
                 # Retimbrar con número de atención y envío
-                # otra culiadez... retimbrar de vuelta porque sí
-                # si va a retimbrar para qué guardo antes el xml
                 inv._do_stamp(att_number)
             if not inv.sii_document_class_id.sii_code in clases:
                 # en la  primera vuelta no hay nada en clases
@@ -1728,6 +1743,9 @@ hacer eso en un envío')
             inv.sii_result = pysiidte.analyze_sii_result(
                 inv.sii_result, inv.sii_message, inv.sii_receipt)
             if inv.sii_result == 'Aceptado':
+                # inv.send_to_recipient(
+                #     RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
+                #     is_doc_type_b, file_name, company_id, certp)
                 inv.send_envelope_recipient(
                     RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
                     is_doc_type_b, file_name, company_id, certp)
@@ -1735,9 +1753,31 @@ hacer eso en un envío')
         return envelope
 
     @api.multi
+    def ask_force_dte(self):
+        """
+        Este proceso realiza las consultas desde la cola de envío.
+        o desde el botón
+        :return:
+        """
+        signature_d = self.get_digital_signature_pem(self.company_id)
+        certp = signature_d['cert'].replace(BC, '').replace(
+            EC, '').replace('\n', '')
+        SubTotDTE = '''<SubTotDTE>
+<TpoDTE>{}</TpoDTE>
+<NroDTE>1</NroDTE>
+</SubTotDTE>'''.format(self.sii_document_class_id.sii_code)
+        self.send_envelope_recipient(
+            self.format_vat(self.company_id.vat),
+            self.get_resolution_data(self.company_id),
+            self.sii_xml_request, signature_d, SubTotDTE, False,
+            self.sii_send_file_name, self.company_id, certp)
+        return
+
+    @api.multi
     def ask_for_dte_status(self):
         """
         Este proceso realiza las consultas desde la cola de envío.
+        o desde el botón
         :return:
         """
         signature_d = self.get_digital_signature_pem(self.company_id)
@@ -1912,6 +1952,7 @@ hacer eso en un envío')
             if inv.type in ['out_invoice', 'out_refund']:
                 inv._do_stamp()
         super(Invoice, self).action_invoice_open()
+        self.do_dte_send_invoice()
 
     @api.multi
     def do_dte_send_invoice(self, att_number=None, dte=False):

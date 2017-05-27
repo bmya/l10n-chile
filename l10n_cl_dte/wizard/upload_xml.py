@@ -7,19 +7,12 @@ import xmltodict
 from lxml import etree
 import collections
 import dicttoxml
-import json
-
+import pysiidte
 
 _logger = logging.getLogger(__name__)
 
-# try:
-#     from signxml import *
-#     # xmldsig, methods
-# except ImportError:
-#     _logger.info('Cannot import signxml')
+BC, EC = pysiidte.BC, pysiidte.EC
 
-BC = '''-----BEGIN CERTIFICATE-----\n'''
-EC = '''\n-----END CERTIFICATE-----\n'''
 
 class UploadXMLWizard(models.TransientModel):
     _name = 'sii.dte.upload_xml.wizard'
@@ -31,7 +24,7 @@ class UploadXMLWizard(models.TransientModel):
             ('response', 'Acuse de recibo'),
             ('receipt', 'Recibo de mercaderías'),
             ('validate', 'Aprobar comercialmente'),
-            ], string="Acción", default="create")
+    ], string=u"Acción", default="create")
 
     xml_file = fields.Binary(
         string='XML File', filters='*.xml',
@@ -265,7 +258,7 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte RespuestaEnvioDTE_v10.xsd" >
         </Caratula>
             {1}
     </Resultado>
-</RespuestaDTE>'''.format(Caratula,resultado)
+</RespuestaDTE>'''.format(Caratula, resultado)
         return resp
 
     def do_receipt_deliver(self):
@@ -588,7 +581,7 @@ signature.'''))
         discount = 0
         if 'DescuentoPct' in line:
             discount = line['DescuentoPct']
-        return [0,0,{
+        return [0, 0, {
             'name': line['DescItem'] if 'DescItem' in line else line['NmbItem'],
             'product_id': product_id.id,
             'price_unit': line['PrcItem'],
@@ -596,8 +589,8 @@ signature.'''))
             'quantity': line['QtyItem'],
             'account_id': account_id,
             'price_subtotal': price_subtotal,
-            'invoice_line_tax_ids': [(6, 0, product_id.supplier_taxes_id.ids)],
-        }]
+            'invoice_line_tax_ids': [
+                (6, 0, product_id.supplier_taxes_id.ids)], }]
 
     def _prepare_invoice(self, dte, company_id, journal_document_class_id):
         partner_id = self.env['res.partner'].search(
@@ -618,8 +611,7 @@ signature.'''))
             'turn_issuer': company_id.company_activities_ids[0].id,
             'journal_document_class_id':journal_document_class_id.id,
             'sii_xml_request': base64.b64decode(self.xml_file),
-            'sii_send_file_name': self.filename,
-        }
+            'sii_send_file_name': self.filename, }
 
     def _get_journal(self, sii_code):
         journal_sii = self.env['account.journal.sii_document_class'].search(
@@ -649,7 +641,10 @@ signature.'''))
             lines = [(5,)]
             if 'NroLinDet' in dte['Detalle']:
                 lines.append(
-                    self._prepare_line(dte['Detalle'], journal=journal_document_class_id.journal_id, type=data['type']))
+                    self._prepare_line(
+                        dte['Detalle'],
+                        journal=journal_document_class_id.journal_id,
+                        type=data['type']))
             elif len(dte['Detalle']) > 0:
                 for line in dte['Detalle']:
                     lines.append(
@@ -662,8 +657,8 @@ signature.'''))
             if inv.amount_total == monto_xml:
                 return inv
             #cuadrar en caso de descuadre por 1$
-            if (inv.amount_total - 1) == monto_xml or (
-                        inv.amount_total + 1) == monto_xml:
+            if round(inv.amount_total, 0) - 1 == monto_xml or (
+                        round(inv.amount_total, 0) + 1) == monto_xml:
                 inv.amount_total = monto_xml
                 for t in inv.tax_line_ids:
                     if t.tax_id.amount == float(
@@ -671,9 +666,10 @@ signature.'''))
                         t.amount = float(dte['Encabezado']['Totales']['IVA'])
                         t.base = float(dte['Encabezado']['Totales']['MntNeto'])
             else:
-                raise UserError('¡El documento está completamente descuadrado!')
+                raise UserError('¡El documento está completamente descuadrado!\
+Monto inv_amount_total: {}, monto xml: {}'.format(inv.amount_total, monto_xml))
             return inv
-        return False # ya ha sido creada
+        return False  # ya ha sido creada
 
     def do_create_inv(self):
         envio = self._read_xml()

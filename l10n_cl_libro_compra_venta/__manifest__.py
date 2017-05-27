@@ -24,7 +24,7 @@ Chile - Libros mensuales de Compra y Venta
     'name': u'Chile - Libros mensuales de Compra y Venta',
     'test': [],
     'data': [
-        'views/libro_compra_venta.xml',
+        #'views/libro_compra_venta.xml',
         'views/libro_honorarios.xml',
         'views/consumo_folios.xml',
         'views/export.xml',

@@ -60,20 +60,20 @@ Cancelled means it has been deprecated by hand.''')
     def _use_level(self):
         for r in self:
             if r.status not in ['draft', 'cancelled']:
-                try:
-                    r.use_level = 100 * (
-                        float(r.sequence_id.number_next_actual - 1) / float(
-                            r.final_nm - r.start_nm + 1))
-                except ZeroDivisionError:
+                if r.sequence_id.number_next_actual > r.final_nm:
+                    r.use_level = 100
+                    if r.status == 'in_use':
+                        self.env.cr.execute("UPDATE dte_caf SET status = \
+                        'spent' WHERE filename = '%s'" % r.filename)
+                elif r.sequence_id.number_next_actual < r.start_nm:
                     r.use_level = 0
-                if r.sequence_id.number_next_actual > r.final_nm and \
-                                r.status == 'in_use':
-                    self.env.cr.execute("UPDATE dte_caf SET status = \
-'spent' WHERE filename = '%s'" % r.filename)
-                elif r.sequence_id.number_next_actual <= r.final_nm and \
-                                r.status == 'spent':
-                    self.env.cr.execute("UPDATE dte_caf SET status = 'in_use' \
-WHERE filename = '%s'" % r.filename)
+                else:
+                    r.use_level = 100 * float(
+                        r.sequence_id.number_next_actual - r.start_nm) / float(
+                        r.final_nm - r.start_nm)
+                    if r.status == 'spent':
+                        self.env.cr.execute("UPDATE dte_caf SET status = \
+                        'in_use' WHERE filename = '%s'" % r.filename)
             else:
                 r.use_level = 0
 
@@ -83,30 +83,31 @@ WHERE filename = '%s'" % r.filename)
             raise UserError('Debe Guardar el Caf primero')
         result = xmltodict.parse(
             base64.b64decode(self.caf_file).replace(
-                '<?xml version="1.0"?>','',1))['AUTORIZACION']['CAF']['DA']
+                '<?xml version="1.0"?>', '', 1))['AUTORIZACION']['CAF']['DA']
 
         self.start_nm = result['RNG']['D']
         self.final_nm = result['RNG']['H']
         self.sii_document_class = result['TD']
         self.issued_date = result['FA']
-        self.rut_n = 'CL' + result['RE'].replace('-', '')
+        rut = 'CL' + result['RE'].replace('-', '')
+        self.rut_n = rut
         if not self.sequence_id:
-            raise Warning(_(
+            raise UserError(_(
                 'You should select a DTE sequence before enabling this CAF \
 record'))
         elif self.rut_n != self.company_id.vat.replace('L0', 'L'):
-            raise Warning(_(
+            raise UserError(_(
                 'Company vat %s should be the same that assigned company\'s \
 vat: %s!') % (self.rut_n, self.company_id.vat))
         elif self.sii_document_class != self.sequence_id.sii_document_class:
-            raise Warning(_(
+            raise UserError(_(
                 '''SII Document Type for this CAF is %s and selected sequence \
 associated document class is %s. This values should be equal for DTE Invoicing \
 to work properly!''') % (
                 self.sii_document_class, self.sequence_id.sii_document_class))
         elif self.sequence_id.number_next_actual < self.start_nm or \
                         self.sequence_id.number_next_actual > self.final_nm:
-            raise Warning(_(
+            raise UserError(_(
                 'Folio Number %s should be between %s and %s CAF \
 Authorization Interval!') % (self.sequence_id.number_next_actual,
                              self.start_nm, self.final_nm))
@@ -128,9 +129,11 @@ class SequenceCaf(models.Model):
     @api.model
     def _check_dte(self):
         for r in self:
+            if not r.is_dte:
+                return
             obj = r.env['account.journal.sii_document_class'].search(
                 [('sequence_id', '=', r.id)])
-            if not obj: # si s guía de despacho
+            if not obj:  # si s guía de despacho
                 obj = self.env['stock.location'].search(
                     [('sequence_id', '=', r.id)], limit=1)
             if obj:
@@ -145,8 +148,11 @@ class SequenceCaf(models.Model):
             obj = self.env['account.journal.sii_document_class'].search(
                 [('sequence_id', '=', r.id)], limit=1)
             if not obj:  # si s guía de despacho
-                obj = self.env['stock.location'].search(
-                    [('sequence_id', '=', r.id)], limit=1)
+                try:
+                    obj = self.env['stock.location'].search(
+                        [('sequence_id', '=', r.id)], limit=1)
+                except ValueError:  # cualquier otra secuencia
+                    return
             r.sii_document_class = obj.sii_document_class_id.sii_code
 
     sii_document_class = fields.Integer(

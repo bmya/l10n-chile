@@ -182,7 +182,8 @@
                 <!-- posible deprecated-->
                 <field name="reference" position="after">
                     <field name="supplier_invoice_number"
-                       attrs="{'required':[('use_documents','=',True)],
+                       attrs="{'required':[('use_documents', '=', True),
+                       ('type', 'ilike', 'in_')],
                        'readonly':[('state', 'not in', ['open', 'draft'])]}"/>
                 </field>
                 <field name="reference" position="attributes">

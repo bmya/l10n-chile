@@ -28,8 +28,8 @@
                             attrs="{'invisible':[
                             '|', ('state', 'in', ['draft']),
                             ('sii_result', 'in', ['NoEnviado', 'Aceptado'])]}"/>
-                    <button type="object" name="ask_for_dte_status"
-                            help="Respaldar y Traer PDF con www.documentosonline.com"
+                    <button type="object" name="ask_force_dte"
+                            help="Forzar PDF"
                             icon="fa-file-pdf-o"
                             attrs="{'invisible':[
                             '|', ('state', 'in', ['draft']),
@@ -91,6 +91,12 @@
                                 ('sii_result', 'not in', ['NoEnviado', 'Aceptado', 'Reparo']),
                                 ('sii_xml_request', '=', False)
                                 ]}"/>
+                            <button type="object" name="ask_force_dte"
+                                help="Forzar PDF"
+                                icon="fa-file-pdf-o"
+                                attrs="{'invisible':[
+                                '|', ('state', 'in', ['draft']),
+                                ('sii_result', 'not in', ['Enviado', 'Proceso', 'Aceptado'])]}"/>
                             <field name='sii_result' widget="statusbar" class="oe_right"/>
                         </header>
                         <group>
