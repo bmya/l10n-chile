@@ -515,17 +515,21 @@ signature.'''))
             giro_id = self.env['sii.activity.description'].create({
                 'name': data['GiroEmis'],
             })
-        partner_id = self.env['res.partner'].create({
-            'name': data['RznSoc'],
-            'activity_description': giro_id.id,
-            'vat': 'CL'+data['RUTEmisor'].replace('-',''),
-            'document_type_id': self.env.ref('l10n_cl_invoice.dt_RUT').id,
-            'responsability_id': self.env.ref('l10n_cl_invoice.res_IVARI').id,
-            'document_number': data['RUTEmisor'],
-            'street': data['DirOrigen'],
-            'city':data['CiudadOrigen'],
-            'company_type':'company',
-            'supplier': True, })
+        partner_data = {}
+        partner_data['name'] = data['RznSoc']
+        partner_data['activity_description'] = giro_id.id
+        partner_data['vat'] = 'CL' + data['RUTEmisor'].replace('-', '')
+        partner_data['document_type_id'] = self.env.ref('l10n_cl_invoice.dt_RUT').id
+        partner_data['responsability_id'] = self.env.ref('l10n_cl_invoice.res_IVARI').id
+        partner_data['document_number'] = data['RUTEmisor']
+        partner_data['street'] = data['DirOrigen']
+        try:
+            partner_data['city'] = data['CiudadOrigen']
+        except KeyError:
+            pass
+        partner_data['company_type'] = 'company'
+        partner_data['supplier'] = True
+        partner_id = self.env['res.partner'].create({partner_data})
         return partner_id
 
     def _create_prod(self, data):

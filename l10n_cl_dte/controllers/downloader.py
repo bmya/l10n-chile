@@ -2,11 +2,13 @@ from odoo import models, http, api
 from odoo.http import request
 from odoo.addons.web.controllers.main import serialize_exception, content_disposition
 
+
 class Binary(http.Controller):
 
     @http.route('/web/binary/download_document', type='http', auth="public")
     @serialize_exception
-    def download_document(self, model, field, id, filename=None, **kw):
+    def download_document(
+            self, model, field, id, filename=None, filetype='xml', **kw):
         """
         :param str filename: field holding the file's name, if any
         :returns: :class:`werkzeug.wrappers.Response`
@@ -15,7 +17,6 @@ class Binary(http.Controller):
         cr, uid, context = request.cr, request.uid, request.context
         fields = [field]
         res = Model.read(cr, uid, [int(id)], fields, context)[0]
-        # filecontent = base64.b64decode(res.get(field) or '')
         filecontent = res.get(field)
         print(filecontent)
         if not filecontent:
@@ -24,9 +25,8 @@ class Binary(http.Controller):
             if not filename:
                 filename = '%s_%s' % (model.replace('.', '_'), id)
             headers = [
-                ('Content-Type', 'application/xml'),
+                ('Content-Type', 'application/%s' % filetype),
                 ('Content-Disposition', content_disposition(filename)),
-                ('charset', 'utf-8'),
-            ]
+                ('charset', 'utf-8'), ]
             return request.make_response(
                     filecontent, headers=headers, cookies=None)

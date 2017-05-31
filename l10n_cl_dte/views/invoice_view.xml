@@ -51,9 +51,19 @@
                 <button name="action_invoice_cancel" position="attributes">
                     <attribute name="invisible">1</attribute>
                 </button>
+                <button name="invoice_print" position="attributes">
+                    <attribute name="invisible">True</attribute>
+                </button>
                 <button name="invoice_print" position="after">
-                    <button string="Imprimir Cedible" type="object"
-                            name="print_cedible" invisible="True"/>
+                    <button type="object" name="ask_force_dte"
+                        help="Imprimir PDF desde Documentos Online. ATENCION!
+                        Si Ud. envía un documento no
+                        aprobado por el SII, puede estar incurriendo
+                        en una irregularidad administrativa."
+                        icon="fa-file-pdf-o" string="Imprimir"
+                        attrs="{'invisible':[
+                        '|', ('state', 'in', ['draft']),
+                        ('sii_result', 'not in', ['EnCola', 'Enviado', 'Proceso', 'Aceptado'])]}"/>
                 </button>
                 <field name="journal_id" position="after">
                     <field name="ticket" invisible="True"/>
@@ -100,6 +110,7 @@
                             <field name='sii_result' widget="statusbar" class="oe_right"/>
                         </header>
                         <group>
+                            <field name='docs_online_token' widget="url"/>
                             <field name='dte_service_provider'/>
                             <field name="responsable_envio" invisible="True" readonly="True"/>
                             <field name='sii_batch_number' readonly="1"/>

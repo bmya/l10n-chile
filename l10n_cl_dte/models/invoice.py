@@ -557,7 +557,7 @@ version="1.0">
         except AssertionError as e:
             _logger.info(etree.tostring(xml_doc))
             raise UserError(
-                _('XML Malformed Error: {} - Validation: {}').format(
+                _(u'Error de formación del XML: {} - Validación: {}').format(
                     e.args, validacion))
 
     def send_xml_file(self, envio_dte=None, file_name="envio", company_id=False,
@@ -895,15 +895,35 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
             'cert': obj.cert}
         return signature_data
 
+    def get_pdf_file(self):
+        """
+        Funcion para descargar el attachment en el sistema local del usuario
+         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
+         @version: 2016-05-01
+        """
+        attachment_obj = self.env['ir.attachment']
+        attachment_id = attachment_obj.search(
+            [('name', 'ilike', 'pdf'),
+             ('res_model', '=', self._name),
+             ('res_id', '=', self.id)])
+        # raise UserError(attachment_id[0].id)
+        _logger.info('DOWNLOOOOOOOAAAAAAAADDDDDDDD')
+        url = '/web/content/%s?download=true' % attachment_id[0].id
+        _logger.info(url)
+        return {
+            'type': 'ir.actions.act_url',
+            'url': url,
+            'target': 'self', }
+
     def get_xml_file(self):
         """
-        Funcion para descargar el xml en el sistema local del usuario
+        Funcion para descargar el attachmnet en el sistema local del usuario
          @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
          @version: 2016-05-01
         """
         filename = (self.document_number+'.xml').replace(' ','')
         return {
-            'type' : 'ir.actions.act_url',
+            'type': 'ir.actions.act_url',
             'url': '/web/binary/download_document?model=account.invoice\
 &field=sii_xml_request&id=%s&filename=%s' % (self.id,filename),
             'target': 'self', }
@@ -1556,27 +1576,39 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
         _logger.info('fin de preparacion y envio sii')
         return envio_dte
 
+    def _not_attachment(self, filetype):
+        attachment_obj = self.env['ir.attachment']
+        attachment_id = attachment_obj.search(
+            [('name', 'ilike', filetype),
+            ('res_model', '=', self._name),
+            ('res_id', '=', self.id)])
+        return not attachment_id
+
     def send_envelope_recipient(
             self, RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
             is_doc_type_b, file_name, company_id, certp):
-        dtes = self.create_template_envelope(
-            RUTEmisor, self.format_vat(self.partner_id.vat),
-            resol_data['dte_resolution_date'],
-            resol_data['dte_resolution_number'], self.time_stamp(), documentos,
-            signature_d, SubTotDTE)
-        env = 'env'
-        if is_doc_type_b:
-            envio_dte = self.create_template_env(dtes, 'BOLETA')
-            env = 'env_boleta'
+        if self._not_attachment('pdf'):
+            dtes = self.create_template_envelope(
+                RUTEmisor, self.format_vat(self.partner_id.vat),
+                resol_data['dte_resolution_date'],
+                resol_data['dte_resolution_number'], self.time_stamp(), documentos,
+                signature_d, SubTotDTE)
+            env = 'env'
+            if is_doc_type_b:
+                envio_dte = self.create_template_env(dtes, 'BOLETA')
+                env = 'env_boleta'
+            else:
+                envio_dte = self.create_template_env(dtes)
+            envio_dte = self.sign_full_xml(
+                envio_dte, signature_d['priv_key'], certp, 'BMyA_Odoo_SetDoc', env)
+            result = self.send_xml_file(envio_dte, file_name, company_id)
+            _logger.info('fin de preparacion y envio sii')
+            for inv in self:
+                inv.save_xml_knowledge(result, envio_dte, file_name)
+                inv.get_pdf_docsonline(envio_dte)
         else:
-            envio_dte = self.create_template_env(dtes)
-        envio_dte = self.sign_full_xml(
-            envio_dte, signature_d['priv_key'], certp, 'BMyA_Odoo_SetDoc', env)
-        result = self.send_xml_file(envio_dte, file_name, company_id)
-        _logger.info('fin de preparacion y envio sii')
-        for inv in self:
-            inv.save_xml_knowledge(result, envio_dte, file_name)
-            inv.get_pdf_docsonline(envio_dte)
+            pass
+        return self.get_pdf_file()
 
     def get_pdf_docsonline(self, file_upload):
         host = 'https://www.documentosonline.cl'
@@ -1766,12 +1798,12 @@ hacer eso en un envío')
 <TpoDTE>{}</TpoDTE>
 <NroDTE>1</NroDTE>
 </SubTotDTE>'''.format(self.sii_document_class_id.sii_code)
-        self.send_envelope_recipient(
+        return self.send_envelope_recipient(
             self.format_vat(self.company_id.vat),
             self.get_resolution_data(self.company_id),
             self.sii_xml_request, signature_d, SubTotDTE, False,
             self.sii_send_file_name, self.company_id, certp)
-        return
+        # return
 
     @api.multi
     def ask_for_dte_status(self):
