@@ -50,12 +50,8 @@ class UploadXMLWizard(models.TransientModel):
         return result
 
     @staticmethod
-    def format_rut(rutem=None):
-        rut = rutem.replace('-', '')
-        if int(rut[:-1]) < 10000000:
-            rut = '0' + str(int(rut))
-        rut = 'CL'+rut
-        return rut
+    def format_native_vat(vat_emitter=None):
+        return 'CL' + vat_emitter.replace('-', '').zfill(9)
 
     def _read_xml(self, mode="text"):
         if self.xml_file:
@@ -126,13 +122,13 @@ xmldsig#}Reference/{http://www.w3.org/2000/09/xmldsig#}DigestValue").text:
 
     def _validar_caratula(self, cara):
         if not self.env['res.company'].search([
-                ('vat','=', self.format_rut(cara['RutReceptor']))
+                ('vat','=', self.format_native_vat(cara['RutReceptor']))
             ]):
             return 3, 'Rut no corresponde a nuestra empresa'
         partner_id = self.env['res.partner'].search([
         ('active','=', True),
         ('parent_id', '=', False),
-        ('vat','=', self.format_rut(cara['RutEmisor']))])
+        ('vat','=', self.format_native_vat(cara['RutEmisor']))])
         if not partner_id and not self.inv:
             return 2, 'Rut no coincide con los registros'
         try:
@@ -169,7 +165,7 @@ xmldsig#}Reference/{http://www.w3.org/2000/09/xmldsig#}DigestValue").text:
         partner_id = self.env['res.partner'].search([
         ('active','=', True),
         ('parent_id', '=', False),
-        ('vat','=', self.format_rut(
+        ('vat','=', self.format_native_vat(
             doc['Encabezado']['Emisor']['RUTEmisor']))])
         sii_document_class = self.env['sii.document_class'].search(
             [('sii_code', '=', str(doc['Encabezado']['IdDoc']['TipoDTE']))])
@@ -187,7 +183,7 @@ xmldsig#}Reference/{http://www.w3.org/2000/09/xmldsig#}DigestValue").text:
                 ('partner_id', '=', partner_id.id),
                 ('sii_document_class_id', '=', sii_document_class.id), ])
         company_id = self.env['res.company'].search([
-            ('vat', '=', self.format_rut(
+            ('vat', '=', self.format_native_vat(
                 doc['Encabezado']['Receptor']['RUTRecep']))
         ])
         if not company_id and (
@@ -293,7 +289,7 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte RespuestaEnvioDTE_v10.xsd" >
         _logger.info('envio parse')
         _logger.info(envio)
         company_id = self.env['res.company'].search(
-            [('vat', '=', self.format_rut(
+            [('vat', '=', self.format_native_vat(
                 envio['EnvioDTE']['SetDTE']['Caratula']['RutReceptor']))],
             limit=1)
         id_seq = self.env.ref('l10n_cl_dte.response_sequence').id
@@ -362,7 +358,7 @@ signature.'''))
         partner_id = self.env['res.partner'].search([
         ('active','=', True),
         ('parent_id', '=', False),
-        ('vat','=', self.format_rut(doc['Encabezado']['Emisor']['RUTEmisor']))])
+        ('vat','=', self.format_native_vat(doc['Encabezado']['Emisor']['RUTEmisor']))])
         sii_document_class = self.env['sii.document_class'].search(
             [('sii_code', '=', str(doc['Encabezado']['IdDoc']['TipoDTE']))])
         res['EstadoDTE'] = 0
@@ -578,12 +574,12 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte Recibos_v10.xsd" >
         if not giro_id:
             giro_id = self.env['sii.activity.description'].create({
                 'name': data['GiroEmis'], })
-        rut = self.format_rut(data['RUTEmisor'])
+        rut = self.format_native_vat(data['RUTEmisor'])
         # pero falta incorporar el giro al partner
         partner_data = {}
         partner_data['name'] = data['RznSoc']
         partner_data['activity_description'] = giro_id.id
-        partner_data['vat'] = self.format_rut(data['RUTEmisor'])
+        partner_data['vat'] = self.format_native_vat(data['RUTEmisor'])
         partner_data['document_type_id'] = self.env.ref(
             'l10n_cl_invoice.dt_RUT').id
         partner_data['responsability_id'] = self.env.ref(
@@ -704,7 +700,7 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte Recibos_v10.xsd" >
         partner_id = self.env['res.partner'].search([
         ('active','=', True),
         ('parent_id', '=', False),
-        ('vat','=', self.format_rut(dte['Encabezado']['Emisor']['RUTEmisor']))])
+        ('vat','=', self.format_native_vat(dte['Encabezado']['Emisor']['RUTEmisor']))])
         if not partner_id:
             partner_id = self._create_partner(dte['Encabezado']['Emisor'])
         elif not partner_id.supplier:
@@ -739,10 +735,10 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte Recibos_v10.xsd" >
                  ('sii_document_class_id.sii_code', '=',
                   dte['Encabezado']['IdDoc']['TipoDTE']),
                  ('partner_id.vat', '=',
-                  self.format_rut(dte['Encabezado']['Emisor']['RUTEmisor']))])
+                  self.format_native_vat(dte['Encabezado']['Emisor']['RUTEmisor']))])
         if not inv:
             company_id = self.env['res.company'].search([
-                ('vat','=', self.format_rut(
+                ('vat','=', self.format_native_vat(
                     dte['Encabezado']['Receptor']['RUTRecep']))])
             journal_document_class_id = self._get_journal(
                 dte['Encabezado']['IdDoc']['TipoDTE'], company_id)
@@ -803,7 +799,7 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte Recibos_v10.xsd" >
         if 'Documento' in envio['EnvioDTE']['SetDTE']['DTE']:
             dte = envio['EnvioDTE']['SetDTE']['DTE']
             company_id = self.env['res.company'].search(
-                [('vat', '=', self.format_rut(
+                [('vat', '=', self.format_native_vat(
                     dte['Documento']['Encabezado']['Receptor']['RUTRecep'])), ],
                 limit=1)
             if company_id:
@@ -834,7 +830,7 @@ alguna empresa registrada en Odoo, o ya ha sido procesado anteriormente')
         partner_id = self.env['res.partner'].search([
         ('active','=', True),
         ('parent_id', '=', False),
-        ('vat','=', self.format_rut(dte['Encabezado']['Emisor']['RUTEmisor']))])
+        ('vat','=', self.format_native_vat(dte['Encabezado']['Emisor']['RUTEmisor']))])
         if not partner_id:
             partner_id = self._create_partner(dte['Encabezado']['Emisor'])
         elif not partner_id.supplier:
