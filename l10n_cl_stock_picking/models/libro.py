@@ -540,12 +540,12 @@ exponent. AND DIGEST""")
                 'digest': base64.b64encode(self.digest(MESSAGE))}
 
 
-    @api.onchange('periodo_tributario','tipo_operacion')
+    @api.onchange('fiscal_period','tipo_operacion')
     def _setName(self):
         if self.name:
             return
-        if self.periodo_tributario:
-            self.name += " " + self.periodo_tributario
+        if self.fiscal_period:
+            self.name += " " + self.fiscal_period
 
     sii_message = fields.Text(
         string='SII Message',
@@ -584,7 +584,7 @@ exponent. AND DIGEST""")
     folio_notificacion = fields.Char(string="Folio de Notificación")
     #total_afecto = fields.Char(string="Total Afecto")
     #total_exento = fields.Char(string="Total Exento")
-    periodo_tributario = fields.Char('Periodo Tributario', required=True)
+    fiscal_period = fields.Char('Periodo Tributario', required=True)
     company_id = fields.Many2one('res.company', required=True)
     name = fields.Char(string="Detalle" , required=True)
 
@@ -722,8 +722,8 @@ exponent. AND DIGEST""")
         RUTRecep = "60803000-K" # RUT SII
         xml = dicttoxml.dicttoxml(
             dte, root=False, attr_type=False)
-        doc_id =  'GUIA_'+self.periodo_tributario
-        libro = self.create_template_envio( RUTEmisor, self.periodo_tributario,
+        doc_id =  'GUIA_'+self.fiscal_period
+        libro = self.create_template_envio( RUTEmisor, self.fiscal_period,
             resol_data['dte_resolution_date'],
             resol_data['dte_resolution_number'],
             xml, signature_d,self.tipo_libro,self.tipo_envio,self.folio_notificacion, doc_id)

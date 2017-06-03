@@ -212,7 +212,7 @@ requiere un Código de Autorización de Reemplazo de Libro Electrónico.""")
     total = fields.Monetary(
         string="Total Otros Impuestos", readonly=True, compute='set_values',
         store=True)
-    periodo_tributario = fields.Char(
+    fiscal_period = fields.Char(
         string='Periodo Tributario', required=True, readonly=True,
         default=lambda x: datetime.now().strftime('%Y-%m'),
         states={'draft': [('readonly', False)], })
@@ -270,13 +270,13 @@ END) as "MntExe",
 WHEN tax_amount is null THEN 0
 ELSE price_subtotal
 END) as "MntNeto",
-round(
+coalesce(round(
 (CASE WHEN tax_code = 15 then 0
 ELSE tax_amount END)
 - (case when a.no_rec_code != '0' then
 tax_amount else 0 end) -
 (case when iva_uso_comun then tax_amount
-else 0 end), 2) as "MntIVA",
+else 0 end), 2), 0.0) as "MntIVA",
 (CASE
 WHEN a.tax_code != 14 then 1
 ELSE 0
@@ -323,7 +323,7 @@ al.id as line_id,
 dcl.sii_code as "TpoDoc",
 cast(ai.sii_document_number as integer) as "NroDoc",
 (CASE WHEN at.sii_code in (14, 15) THEN 1 ELSE 0 END) as "TpoImp",
-round(abs(at.amount), 0) as "TasaImp",
+COALESCE(round(abs(at.amount), 0), 0) as "TasaImp",
 ai.date_invoice as "FchDoc",
 trim(leading '0' from substring(rp.vat from 3 for 8)) || '-' ||
 right(rp.vat, 1) as "RUTDoc",
@@ -364,6 +364,7 @@ on ar.tipo = dcl.id) as ref
 on ref.invoice_id = ai.id
 order by ai.id, al.id, dcl.sii_code, at.id) a
 """
+        # raise UserError(a)
         return a
 
     @db_handler
@@ -612,22 +613,23 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
 <FchResol>{}</FchResol>\
 <NroResol>{}</NroResol>\
 <TipoOperacion>{}</TipoOperacion>\
-<TipoLibro>ESPECIAL</TipoLibro>\
+<TipoLibro>{}</TipoLibro>\
 <TipoEnvio>{}</TipoEnvio>\
 <FolioNotificacion>{}</FolioNotificacion>\
 </Caratula>{}{}<TmstFirma>{}</TmstFirma></EnvioLibro>""".format(
                 self.name.replace(' ', '_'),
                 inv_obj.format_vat(self.company_id.vat),
                 signature_d['subject_serial_number'],
-                self.periodo_tributario,
+                self.fiscal_period,
                 resol_data['dte_resolution_date'],
                 resol_data['dte_resolution_number'],
                 self.tipo_operacion,
+                self.tipo_libro,
                 self.tipo_envio,
-                self.folio_notificacion,
+                self.folio_notificacion or '',
                 xml_detail1, xml_detail2,
                 inv_obj.time_stamp(),
-            )
+            ).replace('<FolioNotificacion></FolioNotificacion>', '', 1)
             _logger.info(xml_envio_libro)
             xml1 = xml.dom.minidom.parseString(xml_envio_libro)
             xml_pret = xml1.toprettyxml()
@@ -652,8 +654,11 @@ guardada del xml es la siguiente: {}'.format(xml_pret))
             _logger.info('no se pudo obtener archivos (primer pasada)')
             return False
 
-    @api.depends('invoice_ids')
+    @api.depends('name', 'date', 'company_id', 'invoice_ids', 'fiscal_period',
+                 'tipo_operacion', 'tipo_libro', 'tipo_envio', 'fact_prop')
     def set_values(self):
+        if not self.name and not self.invoice_ids:
+            return
         dict0 = self._summary_by_period()
         self._record_totals(dict0)
         dict1 = {'ResumenPeriodo': dict0}
@@ -668,7 +673,7 @@ guardada del xml es la siguiente: {}'.format(xml_pret))
             raise UserError('El libro se encuentra en estado: {}'.format(
                 self.state))
         company_id = self.company_id
-        doc_id = self.tipo_operacion + '_' + self.periodo_tributario
+        doc_id = self.tipo_operacion + '_' + self.fiscal_period
         result = inv_obj.send_xml_file(
             self.sii_xml_request, doc_id + '.xml', company_id)
         self.write({

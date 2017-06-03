@@ -12,7 +12,7 @@ class LibroXlsx(ReportXlsx):
             bold = workbook.add_format({'bold': True})
             sheet.write(0, 0, obj.name, bold)
             sheet.write(0, 1, obj.company_id.name, bold)
-            sheet.write(0, 2, obj.periodo_tributario, bold)
+            sheet.write(0, 2, obj.fiscal_period, bold)
             sheet.write(0, 3, obj.tipo_operacion, bold)
             sheet.write(0, 4, obj.tipo_libro, bold)
             sheet.write(0, 5, obj.tipo_operacion, bold)

@@ -35,11 +35,11 @@ class masive_send_dte_wizard(models.TransientModel):
         #raise UserError("%s %s" %(self._context.get('active_ids'), self.move_ids))
         data ={
                 'move_ids': self.move_ids,
-                'tipo_libro':'ESPECIAL',
+                'tipo_libro': 'ESPECIAL',
                 'tipo_operacion': 'COMPRA',
                 'tipo_envio': 'TOTAL',
                 'folio_notificacion': 612124,
-                'periodo_tributario': '2016-07',
+                'fiscal_period': '2016-07',
                 'company_id':self.company_id.id,
             }
         libro = self.env['account.move.libro'].create(data)

@@ -451,7 +451,7 @@ generated. Its in open status till user does not pay invoice.\n
         readonly=True,
         compute='set_resumen',
         store=True,)
-    periodo_tributario = fields.Char(
+    fiscal_period = fields.Char(
         string='Periodo Tributario',
         required=True,
         readonly=True,
@@ -490,9 +490,9 @@ generated. Its in open status till user does not pay invoice.\n
     codigo_rectificacion = fields.Char(string="Código de Rectificación")
 
 
-    @api.onchange('periodo_tributario', 'tipo_operacion', 'company_id')
+    @api.onchange('fiscal_period', 'tipo_operacion', 'company_id')
     def set_movimientos(self):
-        current = datetime.strptime(self.periodo_tributario + '-01', '%Y-%m-%d')
+        current = datetime.strptime(self.fiscal_period + '-01', '%Y-%m-%d')
         next_month = current + relativedelta.relativedelta(months=1)
         docs = [False, 70, 71]
         operator = 'not in'
@@ -1051,11 +1051,11 @@ version="1.0">
         sha1 = hashlib.new('sha1', data)
         return sha1.digest()
 
-    @api.onchange('periodo_tributario', 'tipo_operacion')
+    @api.onchange('fiscal_period', 'tipo_operacion')
     def _setName(self):
         self.name = self.tipo_operacion
-        if self.periodo_tributario:
-            self.name += " " + self.periodo_tributario
+        if self.fiscal_period:
+            self.name += " " + self.fiscal_period
 
     @api.multi
     def validar_libro(self):
@@ -1651,8 +1651,8 @@ version="1.0">
         RUTRecep = "60803000-K"  # RUT SII
         xml = dicttoxml.dicttoxml(
             dte, root=False, attr_type=False)
-        doc_id =  self.tipo_operacion+'_'+self.periodo_tributario
-        libro = self.create_template_envio( RUTEmisor, self.periodo_tributario,
+        doc_id =  self.tipo_operacion+'_'+self.fiscal_period
+        libro = self.create_template_envio( RUTEmisor, self.fiscal_period,
             resol_data['dte_resolution_date'],
             resol_data['dte_resolution_number'],
             xml, signature_d, self.tipo_operacion, self.tipo_libro,

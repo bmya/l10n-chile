@@ -575,13 +575,13 @@ version="1.0">
         sha1 = hashlib.new('sha1', data)
         return sha1.digest()
 
-    @api.onchange('periodo_tributario','tipo_operacion')
+    @api.onchange('fiscal_period','tipo_operacion')
     def _setName(self):
         if self.name:
             return
         self.name = self.tipo_operacion
-        if self.periodo_tributario:
-            self.name += " " + self.periodo_tributario
+        if self.fiscal_period:
+            self.name += " " + self.fiscal_period
 
     @api.multi
     def validar_consumo_folios(self):
