@@ -12,7 +12,7 @@
                 <!--<form>
                     <field name="internal_number" invisible="1"/>
                 </form>-->
-                <button name="print_cedible" position="after">
+                <button name="invoice_print" position="after">
                     <button
                             name="clean_internal_number"
                             string="Clean Internal Number"

@@ -5,6 +5,7 @@ import ast
 
 _logger = logging.getLogger(__name__)
 
+
 class ColaEnvio(models.Model):
     _name = "sii.cola_envio"
 
