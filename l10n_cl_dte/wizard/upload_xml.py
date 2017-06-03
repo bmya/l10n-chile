@@ -40,7 +40,9 @@ class UploadXMLWizard(models.TransientModel):
         _logger.info(context)
         _logger.info(active_id)
         created_inv = []
-        getattr(self, action[self.action]['function'])
+        resp = getattr(self, action[self.action]['function'])()
+        _logger.info('kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk')
+        _logger.info(resp)
         if self.inv:
             created_inv.append(self.inv.id)
         result = self.env.ref('%s' % (action[self.action]['xml_id'])).read()[0]
@@ -55,12 +57,11 @@ class UploadXMLWizard(models.TransientModel):
 
     def _read_xml(self, mode="text"):
         if self.xml_file:
-            xml = base64.b64decode(self.xml_file).decode(
-                'ISO-8859-1').replace(
-                '<?xml version="1.0" encoding="ISO-8859-1"?>', '')
+            xml = base64.b64decode(self.xml_file)
         else:
-            xml = self.inv.sii_xml_request.decode('ISO-8859-1').replace(
-                '<?xml version="1.0" encoding="ISO-8859-1"?>', '')
+            xml = self.inv.sii_xml_request
+        xml = xml.decode('ISO-8859-1').replace(
+            '<?xml version="1.0" encoding="ISO-8859-1"?>', '')
         if mode == "etree":
             return etree.fromstring(xml)
         if mode == "parse":
