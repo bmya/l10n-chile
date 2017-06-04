@@ -590,11 +590,10 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte Recibos_v10.xsd" >
         partner_data['country_id'] = self.env.ref('base.cl').id
         try:
             partner_data['city'] = data['CiudadOrigen']
-        except KeyError:
+        except AttributeError:
             pass
         partner_data['company_type'] = 'company'
         partner_data['supplier'] = True
-        # raise UserError(json.dumps(partner_data))
         partner_id = partner_obj.create(partner_data)
         return partner_id
 
