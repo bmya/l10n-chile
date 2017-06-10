@@ -10,7 +10,7 @@
         <record id="transfer_account_id" model="account.account.template">
             <field name="name">Cuenta de Transferencia</field>
             <field name="code">117000</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field ref="account.data_account_type_current_assets" name="user_type_id"/>
         </record>
 
@@ -97,7 +97,7 @@
         <record id="110320" model="account.account.template">
             <field name="name">Anticipo Proveedores</field>
             <field name="code">110320</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1103')])]"/>
             <field ref="account.data_account_type_prepayments" name="user_type_id"/>
             <field name="reconcile">1</field>
@@ -110,9 +110,9 @@
         <record id="110410" model="account.account.template">
             <field name="name">Cheques a Fecha Por Cobrar</field>
             <field name="code">110410</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1104')])]"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="reconcile">1</field>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -123,8 +123,8 @@
         <record id="110420" model="account.account.template">
             <field name="name">Cuenta Por Cobrar 3eros</field>
             <field name="code">110420</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1104')])]"/>
             <field name="reconcile">1</field>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -136,8 +136,8 @@
         <record id="110430" model="account.account.template">
             <field name="name">Boletas en Garantía</field>
             <field name="code">110430</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1104')])]"/>
             <field name="reconcile">1</field>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -148,8 +148,8 @@
         <record id="110440" model="account.account.template">
             <field name="name">Letras en Cartera</field>
             <field name="code">110440</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1104')])]"/>
             <field name="reconcile">1</field>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -161,8 +161,8 @@
         <record id="110450" model="account.account.template">
             <field name="name">Documentos Protestados</field>
             <field name="code">110450</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1104')])]"/>
             <field name="reconcile">1</field>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -174,7 +174,7 @@
         <record id="110510" model="account.account.template">
             <field name="name">Anticipo de Sueldo</field>
             <field name="code">110510</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field ref="account.data_account_type_prepayments" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1105')])]"/>
             <field name="reconcile">1</field>
@@ -187,8 +187,8 @@
         <record id="110520" model="account.account.template">
             <field name="name">Préstamos al Personal</field>
             <field name="code">110520</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1105')])]"/>
             <field name="reconcile">1</field>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -200,7 +200,7 @@
         <record id="110530" model="account.account.template">
             <field name="name">Anticipos de Viáticos</field>
             <field name="code">110530</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field ref="account.data_account_type_prepayments" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1105')])]"/>
             <field name="reconcile">1</field>
@@ -213,8 +213,8 @@
         <record id="110540" model="account.account.template">
             <field name="name">Fondos x Rendir</field>
             <field name="code">110540</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1105')])]"/>
             <field name="reconcile">1</field>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -226,7 +226,7 @@
         <record id="110550" model="account.account.template">
             <field name="name">Anticipo de Honorarios</field>
             <field name="code">110550</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field ref="account.data_account_type_prepayments" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1105')])]"/>
             <field name="reconcile">1</field>
@@ -240,7 +240,7 @@
         <record id="110560" model="account.account.template">
             <field name="name">Anticipo de Aguinaldo</field>
             <field name="code">110560</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field ref="account.data_account_type_prepayments" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1105')])]"/>
             <field name="reconcile">1</field>
@@ -253,8 +253,8 @@
         <record id="110570" model="account.account.template">
             <field name="name">Asignación Familiar</field>
             <field name="code">110570</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('1'),ref('11'),ref('1105')])]"/>
             <field name="reconcile">1</field>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -771,8 +771,8 @@
         <record id="210110" model="account.account.template">
             <field name="name">Tarjeta de Crédito Corporativa</field>
             <field name="code">210110</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2101')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -783,8 +783,8 @@
         <record id="210120" model="account.account.template">
             <field name="name">Linea de Crédito Bancaria</field>
             <field name="code">210120</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2101')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -795,8 +795,8 @@
         <record id="210140" model="account.account.template">
             <field name="name">Crédito Comercial C/Plazo</field>
             <field name="code">210140</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2101')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -807,7 +807,7 @@
         <record id="210150" model="account.account.template">
             <field name="name">Obligaciones Leasing Corto Plazo</field>
             <field name="code">210150</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2101')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
@@ -819,8 +819,8 @@
         <record id="210160" model="account.account.template">
             <field name="name">Crédito Hipotecario C/Plazo</field>
             <field name="code">210160</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2101')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -831,8 +831,8 @@
         <record id="210170" model="account.account.template">
             <field name="name">Crédito Comercial LP Venc. C/Plazo</field>
             <field name="code">210170</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2101')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -843,8 +843,8 @@
         <record id="210180" model="account.account.template">
             <field name="name">Dividendos por Pagar</field>
             <field name="code">210180</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2101')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -867,8 +867,8 @@
         <record id="210220" model="account.account.template">
             <field name="name">Anticipo de Clientes</field>
             <field name="code">210220</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_receivable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_assets" name="user_type_id"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2102')])]"/>
         </record>
@@ -879,8 +879,8 @@
         <record id="210310" model="account.account.template">
             <field name="name">Cheques Girados y No Cobrados</field>
             <field name="code">210310</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2103')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -891,8 +891,8 @@
         <record id="210320" model="account.account.template">
             <field name="name">Documentos en Garantía</field>
             <field name="code">210320</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2103')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -903,8 +903,8 @@
         <record id="210330" model="account.account.template">
             <field name="name">Boleta en Garantia</field>
             <field name="code">210330</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2103')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -915,8 +915,8 @@
         <record id="210410" model="account.account.template">
             <field name="name">AFP x Pagar</field>
             <field name="code">210410</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2104')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -927,8 +927,8 @@
         <record id="210420" model="account.account.template">
             <field name="name">C.C.A.F. x Pagar</field>
             <field name="code">210420</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2104')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -939,8 +939,8 @@
         <record id="210430" model="account.account.template">
             <field name="name">INP x Pagar</field>
             <field name="code">210430</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2104')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -951,8 +951,8 @@
         <record id="210440" model="account.account.template">
             <field name="name">ISAPRES x Pagar</field>
             <field name="code">210440</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2104')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -963,8 +963,8 @@
         <record id="210450" model="account.account.template">
             <field name="name">Mutual Seg. x Pagar</field>
             <field name="code">210450</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2104')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -975,8 +975,8 @@
         <record id="210510" model="account.account.template">
             <field name="name">Sueldos por Pagar</field>
             <field name="code">210510</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2105')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -987,8 +987,8 @@
         <record id="210520" model="account.account.template">
             <field name="name">Honorarios por Pagar</field>
             <field name="code">210520</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2105')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -999,8 +999,8 @@
         <record id="210530" model="account.account.template">
             <field name="name">Viáticos y Otros por Pagar</field>
             <field name="code">210530</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
         </record>
 
         <!-- 2902 Responsable Garantía -->
@@ -1305,7 +1305,7 @@
         <record id="220330" model="account.account.template">
             <field name="name">Otros Pasivos</field>
             <field name="code">220330</field>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2105')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -1316,8 +1316,8 @@
         <record id="210540" model="account.account.template">
             <field name="name">Finiquitos por Pagar</field>
             <field name="code">210540</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2105')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -1328,8 +1328,8 @@
         <record id="210550" model="account.account.template">
             <field name="name">Rendiciones por Pagar</field>
             <field name="code">210550</field>
-            <field name="reconcile" eval="True"/>
-            <field ref="account.data_account_type_payable" name="user_type_id"/>
+            <field name="reconcile" eval="False"/>
+            <field ref="account.data_account_type_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2105')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
@@ -1352,7 +1352,7 @@
         <record id="210610" model="account.account.template">
             <field name="name">Provisión de Impuesto PPM</field>
             <field name="code">210610</field>
-            <field name="reconcile" eval="True"/>
+            <field name="reconcile" eval="False"/>
             <field ref="account.data_account_type_non_current_liabilities" name="user_type_id"/>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2106')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
