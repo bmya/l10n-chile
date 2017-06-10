@@ -274,7 +274,10 @@ coalesce(round(
 (CASE WHEN tax_code = 15 then 0
 ELSE tax_amount END)
 - (case when a.no_rec_code != '0' then
-tax_amount else 0 end) -
+tax_amount else
+(case when a.no_rec = '1' then tax_amount
+else 0 end)
+end) -
 (case when iva_uso_comun then tax_amount
 else 0 end), 2), 0.0) as "MntIVA",
 (CASE
@@ -299,13 +302,24 @@ as "IVARetTotal",
 WHEN "TasaImp" < 19 AND a.tax_code = 15
 THEN tax_amount ELSE 0 END)
 as "IVARetParcial",
-(case when a.no_rec_code != '0' then 1 else 0 end) as "IVANoRec",
+(case
+when a.no_rec_code != '0'
+then 1
+else (case
+when a.no_rec = '1' then 1 else 0
+end)
+end) as "IVANoRec",
 (case when a.no_rec_code != '0' then
-cast(a.no_rec_code as integer) else 0 end) as "CodIVANoRec",
+cast(a.no_rec_code as integer) else
+(case when a.no_rec = '1' then 1
+else 0 end)
+end) as "CodIVANoRec",
 cast(round((case when a.no_rec_code != '0' then
 tax_amount
-else 0 end), 0) as
-integer) as "MntIVANoRec",
+else
+(case when a.no_rec = '1' then tax_amount
+else 0 end)
+end), 0) as integer) as "MntIVANoRec",
 round((case when iva_uso_comun then
 tax_amount
 else 0 end), 2) as "IVAUsoComun",

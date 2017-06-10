@@ -9,6 +9,7 @@ import collections
 import dicttoxml
 import pysiidte
 import json
+from bs4 import BeautifulSoup as bs
 
 _logger = logging.getLogger(__name__)
 
@@ -21,12 +22,15 @@ class UploadXMLWizard(models.TransientModel):
 
     action = fields.Selection([
             ('create_po', 'Crear Orden de Pedido y Factura'),
-            ('create', 'Crear Solamente Factura'), ], string=u"Acción", default="create")
-
+            ('create', 'Crear Solamente Factura'), ], string=u"Acción",
+        default="create")
     xml_file = fields.Binary(
         string='XML File', filters='*.xml',
         store=True, help='Upload the XML File in this holder')
     filename = fields.Char('File Name')
+    backup_only = fields.Boolean(
+        string='Solo Backup',
+        help='Only for backup purposes, but not receipt deliver')
     inv = fields.Many2one('account.invoice', invisible=True)
 
     @api.multi
@@ -198,15 +202,11 @@ xmldsig#}Reference/{http://www.w3.org/2000/09/xmldsig#}DigestValue").text:
 
     def _validar_dtes(self):
         envio = self._read_xml('parse')
-        if 'Documento' in envio['EnvioDTE']['SetDTE']['DTE']:
-            res = {'RecepcionDTE' : self._validar_dte(
-                envio['EnvioDTE']['SetDTE']['DTE']['Documento'])}
-        else:
-            res = []
-            for doc in envio['EnvioDTE']['SetDTE']['DTE']:
-                res.extend(
-                    [{'RecepcionDTE': self._validar_dte(doc['Documento'])}])
-        return res
+        soup = bs(envio, 'xml')
+        #if soup.find('Documento'):
+
+        #res.extend([{'RecepcionDTE': self._validar_dte(doc['Documento'])}])
+        #return res
 
     def _caratula_respuesta(
             self, RutResponde, RutRecibe, IdRespuesta="1", NroDetalles=0):
@@ -795,7 +795,23 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte Recibos_v10.xsd" >
 
     def do_create_inv(self):
         envio = self._read_xml('parse')
-        resp = self.do_receipt_deliver()
+        if not self.backup_only:
+            resp = self.do_receipt_deliver()
+        # a rehacer esta parte....
+        try:
+            if 'Documento' in envio['EnvioDTE']['SetDTE']['DTE']:
+                dte = envio['EnvioDTE']['SetDTE']['DTE']
+        except KeyError:
+            try:
+                if 'Documento' in envio['EnvioDTE']['SetDTE']['DTE']:
+                    dte = envio['EnvioDTE']['SetDTE']['DTE']
+            except KeyError:
+                try:
+                    if 'Documento' in envio['EnvioDTE']['SetDTE']['DTE']:
+                        dte = envio['EnvioDTE']['SetDTE']['DTE']
+                except:
+                    pass
+
         if 'Documento' in envio['EnvioDTE']['SetDTE']['DTE']:
             dte = envio['EnvioDTE']['SetDTE']['DTE']
             company_id = self.env['res.company'].search(
