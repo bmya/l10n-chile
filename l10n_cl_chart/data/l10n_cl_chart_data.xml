@@ -1405,7 +1405,7 @@
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
 
-        		<record id="320140" model="account.account.template">
+        <record id="320140" model="account.account.template">
             <field name="code">320140</field>
             <field name="reconcile" eval="False"/>
             <field ref="account.data_account_type_other_income" name="user_type_id"/>
