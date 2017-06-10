@@ -1303,6 +1303,8 @@
         <!-- 22 Pasivo a Largo Plazo -->
         <!-- 2203 Otros Pasivos -->
         <record id="220330" model="account.account.template">
+            <field name="code">220330</field>
+            <field name="name">Otros Pasivos</field>
             <field name="tag_ids" eval="[(6,0,[ref('2'),ref('21'),ref('2105')])]"/>
             <field name="chart_template_id" ref="cl_chart_template_bmya"/>
         </record>
