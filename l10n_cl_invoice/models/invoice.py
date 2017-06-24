@@ -466,11 +466,11 @@ a VAT."""))
         readonly=True,)
     responsability_id = fields.Many2one(
         'sii.responsability',
-        string='Responsability',
+        string='Company Responsibility',
         related='commercial_partner_id.responsability_id',
         store=True, )
     formated_vat = fields.Char(
-        string='Responsability',
+        string='Company VAT',
         related='commercial_partner_id.formated_vat')
     iva_uso_comun = fields.Boolean(
         string="Uso Común", readonly=True,
