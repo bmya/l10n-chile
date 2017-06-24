@@ -43,40 +43,63 @@ class ResPartner(models.Model):
         if self.document_number and ((
             'sii.document_type',
             self.document_type_id.id) == mod_obj.get_object_reference(
-                'l10n_cl_invoice', 'dt_RUT') or ('sii.document_type',
+                'l10n_cl_invoice', 'dt_RUT') or (
+                'sii.document_type',
                 self.document_type_id.id) == mod_obj.get_object_reference(
-                    'l10n_cl_invoice', 'dt_RUN')):
+                'l10n_cl_invoice', 'dt_RUN')):
             document_number = (
                 re.sub('[^1234567890Kk]', '', str(
                     self.document_number))).zfill(9).upper()
-            vat = 'CL{}'.format(document_number)
-            current_partner_id = self._origin.id
-            # quitar esta parte cuando el partner_vat_unique este portado
-            exist = self.env['res.partner'].search(
-                [('vat', '=', vat), ('vat', 'not in', ['CL55555555K'])],
-                limit=1)
-            if current_partner_id:
-                if exist.id == current_partner_id:
-                    pass
-            elif exist:
-                raise UserError(
-                    "El usuario {} está utilizando este documento {}, \
-                    {}".format(exist.name, exist.id, current_partner_id))
-                # self.vat = self.document_number = ""
-                # return {
-                #     'warning': {
-                #         'title': "El RUT ya está siendo usado",
-                #         'message': _(
-                #             "El usuario {} está utilizando este documento {}, {}").
-                #         format(exist.name, exist.id, current_partner_id)}}
-            # revision - fin
-            self.vat = vat
-            self.document_number = '{}.{}.{}-{}'.format(
+            self.vat = 'CL%s' % document_number
+            self.document_number = '%s.%s.%s-%s' % (
                 document_number[0:2], document_number[2:5],
                 document_number[5:8], document_number[-1])
-
         elif self.document_number and (
-            'sii.document_type',
-            self.document_type_id.id) == mod_obj.get_object_reference(
+                'sii.document_type',
+                self.document_type_id.id) == mod_obj.get_object_reference(
                 'l10n_cl_invoice', 'dt_Sigd'):
             self.document_number = ''
+
+#    @api.onchange('document_number', 'document_type_id')
+#    def onchange_document(self):
+#        mod_obj = self.env['ir.model.data']
+#        if self.document_number and ((
+#            'sii.document_type',
+#            self.document_type_id.id) == mod_obj.get_object_reference(
+#                'l10n_cl_invoice', 'dt_RUT') or ('sii.document_type',
+#                self.document_type_id.id) == mod_obj.get_object_reference(
+#                    'l10n_cl_invoice', 'dt_RUN')):
+#            document_number = (
+#                re.sub('[^1234567890Kk]', '', str(
+#                    self.document_number))).zfill(9).upper()
+#            vat = 'CL{}'.format(document_number)
+#            current_partner_id = self._origin.id
+#            # quitar esta parte cuando el partner_vat_unique este portado
+#            exist = self.env['res.partner'].search(
+#                [('vat', '=', vat), ('vat', 'not in', ['CL55555555K'])],
+#                limit=1)
+#            if current_partner_id:
+#                if exist.id == current_partner_id:
+#                    pass
+#            elif exist:
+#                raise UserError(
+#                    "El usuario {} está utilizando este documento {}, \
+#                    {}".format(exist.name, exist.id, current_partner_id))
+#                # self.vat = self.document_number = ""
+#                # return {
+#                #     'warning': {
+#                #         'title': "El RUT ya está siendo usado",
+#                #         'message': _(
+#                #             "El usuario {} está utilizando este documento {}, {}").
+#                #         format(exist.name, exist.id, current_partner_id)}}
+#            # revision - fin
+#            self.vat = vat
+#            self.document_number = '{}.{}.{}-{}'.format(
+#                document_number[0:2], document_number[2:5],
+#                document_number[5:8], document_number[-1])
+#
+#        elif self.document_number and (
+#            'sii.document_type',
+#            self.document_type_id.id) == mod_obj.get_object_reference(
+#                'l10n_cl_invoice', 'dt_Sigd'):
+#            self.document_number = ''

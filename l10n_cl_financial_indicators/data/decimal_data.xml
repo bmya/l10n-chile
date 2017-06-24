@@ -4,10 +4,10 @@
         <!--
              Precisions
         -->
-        <record forcecreate="True" id="decimal_currency" model="decimal.precision">
+        <!--<record forcecreate="True" id="decimal_currency" model="decimal.precision">
             <field name="name">Currency</field>
             <field name="digits">9</field>
-        </record>
+        </record>-->
 
     </data>
 </odoo>
