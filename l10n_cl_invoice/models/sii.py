@@ -99,7 +99,7 @@ class sii_document_letter(models.Model):
 
 class sii_responsability(models.Model):
     _name = 'sii.responsability'
-    _description = 'SII VAT Responsability'
+    _description = 'SII VAT Responsibility'
 
     name = fields.Char(
         'Name', size=64, required=True)

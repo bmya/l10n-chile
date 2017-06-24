@@ -45,8 +45,8 @@ sign electronic documents.
     ],
     'data': [
         'views/user_signature_tab.xml',
-        'views/company_signature_tab.xml',
-        # 'security/ir.model.access.csv'
+        # 'views/company_signature_tab.xml',
+        'security/ir.model.access.csv'
     ],
     'installable': True,
     'auto_install': False,

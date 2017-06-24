@@ -39,7 +39,7 @@ Chile: API and GUI to access Electronic Invoicing webservices.
     },
     'data': [
         'views/invoice_view.xml',
-        'views/partner_view.xml',
+        # 'views/partner_view.xml',
         'views/company_view.xml',
         'views/payment_t_view.xml',
         'views/layout.xml',
