@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import os, datetime
+import datetime
 from odoo import models, fields, api
-from odoo.tools.translate import _
-from odoo.exceptions import Warning
-from odoo import SUPERUSER_ID
+
 try:
     from M2Crypto import X509 as M2X509
     from M2Crypto.EVP import MessageDigest
@@ -96,10 +94,14 @@ class userSignature(models.Model):
         issuer = cert.get_issuer()
         subject = cert.get_subject()
 
-        self.not_before = datetime.datetime.strptime(cert.get_notBefore(), '%Y%m%d%H%M%SZ')
-        self.not_after = datetime.datetime.strptime(cert.get_notAfter(), '%Y%m%d%H%M%SZ')
-        print('not before           ', datetime.datetime.strptime(cert.get_notBefore(), '%Y%m%d%H%M%SZ'))
-        print('not after            ', datetime.datetime.strptime(cert.get_notAfter(), '%Y%m%d%H%M%SZ'))
+        self.not_before = datetime.datetime.strptime(
+            cert.get_notBefore(), '%Y%m%d%H%M%SZ')
+        self.not_after = datetime.datetime.strptime(
+            cert.get_notAfter(), '%Y%m%d%H%M%SZ')
+        print('not before           ', datetime.datetime.strptime(
+            cert.get_notBefore(), '%Y%m%d%H%M%SZ'))
+        print('not after            ', datetime.datetime.strptime(
+            cert.get_notAfter(), '%Y%m%d%H%M%SZ'))
 
         # self.final_date =
         self.subject_c = subject.C
@@ -181,7 +183,8 @@ class userSignature(models.Model):
     not_after = fields.Date(
         string='Not After', help='Not After this Date', readonly=True)
     status = fields.Selection(
-        [('unverified', 'Unverified'), ('valid', 'Valid'), ('expired', 'Expired')],
+        [('unverified', 'Unverified'), ('valid', 'Valid'),
+         ('expired', 'Expired')],
         string='Status', default=default_status,
         help='''Draft: means it has not been checked yet.\nYou must press the\
 "check" button.''')
@@ -220,8 +223,8 @@ class userSignature(models.Model):
     priv_key = fields.Text('Private Key', readonly=True)
     authorized_users_ids = fields.One2many('res.users','cert_owner_id',
                                            string='Authorized Users')
-    cert_owner_id = fields.Many2one('res.users', 'Certificate Owner',
-                                    select=True, ondelete='cascade')
+    cert_owner_id = fields.Many2one(
+        'res.users', 'Certificate Owner', ondelete='cascade')
 
     @api.multi
     def action_clean1(self):

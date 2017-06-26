@@ -123,14 +123,11 @@ class sii_document_type(models.Model):
     _name = 'sii.document_type'
     _description = 'SII document types'
 
-    name = fields.Char(
-        'Name', size=120, required=True)
-    code = fields.Char(
-        'Code', size=16, required=True)
-    sii_code = fields.Integer(
-        'SII Code', required=True)
-    active = fields.Boolean(
-        'Active', default=True)
+    name = fields.Char('Name', size=120, required=True)
+    code = fields.Char('Code', size=16, required=True)
+    sii_code = fields.Integer('SII Code', required=True)
+    default_doc_num = fields.Char(string='Default document number')
+    active = fields.Boolean('Active', default=True)
 
 
 class sii_concept_type(models.Model):
