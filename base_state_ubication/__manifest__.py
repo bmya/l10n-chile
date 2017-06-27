@@ -20,7 +20,7 @@
 ##############################################################################
 {
     "name": "States Inherited (Recursive Ubication)",
-    "version": "10.0.2.0.0",
+    "version": "10.0.3.0.0",
     "description": """
 Add parent state to standard state and transform the states on \
 recursive ubication.

@@ -4,7 +4,10 @@
 # directory
 ##############################################################################
 from odoo import fields, models, api, _
+from odoo.exceptions import UserError
+import logging
 
+_logger = logging.getLogger(__name__)
 
 class DteEmail(models.Model):
     """
@@ -47,14 +50,21 @@ token. In other cases, the pair username/password is needed.''')
         help=u'''Cantidad de copias cedibles. Para que esta característica \
 funcione, deberá habilitar la iimpresión de cedible en LibreDTE.''')
 
-    @api.multi
     @api.onchange('dte_service_provider')
-    def set_libredte_username(self):
+    def _set_libredte_username(self):
         """
         cambiar dte username para libredte
         @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
         @version: 2016-06-16
         """
-        self.ensure_one()
         if self.dte_service_provider in ['LIBREDTE']:
             self.username = 'X'
+
+    @api.onchange('city_id')
+    def _set_regional_office(self):
+        if self.dte_service_provider in ['SIIHOMO', 'SII']:
+            try:
+                self.sii_regional_office_id = \
+                    self.city_id.sii_regional_office_ids[0]
+            except:
+                _logger.info('Cannot assign regional office')

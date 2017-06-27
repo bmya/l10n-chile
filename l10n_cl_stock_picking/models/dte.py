@@ -1,31 +1,19 @@
 # -*- coding: utf-8 -*-
-
-
 from odoo import fields, models, api, _
-from odoo.exceptions import Warning
 from odoo.exceptions import UserError
 from datetime import datetime, timedelta
 import logging
 from lxml import etree
 from lxml.etree import Element, SubElement
-from lxml import objectify
-from lxml.etree import XMLSyntaxError
-from odoo import SUPERUSER_ID
 
-import xml.dom.minidom
 import pytz
 
-
-import socket
 import collections
 
 try:
     from cStringIO import StringIO
 except:
     from StringIO import StringIO
-
-import traceback as tb
-import suds.metrics as metrics
 
 try:
     from suds.client import Client

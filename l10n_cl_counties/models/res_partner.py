@@ -32,28 +32,36 @@ from odoo import models, fields, api
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
+    def _default_country(self):
+        return self.env.ref('base.cl')
+
     city_id = fields.Many2one(
         "res.country.state.city", 'City',
-        domain="[('state_id', '=', state_id), "
-               "('type', '=', 'normal'), "
-               "('id', '!=', id)]")
+        domain="[('country_id', '=', country_id)]")
+    country_id = fields.Many2one(
+        "res.country", 'Country',
+        default=_default_country)
 
-    # @api.multi
-    # def _asign_city(self, source):
-    #     if self.city_id:
-    #         return {'value':{'city': self.city_id.name}}
+    @api.onchange('city_id')
+    def _change_city_province(self):
+        self.state_id = self.city_id.state_id.parent_id
+        self.city = self.city_id.state_id.name
+
 
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
+    def _default_country(self):
+        return self.env.ref('base.cl')
+
     city_id = fields.Many2one(
         "res.country.state.city", 'City',
-        domain="[('state_id', '=', state_id), "
-               "('type', '=', 'normal'), "
-               "('id', '!=', id)]")
+        domain="[('country_id', '=', country_id)]")
+    country_id = fields.Many2one(
+        "res.country", 'Country',
+        default=_default_country)
 
-    # @api.multi
-    # def _asign_city(self, source):
-    #     if self.city_id:
-    #         return {'value': {'city': self.city_id.name}}
-
+    @api.onchange('city_id')
+    def _change_city_province(self):
+        self.state_id = self.city_id.state_id.parent_id
+        self.city = self.city_id.state_id.name

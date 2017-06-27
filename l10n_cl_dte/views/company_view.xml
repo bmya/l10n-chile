@@ -36,9 +36,8 @@
                                attrs="{'invisible': [('dte_service_provider', 'not in', ['SII', 'SIIHOMO'])],
                                        'required':  [('dte_service_provider', 'in', ['SII', 'SIIHOMO'])]}"/>
                         <field name="sii_regional_office_id"
-                                domain="['|',
-                                ('state_ids', '=', city_id),
-                                ('name', '=', 'Grandes Contribuyentes')]"
+                                domain="[('state_ids', '=', city_id),
+                                ]"
                                attrs="{'invisible': [('dte_service_provider', 'not in', ['SII', 'SIIHOMO'])],
                                        'required':  [('dte_service_provider', 'in', ['SII', 'SIIHOMO'])]}"/>
                     </group>

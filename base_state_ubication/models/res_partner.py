@@ -36,17 +36,9 @@ class ResPartner(models.Model):
         "res.country.state", 'Ubication',
         domain="[('country_id', '=', country_id), "
                "('type', '=', 'normal'), "
-               "('id', '!=', id)]")
+               "('id', '!=', id)]",
+        readonly=True)
 
-    # @api.model
-    # def _get_default_country(self):
-    #     return self.env.user.company_id.country_id.id or \
-    #            self.env.user.partner_id.country_id.id
-
-    # _defaults ={
-    #     'country_id': lambda self,
-    #                          c: self.env['res.partner']._get_default_country()
-    # }
 
 class ResCompany(models.Model):
     _inherit = 'res.company'
@@ -55,4 +47,5 @@ class ResCompany(models.Model):
         "res.country.state", 'Ubication',
         domain="[('country_id', '=', country_id), "
                "('type', '=', 'normal'), "
-               "('id', '!=', id)]")
+               "('id', '!=', id)]",
+        readonly=True)
