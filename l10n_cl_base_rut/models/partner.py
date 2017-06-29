@@ -50,10 +50,11 @@ class res_partner(models.Model):
 
     @api.depends('document_number')
     def _compute_vat(self):
-        clean_vat = (
-            re.sub('[^1234567890Kk]', '',
-                   str(self.document_number))).zfill(9).upper()
-        self.vat = 'CL%s' % clean_vat
+        for x in self:
+            clean_vat = (
+                re.sub('[^1234567890Kk]', '',
+                       str(x.document_number))).zfill(9).upper()
+            x.vat = 'CL%s' % clean_vat
 
     def _inverse_vat(self):
         self.document_number = self.format_document_number(self.vat)

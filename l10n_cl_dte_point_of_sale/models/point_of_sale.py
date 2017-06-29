@@ -303,8 +303,9 @@ class POS(models.Model):
      @version: 2015-04-01
     '''
     def get_seed(self, company_id):
-        #En caso de que haya un problema con la validación de certificado del sii ( por una mala implementación de ellos)
-        #esto omite la validacion
+        # En caso de que haya un problema con la validación de certificado del
+        # sii ( por una mala implementación de ellos)
+        # esto omite la validacion
         try:
             import ssl
             ssl._create_default_https_context = ssl._create_unverified_context

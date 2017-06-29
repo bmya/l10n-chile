@@ -15,7 +15,7 @@
                     <attribute name="readonly">True</attribute>
                 </field>
                 <field name="city" position="attributes">
-                    <attribute name="readonly">True</attribute>
+                    <attribute name="readonly">False</attribute>
                 </field>
             </field>
         </record>
@@ -34,7 +34,7 @@
                     <attribute name="readonly">True</attribute>
                 </field>
                 <field name="city" position="attributes">
-                    <attribute name="readonly">True</attribute>
+                    <attribute name="readonly">False</attribute>
                 </field>
             </field>
         </record>
@@ -52,7 +52,7 @@
                     <attribute name="readonly">True</attribute>
                 </field>
                 <field name="city" position="attributes">
-                    <attribute name="readonly">True</attribute>
+                    <attribute name="readonly">False</attribute>
                 </field>
             </field>
         </record>

@@ -1969,6 +1969,9 @@ hacer eso en un envío')
 
     @api.multi
     def action_invoice_open(self):
+        if self.company_id.dte_service_provider in ['SII MiPyme']:
+            super(Invoice, self).action_invoice_open()
+            return
         for inv in self.with_context(lang='es_CL'):
             if inv.type[:2] == 'in':
                 continue
