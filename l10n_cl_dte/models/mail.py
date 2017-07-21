@@ -19,6 +19,6 @@ class ProcessMails(models.Model):
                         'xml_file': att.datas,
                         'filename': att.name,
                     }
-                    val = self.env['sii.dte.upload_xml.wizard'].create(vals)
-                    val.confirm()
+                    # val = self.env['sii.dte.upload_xml.wizard'].create(vals)
+                    # val.confirm()
         return mail

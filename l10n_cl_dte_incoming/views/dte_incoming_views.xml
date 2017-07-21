@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<data>
+		<!-- Base Config Settings Form View -->
+		<record id="view_sii_incoming_dte_form" model="ir.ui.view">
+			<field name="name">sii.dte.incoming.form</field>
+			<field name="model">sii.dte.incoming</field>
+			<field name="arch" type="xml">
+				<header>
+                    <field name="status" widget="statusbar"
+                           clickable="{[('type', '!=', False)]}" />
+                </header>
+                <form string="Incoming DTE">
+					<group cols="4">
+                        <field name="name"/>
+                        <field name="date_received"/>
+                        <field name="partner_id"/>
+                        <field name="type" widget="radio"/>
+                        <field name="invoice_id"/>
+                        <field name="filename"/>
+                    </group>
+                </form>
+                <form>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"
+                            widget="mail_followers" groups="base.group_user" />
+                        <field name="message_ids"
+                            widget="mail_thread" />
+                    </div>
+                </form>
+            </field>
+		</record>
+		<!-- Base Config Settings List View -->
+		<record id="view_sii_incoming_dte_tree" model="ir.ui.view">
+			<field name="name">sii.dte.incoming.tree</field>
+			<field name="model">sii.dte.incoming</field>
+			<field name="arch" type="xml">
+				<tree string="Incoming DTEs">
+                    <field name="name"/>
+                    <field name="date_received"/>
+                    <!--<field name="filename"/>-->
+                    <field name="invoice_id"/>
+                    <field name="partner_id"/>
+                    <field name="type"/>
+                    <field name="status"/>
+                </tree>
+            </field>
+		</record>
+		<!-- Base Config Settings Action -->
+		<record id="action_open_incoming_dte" model="ir.actions.act_window">
+			<field name="name">DTEs Entrantes</field>
+			<field name="type">ir.actions.act_window</field>
+			<field name="res_model">sii.dte.incoming</field>
+			<field name="view_mode">tree,form</field>
+			<!--<field name="target">inline</field>-->
+		</record>
+
+		<!-- Base Config Settings Menu -->
+		<menuitem id="menu_open_incoming_dte"
+			action="action_open_incoming_dte"
+			name="DTEs Entrantes"
+            groups="account.group_account_manager"
+            parent="account.menu_finance_entries"
+            sequence="1" />
+	</data>
+</odoo>

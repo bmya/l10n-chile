@@ -314,12 +314,12 @@ cast(a.no_rec_code as integer) else
 (case when a.no_rec = '1' then 1
 else 0 end)
 end) as "CodIVANoRec",
-cast(round((case when a.no_rec_code != '0' then
+round((case when a.no_rec_code != '0' then
 tax_amount
 else
 (case when a.no_rec = '1' then tax_amount
 else 0 end)
-end), 0) as integer) as "MntIVANoRec",
+end), 2) as "MntIVANoRec",
 round((case when iva_uso_comun then
 tax_amount
 else 0 end), 2) as "IVAUsoComun",
@@ -517,7 +517,7 @@ round(sum("IVARetTotal"), 0) as "IVARetTotal",
 sum("IVARetParcial") as "IVARetParcial",
 max("IVANoRec") as "IVANoRec",
 max("CodIVANoRec") as "CodIVANoRec",
-sum("MntIVANoRec") as "MntIVANoRec",
+round(sum("MntIVANoRec"), 0) as "MntIVANoRec",
 round(sum("IVAUsoComun"), 0) as "IVAUsoComun",
 sum("MntSinCred") as "MntSinCred",
 max("MntTotal") as "MntTotal",
@@ -530,7 +530,7 @@ group by "TpoDoc", "NroDoc",
 "TpoDocRef", "FolioDocRef"
 order by "TpoDoc", "NroDoc"
         """ % (self.line_tax_view(), ', '.join(account_invoice_ids))
-        # raise UserError(a)
+        raise UserError(a)
         return a
 
     def _record_totals(self, jvalue):
@@ -630,6 +630,7 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
 <TipoLibro>{}</TipoLibro>\
 <TipoEnvio>{}</TipoEnvio>\
 <FolioNotificacion>{}</FolioNotificacion>\
+<CodAutRec>{}</CodAutRec>\
 </Caratula>{}{}<TmstFirma>{}</TmstFirma></EnvioLibro>""".format(
                 self.name.replace(' ', '_'),
                 inv_obj.format_vat(self.company_id.vat),
@@ -641,9 +642,10 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
                 self.tipo_libro,
                 self.tipo_envio,
                 self.folio_notificacion or '',
-                xml_detail1, xml_detail2,
-                inv_obj.time_stamp(),
-            ).replace('<FolioNotificacion></FolioNotificacion>', '', 1)
+                self.codigo_rectificacion or '',
+                xml_detail1, xml_detail2, inv_obj.time_stamp()).replace(
+                '<FolioNotificacion></FolioNotificacion>', '', 1).replace(
+                '<CodAutRec></CodAutRec>', '', 1)
             _logger.info(xml_envio_libro)
             xml1 = xml.dom.minidom.parseString(xml_envio_libro)
             xml_pret = xml1.toprettyxml()
