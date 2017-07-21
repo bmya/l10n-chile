@@ -21,7 +21,7 @@ class InvoiceAdditional(models.Model):
     '''
     invoice_id = fields.Many2one(
         'account.invoice', 'Invoice',
-        required=True, ondelete='cascade', select=True, readonly=True)
+        required=True, ondelete='cascade', readonly=True)
     name = fields.Char(
         'Additional Node', required=True, readonly=False,
         help='Additional description')

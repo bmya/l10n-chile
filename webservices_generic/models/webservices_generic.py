@@ -195,7 +195,6 @@ class ws_srv_users(models.Model):
         'User ID',
         )
     ws_server_id = fields.Many2one(
-        'webservices.server', 'Webservices Server', select=True,
-        ondelete='cascade')
+        'webservices.server', 'Webservices Server', ondelete='cascade')
     user_id = fields.Many2one(
-        'res.users', 'User', select=True, ondelete='cascade')
+        'res.users', 'User', ondelete='cascade')
