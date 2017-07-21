@@ -6,6 +6,7 @@ from odoo.tools.float_utils import float_compare, float_round
 import logging
 _logger = logging.getLogger(__name__)
 
+
 class StockPicking(models.Model):
     _inherit = "stock.picking"
 
@@ -59,14 +60,11 @@ class StockPicking(models.Model):
             self.amount_total = self.amount_untaxed + self.amount_tax
 
     amount_untaxed = fields.Monetary(
-        compute='_compute_amount', digits_compute=dp.get_precision('Account'),
-        string='Untaxed Amount')
+        compute='_compute_amount', string='Untaxed Amount')
     amount_tax = fields.Monetary(
-        compute='_compute_amount', digits_compute=dp.get_precision('Account'),
-        string='Taxes')
+        compute='_compute_amount', string='Taxes')
     amount_total = fields.Monetary(
-        compute='_compute_amount', digits_compute=dp.get_precision('Account'),
-        string='Total')
+        compute='_compute_amount', string='Total')
     currency_id = fields.Many2one(
         'res.currency', string='Currency',
         required=True, readonly=True, states={'draft': [('readonly', False)]},
@@ -425,8 +423,8 @@ class StockPackOperation(models.Model):
                     rec.discount = l.discount
                     rec.operation_line_tax_ids = l.move_line_tax_ids
             if not rec.price_unit > 0 or not rec.name:
-            	if not rec.name:
-            		rec.name = rec.product_id.name
+                if not rec.name:
+                    rec.name = rec.product_id.name
                 rec.price_unit = rec.product_id.lst_price
                 rec.operation_line_tax_ids = rec.product_id.taxes_id
                 # @TODO mejorar asignación
@@ -434,22 +432,16 @@ class StockPackOperation(models.Model):
     name = fields.Char(string="Nombre")
 
     subtotal = fields.Monetary(
-        compute='_compute_amount', digits_compute=dp.get_precision('Account'),
-        string='Subtotal')
-    price_unit = fields.Monetary(
-        digits_compute=dp.get_precision('Product Price'), string='Price')
-    price_untaxed = fields.Monetary(
-        digits_compute=dp.get_precision('Product Price'),
-        string='Price Untaxed')
+        compute='_compute_amount', string='Subtotal')
+    price_unit = fields.Monetary(string='Price')
+    price_untaxed = fields.Monetary(string='Price Untaxed')
 
     operation_line_tax_ids = fields.Many2many('account.tax',
         'operation_line_tax', 'operation_line_id', 'tax_id',
             string='Taxes', domain=[
             ('type_tax_use', '!=', 'none'), '|', ('active', '=', False),
             ('active', '=', True)], oldname='invoice_line_tax_id')
-    discount = fields.Monetary(
-        digits_compute=dp.get_precision('Discount'),
-        string='Discount (%)')
+    discount = fields.Monetary(string='Discount (%)')
 
     currency_id = fields.Many2one(
         'res.currency', string='Currency',
@@ -526,25 +518,18 @@ class StockMove(models.Model):
     name = fields.Char(string="Nombre")
 
     subtotal = fields.Monetary(
-        compute='_compute_amount',
-        digits_compute=dp.get_precision('Product Price'),
-        string='Subtotal')
+        compute='_compute_amount', string='Subtotal')
 
-    price_unit = fields.Monetary(
-        digits_compute=dp.get_precision('Product Price'),
-        string='Price')
+    price_unit = fields.Monetary(string='Price')
     price_untaxed = fields.Monetary(
-        compute='_sale_prices',
-        digits_compute=dp.get_precision('Product Price'),
-        string='Price Untaxed')
+        compute='_sale_prices', string='Price Untaxed')
     move_line_tax_ids = fields.Many2many(
         'account.tax', 'move_line_tax_ids', 'move_line_id', 'tax_id',
         string='Taxes',
         domain=[('type_tax_use', '!=', 'none'),
                 '|', ('active', '=', False), ('active', '=', True)],
         oldname='invoice_line_tax_id')
-    discount = fields.Monetary(
-        digits_compute=dp.get_precision('Discount'), string='Discount (%)')
+    discount = fields.Monetary(string='Discount (%)')
     currency_id = fields.Many2one(
         'res.currency', string='Currency',
         required=True, readonly=True, states={'draft': [('readonly', False)]},
