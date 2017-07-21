@@ -530,7 +530,7 @@ group by "TpoDoc", "NroDoc",
 "TpoDocRef", "FolioDocRef"
 order by "TpoDoc", "NroDoc"
         """ % (self.line_tax_view(), ', '.join(account_invoice_ids))
-        raise UserError(a)
+        # raise UserError(a)
         return a
 
     def _record_totals(self, jvalue):
