@@ -127,13 +127,12 @@ xmldsig#}Reference/{http://www.w3.org/2000/09/xmldsig#}DigestValue").text:
 
     def _validar_caratula(self, cara):
         if not self.env['res.company'].search([
-                ('vat','=', self.format_native_vat(cara['RutReceptor']))
-            ]):
+                ('vat', '=', self.format_native_vat(cara['RutReceptor']))]):
             return 3, 'Rut no corresponde a nuestra empresa'
         partner_id = self.env['res.partner'].search([
-        ('active','=', True),
+        ('active', '=', True),
         ('parent_id', '=', False),
-        ('vat','=', self.format_native_vat(cara['RutEmisor']))])
+        ('vat', '=', self.format_native_vat(cara['RutEmisor']))])
         if not partner_id and not self.inv:
             return 2, 'Rut no coincide con los registros'
         try:

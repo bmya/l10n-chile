@@ -28,10 +28,11 @@ class IncomingDTE(models.Model):
 
     @staticmethod
     def _get_xml_content(datas):
-        return base64.b64decode(datas)
+        return base64.b64decode(datas).decode('ISO-8859-1').replace(
+            '<?xml version="1.0" encoding="ISO-8859-1"?>', '')
 
     @api.onchange('name')
-    def _analyze_msg(self):
+    def analyze_msg(self):
         # inspecciono los mensajes asociados
         for message_id in self.message_ids:
             if message_id.message_type == 'email':
@@ -42,9 +43,25 @@ class IncomingDTE(models.Model):
                         if attachment_id.mimetype in [
                             'text/plain'] and \
                                 attachment_id.name.lower().find('.xml'):
-                            _logger.info('y es un xml! $$$$$$$$$$$$!!!!!')
+                            _logger.info('El adjunto es un XML')
                             xml = self._get_xml_content(attachment_id.datas)
-                            _logger.info(xml)
+                            if not pysiidte.check_digest(xml):
+                                _logger.info(u'Error de firma en envío')
+                                return False
+                            soup = bs(xml, 'xml')
+                            for sending in soup.find_all('SetDTE'):
+                                # _logger.info(sending)
+                                dte_qty = 0
+                                for docs in sending.find_all('DTE'):
+                                    dte_qty += 1
+                                    if not self._check_digest(docs):
+                                        _logger.info(u'Error de firma en uno \
+                                        de los documentos')
+                                        return False
+
+
+                            # aca tengo que investigar que tipo de xml es
+
         """
         # val = self.env['sii.dte.upload_xml.wizard'].create(vals)
         # val.confirm()

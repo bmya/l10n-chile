@@ -7,6 +7,10 @@
 			<field name="model">sii.dte.incoming</field>
 			<field name="arch" type="xml">
 				<header>
+                    <button type="object" name="analyze_msg"
+                            string="Analyze Message"
+                            help="Inspect Attachment"
+                            icon="fa-file-o"/>
                     <field name="status" widget="statusbar"
                            clickable="{[('type', '!=', False)]}" />
                 </header>
