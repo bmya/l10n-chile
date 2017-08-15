@@ -59,6 +59,11 @@ Include unusual taxes documents, as transfer invoice, and reissue
         journal_ids = context.get('active_ids', False)
         wizard = self.browse()
         # self.create_journals(journal_ids, wizard)
+        _logger.info('Dentro de confirmar')
+        _logger.info('*********************')
+        _logger.info(wizard)
+        _logger.info(journal_ids)
+        _logger.info('*********************')
         self.create_journals(journal_ids)
 
     def create_journals(self, journal_ids):
@@ -74,7 +79,7 @@ set your company responsability in the company partner before continue.'))
             elif journal_type in ['purchase', 'purchase_refund']:
                 letter_ids = [x.id for x in responsability.received_letter_ids]
             if journal_type == 'sale':
-                for doc_type in ['invoice', 'debit_note']:
+                for doc_type in ['invoice', 'debit_note','credit_note']:
                     self.create_journal_document(
                         letter_ids, doc_type, journal.id)
             elif journal_type == 'purchase':
