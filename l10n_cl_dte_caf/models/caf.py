@@ -126,11 +126,9 @@ Authorization Interval!') % (self.sequence_id.number_next_actual,
 class SequenceCaf(models.Model):
     _inherit = "ir.sequence"
 
-    @api.model
+    @api.multi
     def _check_dte(self):
         for r in self:
-            if not r.is_dte:
-                return
             obj = r.env['account.journal.sii_document_class'].search(
                 [('sequence_id', '=', r.id)])
             if not obj:  # si s guía de despacho
