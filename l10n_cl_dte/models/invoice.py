@@ -1175,7 +1175,7 @@ realizar en su documento.""")
                     if t.tax_id.sii_code in [14, 15]:
                         IVA = t
                 if IVA and IVA.base > 0:
-                    totals['MntNeto'] = int(round((IVA.base), 0))
+                    totals['MntNeto'] = int(round(IVA.base, 0))
             if MntExe > 0:
                 self.mnt_exe = totals['MntExe'] = int(round(MntExe, 0))
             if not self.is_doc_type_b() or not tax_include:
