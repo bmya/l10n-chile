@@ -91,8 +91,7 @@ xmldsig#}Reference/{http://www.w3.org/2000/09/xmldsig#}DigestValue").text:
         # {http://www.w3.org/2000/09/xmldsig#}Reference/
         # {http://www.w3.org/2000/09/xmldsig#}DigestValue").text
         for e in envio.findall("{http://www.sii.cl/SiiDte}DTE"):
-            string = etree.tostring(
-                e.find("{http://www.sii.cl/SiiDte}Documento"))#doc
+            string = etree.tostring(e.find("{http://www.sii.cl/SiiDte}Documento"))#doc
             mess = etree.tostring(
                 etree.fromstring(string), method="c14n").replace(
                 ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"', '')
