@@ -193,10 +193,19 @@ class AccountInvoice(models.Model):
         return tax_grouped
 
     def get_document_class_default(self, document_classes):
+        _logger.info(
+            'get_document_class_default - self.turn_issuer: %s' % \
+            self.turn_issuer)
+        _logger.info(
+            'get_document_class_default - self.turn_issuer.vat_affected: %s' \
+            % self.turn_issuer.vat_affected)
         if self.turn_issuer.vat_affected not in ['SI', 'ND']:
             exempt_ids = [
                 self.env.ref('l10n_cl_invoice.dc_y_f_dtn').id,
                 self.env.ref('l10n_cl_invoice.dc_y_f_dte').id]
+
+            _logger.info(
+                'get_document_class_default - exempt_ids: %s' % exempt_ids)
             for document_class in document_classes:
                 if document_class.sii_document_class_id.id in exempt_ids:
                     document_class_id = document_class.id

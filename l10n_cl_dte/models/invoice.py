@@ -1745,6 +1745,7 @@ hacer eso en un envío')
         for inv in self:
             inv.sii_result = pysiidte.analyze_sii_result(
                 inv.sii_result, inv.sii_message, inv.sii_receipt)
+            _logger.info('do_dte_send - sii_result: %s' % inv.sii_result)
             if inv.sii_result == 'Aceptado':
                 # inv.send_to_recipient(
                 #     RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
