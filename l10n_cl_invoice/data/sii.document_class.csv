@@ -8,8 +8,8 @@ dc_l_f_dtn,True,dl_l,40,False,FAL ,invoice,L-FACTURAM ,Liquidación Factura,LFM
 dc_l_f_dte,True,dl_l,43,True,FAL ,invoice,L-FACTURAE ,Liquidación Factura Electrónica,LFE
 dc_fc_f_dtn,True,dl_a,45,False,FAC ,invoice_in,FACTURA ,Factura de Compra,FCA
 dc_fc_f_dte,True,dl_a,46,True,FAC ,invoice_in,FACTURA ,Factura de Compra Electrónica,FCA
-dc_nd_f_dtn,True,dl_a,55,False,N/D ,debit_note,NOTA DE DEBITO ,Nota de Débito,NDA
-dc_nd_f_dte,True,dl_a,56,True,N/D ,debit_note,NOTA DE DEBITO ,Nota de Débito Electrónica,NDA
+dc_nd_f_dtn,True,dl_a,55,False,N/D ,invoice,NOTA DE DEBITO ,Nota de Débito,NDA
+dc_nd_f_dte,True,dl_a,56,True,N/D ,invoice,NOTA DE DEBITO ,Nota de Débito Electrónica,NDA
 dc_nc_f_dtn,True,dl_a,60,False,N/C ,credit_note,NOTA DE CREDITO ,Nota de Crédito,NCA
 dc_nc_f_dte,True,dl_a,61,True,N/C ,credit_note,NOTA DE CREDITO ,Nota de Crédito Electrónica,NCA
 dc_s_f_dtn,True,dl_s,108,False,REG ,,SOL REGISTRO ,SRF Solicitud de Registro de Factura,SRF

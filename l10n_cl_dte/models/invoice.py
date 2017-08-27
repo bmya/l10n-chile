@@ -790,35 +790,6 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"'
         return datetime.now(tz).strftime(format)
 
     @staticmethod
-    def convert_encoding(data, new_coding='UTF-8'):
-        """
-        Funcion auxiliar para conversion de codificacion de strings
-        proyecto experimentos_dte
-        @author: Daniel Blanco Martin (daniel[at]blancomartin.cl)
-        @version: 2014-12-01
-        """
-        try:
-            encoding = cchardet.detect(data)['encoding']
-            _logger.info('Encoding:')
-            _logger.info(encoding)
-        except:
-            encoding = 'ascii'
-        if new_coding.upper() != encoding.upper():
-            try:
-                data = data.decode(encoding=encoding, errors='ignore')
-            except:
-                try:
-                    data = data.decode(encoding='UTF-8', errors='ignore')
-                except:
-                    try:
-                        data = data.decode(
-                            encoding='ISO-8859-9', errors='replace')
-                    except:
-                        pass
-            data = data.encode(encoding=new_coding, errors='ignore')
-        return data
-
-    @staticmethod
     def set_folio(inv, folio):
         """
         Funcion para actualizar el folio tomando el valor devuelto por el
@@ -1175,7 +1146,7 @@ realizar en su documento.""")
                     if t.tax_id.sii_code in [14, 15]:
                         IVA = t
                 if IVA and IVA.base > 0:
-                    totals['MntNeto'] = int(round((IVA.base), 0))
+                    totals['MntNeto'] = int(round(IVA.base, 0))
             if MntExe > 0:
                 self.mnt_exe = totals['MntExe'] = int(round(MntExe, 0))
             if not self.is_doc_type_b() or not tax_include:
@@ -1403,7 +1374,7 @@ signature.'''))
             '</' + tpo_dte + '_ID>', '</' + tpo_dte + '>')
         xml_pret = pysiidte.remove_plurals_xml(xml_pret).replace(
             '<IndExeDR>0</IndExeDR>', '')
-        envelope_efact = self.convert_encoding(xml_pret, 'ISO-8859-1')
+        envelope_efact = pysiidte.convert_encoding(xml_pret, 'ISO-8859-1')
         envelope_efact = pysiidte.create_template_doc(envelope_efact)
         _logger.info('envelope_efact: {}'.format(envelope_efact))
         type = 'bol' if self.is_doc_type_b() else 'doc'

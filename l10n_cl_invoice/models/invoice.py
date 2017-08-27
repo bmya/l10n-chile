@@ -2,6 +2,7 @@
 from odoo import osv, models, fields, api, _
 from odoo.exceptions import except_orm, UserError
 import json
+import logging
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -348,11 +349,14 @@ class AccountInvoice(models.Model):
                 # If document_type in context we try to serch specific document
                 # domain modificado
                 document_type = self._context.get('document_type', False)
+                _logger.info("_get_available_journal_document_class: document_type: %s"%document_type)
                 if document_type:
                     document_classes = self.env[
                         'account.journal.sii_document_class'].search(
                         domain + [('sii_document_class_id.document_type',
                                    '=', document_type)])
+                    _logger.info("_get_available_journal_document_class:")
+                    _logger.info(document_classes)
                     if document_classes.ids:
                         # revisar si hay condicion de exento, para poner como
                         # primera alternativa estos
@@ -365,6 +369,8 @@ class AccountInvoice(models.Model):
                 # raise UserError(json.dumps(domain))
                 document_classes = self.env[
                     'account.journal.sii_document_class'].search(domain)
+                _logger.info("_get_available_journal_document_class: document_classes")
+                _logger.info(document_classes)
                 document_class_ids = document_classes.ids
                 # If not specific document type found, we choose another one
                 if not document_class_id and document_class_ids:
@@ -660,6 +666,16 @@ facturas o facturas no afectas')
                             invoice.reference, invoice.partner_id.name))
         return self.write({'state': 'open'})
 
+    @api.multi
+    @api.returns('self')
+    def refund_overwrite(self, date_invoice=None, date=None, description=None, journal_id=None):
+        new_invoices = self.browse()
+        for invoice in self:
+            # create the new invoice
+            values = self._prepare_refund(invoice, date_invoice=date_invoice, date=date,
+                                    description=description, journal_id=journal_id)
+            new_invoices += self.create(values)
+        return new_invoices
 
 class Referencias(models.Model):
     _name = 'account.invoice.referencias'

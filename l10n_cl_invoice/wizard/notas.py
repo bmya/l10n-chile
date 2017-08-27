@@ -2,7 +2,10 @@
 from odoo import models, fields, api, _
 from odoo.tools.safe_eval import safe_eval as eval
 from odoo.exceptions import UserError
+import logging
 
+
+_logger = logging.getLogger(__name__)
 
 class AccountInvoiceRefund(models.TransientModel):
     """Refunds invoice"""
@@ -11,7 +14,7 @@ class AccountInvoiceRefund(models.TransientModel):
 
     tipo_nota = fields.Many2one(
         'sii.document_class', string="Tipo De nota", required=True,
-        domain=[('document_type', 'in', ['debit_note', 'credit_note']),
+        domain=[('sii_code', 'in', ['56', '61']),
                 ('dte', '=', True)])
     filter_refund = fields.Selection([
                 ('1', 'Anula Documento de Referencia'),
@@ -53,6 +56,7 @@ invoice should be unreconciled first. You can only refund this invoice.'))
                          'account_id', 'currency_id', 'invoice_line_ids',
                          'journal_id', 'date'])
                     invoice = invoice[0]
+                    
                     del invoice['id']
                     prod = self.env['product.product'].search(
                         [('product_tmpl_id', '=', self.env.ref(
@@ -76,22 +80,33 @@ invoice should be unreconciled first. You can only refund this invoice.'))
                         if refund.payment_term_id.id:
                             refund._onchange_payment_term_date_invoice()
                 elif mode in ['1', '3']:
-                    refund = inv.refund(
+                    if tipo_nota.sii_code == 56:
+                        inv.type = 'out_refund'
+                    refund = inv.refund_overwrite(
                         form.date_invoice, date, description, inv.journal_id.id)
                     refund.compute_taxes()
                 type = inv.type
-                if inv.type in ['out_invoice', 'out_refund']:
+                _logger.info('type: %s'%inv.type)
+                if inv.type in ['out_invoice'] and tipo_nota.sii_code == 61:
                     refund.type = 'out_refund'
+                elif inv.type in ['out_invoice'] and tipo_nota.sii_code == 56:
+                    refund.type = 'out_invoice'
+                elif inv.type in ['out_refund']:
+                    refund.type = 'out_invoice'
                 elif inv.type in ['in_invoice', 'in_refund']:
                     refund.type = 'in_refund'
-                # refund._get_available_journal_document_class(tipo_nota.id)
-                refund._get_available_journal_document_class()
+                    
                 created_inv.append(refund.id)
-                refund.update({
-                    'turn_issuer': inv.turn_issuer.id,})
+                document_type = self.env['account.journal.sii_document_class'].search([
+                    ('sii_document_class_id.sii_code','=', self.tipo_nota.sii_code),
+                    ('journal_id','=', inv.journal_id.id)
+                    ],limit=1)
                 if inv.type in ['out_invoice', 'out_refund']:
                     refund.update(
-                        {'referencias': [[5, ], [0, 0, {
+                        {
+                        'journal_document_class_id': document_type.id,
+                        'turn_issuer': inv.turn_issuer.id,
+                        'referencias': [[5, ], [0, 0, {
                             'origen': int(inv.sii_document_number),
                             'sii_referencia_TpoDocRef':
                                 inv.sii_document_class_id.id,
@@ -112,3 +127,4 @@ invoice should be unreconciled first. You can only refund this invoice.'))
             result['domain'] = invoice_domain
             return result
         return True
+    

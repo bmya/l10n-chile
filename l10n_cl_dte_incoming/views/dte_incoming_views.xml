@@ -1,30 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-	<data>
-		<!-- Base Config Settings Form View -->
-		<record id="view_sii_incoming_dte_form" model="ir.ui.view">
+    <data>
+        <record id="view_sii_incoming_dte_form" model="ir.ui.view">
 			<field name="name">sii.dte.incoming.form</field>
 			<field name="model">sii.dte.incoming</field>
 			<field name="arch" type="xml">
-				<header>
-                    <button type="object" name="analyze_msg"
+                <form string="Incoming DTE">
+                    <header>
+                        <button type="object" name="analyze_msg"
                             string="Analyze Message"
                             help="Inspect Attachment"
                             icon="fa-file-o"/>
-                    <field name="status" widget="statusbar"
-                           clickable="{[('type', '!=', False)]}" />
-                </header>
-                <form string="Incoming DTE">
-					<group cols="4">
-                        <field name="name"/>
-                        <field name="date_received"/>
-                        <field name="partner_id"/>
-                        <field name="type" widget="radio"/>
-                        <field name="invoice_id"/>
-                        <field name="filename"/>
-                    </group>
-                </form>
-                <form>
+                        <field name="status" widget="statusbar"/>
+                    </header>
+                    <sheet>
+                        <group cols="4">
+                            <field name="name"/>
+                            <field name="date_received"/>
+                            <field name="partner_id"/>
+                            <field name="type" widget="radio"/>
+                            <field name="invoice_id"/>
+                            <field name="filename"/>
+                        </group>
+                    </sheet>
                     <div class="oe_chatter">
                         <field name="message_follower_ids"
                             widget="mail_followers" groups="base.group_user" />
@@ -33,13 +31,18 @@
                     </div>
                 </form>
             </field>
-		</record>
+        </record>
 		<!-- Base Config Settings List View -->
 		<record id="view_sii_incoming_dte_tree" model="ir.ui.view">
 			<field name="name">sii.dte.incoming.tree</field>
 			<field name="model">sii.dte.incoming</field>
 			<field name="arch" type="xml">
-				<tree string="Incoming DTEs">
+				<tree string="Incoming DTEs"
+                      colors="blue:status=='new';
+                        blue:check_envelope_status in ('in_envelope');
+                        orchid:check_envelope_status in ('in_envelope_wrong');
+                        orchid:check_doc_status in ('in_envelope_wrong');
+                        #084B8A:type=='in_dte';">
                     <field name="name"/>
                     <field name="date_received"/>
                     <!--<field name="filename"/>-->
@@ -47,6 +50,23 @@
                     <field name="partner_id"/>
                     <field name="type"/>
                     <field name="status"/>
+                    <field name="check_envelope_status"/>
+                    <field name="check_doc_status"/>
+                    <button type="object" name="analyze_msg"
+                            help="Dar Acuse de Recibo"
+                            icon="fa-check"
+                            attrs="{'invisible': [('type', '!=' ,'in_dte')]}"/>
+                    <button type="object" name="analyze_msg"
+                            help="Dar Acuse de Recibo de Mercadería"
+                            icon="fa-truck"
+                            attrs="{'invisible': [('type', '!=' ,'in_dte')]}"/>
+                    <button type="object" name="analyze_msg"
+                            help="Dar Aceptación Comercial"
+                            icon="fa-usd"
+                            attrs="{'invisible': [('type', '!=' ,'in_dte')]}"/>
+                    <button type="object" name="analyze_msg"
+                            help="Enlazar"
+                            icon="fa-link"/>
                 </tree>
             </field>
 		</record>
@@ -66,5 +86,5 @@
             groups="account.group_account_manager"
             parent="account.menu_finance_entries"
             sequence="1" />
-	</data>
+    </data>
 </odoo>
