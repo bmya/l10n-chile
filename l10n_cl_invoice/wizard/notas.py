@@ -95,14 +95,18 @@ invoice should be unreconciled first. You can only refund this invoice.'))
                     refund.type = 'out_invoice'
                 elif inv.type in ['in_invoice', 'in_refund']:
                     refund.type = 'in_refund'
-                # refund._get_available_journal_document_class(tipo_nota.id)
-                refund._get_available_journal_document_class()
+                    
                 created_inv.append(refund.id)
-                refund.update({
-                    'turn_issuer': inv.turn_issuer.id,})
+                document_type = self.env['account.journal.sii_document_class'].search([
+                    ('sii_document_class_id.sii_code','=', self.tipo_nota.sii_code),
+                    ('journal_id','=', inv.journal_id.id)
+                    ],limit=1)
                 if inv.type in ['out_invoice', 'out_refund']:
                     refund.update(
-                        {'referencias': [[5, ], [0, 0, {
+                        {
+                        'journal_document_class_id': document_type.id,
+                        'turn_issuer': inv.turn_issuer.id,
+                        'referencias': [[5, ], [0, 0, {
                             'origen': int(inv.sii_document_number),
                             'sii_referencia_TpoDocRef':
                                 inv.sii_document_class_id.id,
