@@ -1511,7 +1511,7 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
     # def send_envelope_sii(self):
     #     pass
 
-    def save_xml_knowledge(self, result, envio_dte, file_name):
+    def save_xml_knowledge(self, envio_dte, file_name):
         attachment_obj = self.env['ir.attachment']
         _logger.info('Attachment')
         for inv in self:
@@ -1572,11 +1572,11 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
                 envio_dte = self.create_template_env(dtes)
             envio_dte = self.sign_full_xml(
                 envio_dte, signature_d['priv_key'], certp, 'BMyA_Odoo_SetDoc', env)
-            result = self.send_xml_file(envio_dte, file_name, company_id)
+            #result = self.send_xml_file(envio_dte, file_name, company_id)
             _logger.info('fin de preparacion y envio sii')
             for inv in self:
-                inv.save_xml_knowledge(result, envio_dte, file_name)
                 inv.get_pdf_docsonline(envio_dte)
+                inv.save_xml_knowledge(envio_dte, file_name)
         else:
             pass
         return self.get_pdf_file()
@@ -1742,18 +1742,19 @@ hacer eso en un envío')
             envelope = self.send_envelope_sii(
                 RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
                 file_name, company_id, certp)
-        for inv in self:
-            inv.sii_result = pysiidte.analyze_sii_result(
-                inv.sii_result, inv.sii_message, inv.sii_receipt)
-            _logger.info('do_dte_send - sii_result: %s' % inv.sii_result)
-            if inv.sii_result == 'Aceptado':
+            _logger.info('do_dte_send - envelope: %s' % envelope)
+        #for inv in self:
+            #inv.sii_result = pysiidte.analyze_sii_result(
+            #    inv.sii_result, inv.sii_message, inv.sii_receipt)
+            #_logger.info('do_dte_send - sii_result: %s' % inv.sii_result)
+            #if inv.sii_result == 'Aceptado':
                 # inv.send_to_recipient(
                 #     RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
                 #     is_doc_type_b, file_name, company_id, certp)
-                inv.send_envelope_recipient(
-                    RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
-                    is_doc_type_b, file_name, company_id, certp)
-                inv.get_pdf_docsonline()
+            #    inv.send_envelope_recipient(
+            #        RUTEmisor, resol_data, documentos, signature_d, SubTotDTE,
+            #        is_doc_type_b, file_name, company_id, certp)
+        #    inv.get_pdf_docsonline()
         return envelope
 
     @api.multi
