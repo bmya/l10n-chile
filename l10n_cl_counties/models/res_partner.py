@@ -42,7 +42,7 @@ class ResPartner(models.Model):
         "res.country", 'Country',
         default=_default_country)
 
-    @api.onchange('city_id')
+    @api.onchange('city_id', 'city', 'state_id')
     def _change_city_province(self):
         self.state_id = self.city_id.state_id.parent_id
         if self.state_id == self.env.ref('l10n_cl_counties.CL13'):
@@ -64,7 +64,7 @@ class ResCompany(models.Model):
         "res.country", 'Country',
         default=_default_country)
 
-    @api.onchange('city_id')
+    @api.onchange('city_id', 'city', 'state_id')
     def _change_city_province(self):
         self.state_id = self.city_id.state_id.parent_id
         if self.state_id == self.env.ref('l10n_cl_counties.CL13'):
