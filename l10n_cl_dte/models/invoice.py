@@ -1575,8 +1575,8 @@ respuesta satisfactoria por conexión ni de respuesta previa.')
             #result = self.send_xml_file(envio_dte, file_name, company_id)
             _logger.info('fin de preparacion y envio sii')
             for inv in self:
-                inv.get_pdf_docsonline(envio_dte)
                 inv.save_xml_knowledge(envio_dte, file_name)
+                inv.get_pdf_docsonline(envio_dte)
         else:
             pass
         return self.get_pdf_file()
