@@ -33,7 +33,8 @@ Allows to ask for tax payers data
         'l10n_cl_dte',
     ],
     'data': [
-        'data/ir.config_parameter.csv',
+        'data/ir.config_parameter.xml',
+        'views/partner_view.xml',
     ],
     'installable': True,
     'auto_install': False,

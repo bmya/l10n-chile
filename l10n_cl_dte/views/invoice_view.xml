@@ -19,9 +19,7 @@
             <field name="inherit_id" ref="account.invoice_tree"/>
             <field name="arch" type="xml">
                 <field name="state" position="after">
-                    <field name="sii_result"
-                           attrs="{'invisible':[
-                            ('state', 'in', ['draft'])]}"/>
+                    <field name="sii_result"/>
                     <button type="object" name="ask_for_dte_status"
                             help="Consultar Estado de envío de DTE"
                             icon="fa-caret-square-o-down"
