@@ -14,7 +14,7 @@
         'l10n_cl_counties',
         'l10n_cl_invoice',
         'l10n_cl_dte',
-        'sale_automatic_workflow',
+        # 'sale_automatic_workflow',
         ],
     'external_dependencies': {
         'python': [
@@ -35,6 +35,7 @@
     },
     'data': [
         'views/dte_incoming_views.xml',
+        'views/sale_order_view.xml',
     ],
     'installable': True,
     'auto_install': False,

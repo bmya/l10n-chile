@@ -42,7 +42,7 @@
                             <field name="purchase_order_id" attrs="{'readonly': True}"/>
                             <field name="invoice_id" attrs="{'readonly': True}"/>
                             <field name="filename" attrs="{'readonly': True}"/>
-                            <field name="payment" attrs="{'readonly': True}"/>
+                            <field name="payment" attrs="{'readonly': False}"/>
                         </group>
                         <notebook attrs="{'invisible': [('type', '=', 'out_dte')]}">
                             <page string="Mercadería">

@@ -4,3 +4,5 @@
 # directory
 ##############################################################################
 from . import dte_incoming
+from . import sale_order
+from . import invoice
