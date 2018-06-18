@@ -57,20 +57,18 @@ class IncomingDTE(models.Model):
     def get_product_id(self, product_obj, default_code):
         try:
             product = product_obj.search(
-                [('default_code', '=', default_code)])[0]
+                [('default_code', '=', default_code)])[0].id
             return product
         except IndexError:
             raise UserError(
                 'El producto %s no existe en el sistema' % default_code)
 
-    def format_sale_order(self, saorder_obj, partner_id, detail, warehouse_id, dte_type, document_number, payment):
+    def format_sale_order(self, saorder_obj, partner_id, detail, warehouse_id):
         order_dict = {
             'partner_id': partner_id.id,
             'origin': 'idn',
             'warehouse_id': warehouse_id.id,
-            'payment': payment,
-            'document_type': dte_type,
-            'document_number': document_number, }
+        }
         product_obj = self.env['product.product']
         lines = [(5, )]
         for product_line in detail:
@@ -78,10 +76,9 @@ class IncomingDTE(models.Model):
             name_code = product_line.NmbItem.text.split(' ')
             line = {
                 'product_id': self.get_product_id(
-                    product_obj, name_code[0]).id,
+                    product_obj, name_code[0]),
                 'name': ' '.join(name_code[:1]),
                 'product_uom_qty': product_line.QtyItem.text,
-                'qty_to_invoice': product_line.QtyItem.text,
                 'price_unit': product_line.PrcItem.text
             }
             _logger.info(line)
@@ -99,47 +96,6 @@ class IncomingDTE(models.Model):
         _logger.info(orden_creada)
         return order_new
 
-    def get_product_account(self, product_id):
-        if product_id.property_account_income_id:
-            return product_id.property_account_income_id.id
-        else:
-            return product_id.categ_id.property_account_income_categ_id.id
-
-    def format_invoice(self, invoice_obj, order_id, partner_id, detail, dte_type, document_number, payment):
-        invoice_dict = {
-            'partner_id': partner_id.id,
-            'origin': order_id.name,
-            'payment': payment,
-            'document_type': dte_type,
-            'document_number': document_number, }
-        product_obj = self.env['product.product']
-        lines = [(5, )]
-        for product_line in detail:
-            _logger.info('product_line: %s' % product_line)
-            name_code = product_line.NmbItem.text.split(' ')
-            product_id = self.get_product_id(product_obj, name_code[0])
-            line = {
-                'product_id': product_id.id,
-                'name': ' '.join(name_code[:1]),
-                'quantity': float(product_line.QtyItem.text),
-                'account_id': self.get_product_account(product_id),
-                'price_unit': product_line.PrcItem.text
-            }
-            _logger.info(line)
-            lines.append((0, 0, line))
-        invoice_dict['invoice_line_ids'] = lines
-        _logger.info('invo dictionary: %s' % invoice_dict)
-        invoice_new = invoice_obj.create(invoice_dict)
-        _logger.info('DTE Creada: %s' % invoice_new.id)
-        invoice_creada = {
-            'order_id': invoice_new.id,
-            'order_name': invoice_new.name,
-            'status': invoice_new.state,
-            'origin': invoice_new.origin
-        }
-        _logger.info(invoice_creada)
-        return invoice_new
-
     def _choose_warehouse(self):
         warehouse_name = self.name.split(' ')[0]
         stock_wh_obj = self.env['stock.warehouse']
@@ -148,55 +104,11 @@ class IncomingDTE(models.Model):
         return stock_wh_name
 
     def _choose_workflow(self):
-        # No usada por ahora
-        try:
-            workflow_name = self.name.split(' ')[0]
-            stock_wf_obj = self.env['sale.workflow.process']
-            stock_wf_name = stock_wf_obj.search([
-                ('name', 'ilike', workflow_name)])
-            return stock_wf_name
-        except:
-            return False
-
-    def create_invoice(self, order_id):
-        for x in self:
-            if x.type == 'out_dte':
-                partner_obj = x.env['res.partner']
-                product_obj = x.env['product.product']
-                try:
-                    invoice_obj = x.env['account.invoice']
-                except KeyError:
-                    raise UserError('Debe instalar el modulo account')
-                _logger.info('create_invoice, out_dte record: %s' % x.id)
-                incoming_dtes = x.get_incoming_dte_attachment()
-                for inc_dte in incoming_dtes:
-                    bsoup = bs(inc_dte, 'xml')
-                    _logger.info('RUTRecep: %s' % bsoup.RUTRecep.text)
-                    try:
-                        partner_id = partner_obj.search(
-                            [('vat', '=',
-                              'CL' + bsoup.RUTRecep.text.replace(
-                                  '.', '').replace('-', ''))])[0]
-                        _logger.info('partner_id: %s' % partner_id)
-                    except IndexError:
-                        _logger.info('El vat no se encuentra en bdd')
-                        partner_id = x.create_sale_partner(
-                            partner_obj, bsoup.Receptor)
-                    detail = bsoup.find_all('Detalle')
-                    dte_type = bsoup.TipoDTE.text
-                    document_number = bsoup.Folio.text
-                    invoice_new = x.format_invoice(
-                        invoice_obj, order_id, partner_id, detail, dte_type, document_number, x.payment)
-                    _logger.info(detail)
-                    _logger.info(invoice_new)
-                    x.write({
-                        'partner_id': partner_id.id,
-                        'flow_status': 'draft',
-                    })
-                    invoice_new.action_confirm()
-                    invoice_new.write({'confirmation_date': x.date_received})
-            else:
-                _logger.info('create_invoice, out_dte: %s' % x.id)
+        workflow_name = self.name.split(' ')[0]
+        stock_wf_obj = self.env['sale.workflow.process']
+        stock_wf_name = stock_wf_obj.search([
+            ('name', 'ilike', workflow_name)])
+        return stock_wf_name
 
     def create_sale_order(self):
         for x in self:
@@ -224,11 +136,9 @@ class IncomingDTE(models.Model):
                             partner_obj, bsoup.Receptor)
                     detail = bsoup.find_all('Detalle')
                     warehouse_id = x._choose_warehouse()
-                    # workflow_id = x._choose_workflow()
-                    dte_type = bsoup.TipoDTE.text
-                    document_number = bsoup.Folio.text
+                    workflow_id = x._choose_workflow()
                     order_new = x.format_sale_order(
-                        saorder_obj, partner_id, detail, warehouse_id, dte_type, document_number, x.payment)
+                        saorder_obj, partner_id, detail, warehouse_id)
                     _logger.info(detail)
                     _logger.info(order_new)
                     x.write({
@@ -236,6 +146,7 @@ class IncomingDTE(models.Model):
                         'flow_status': 'order',
                         'sale_order_id': order_new.id,
                         'warehouse_id': warehouse_id.id,
+                        'workflow_process_id': workflow_id.id,
                     })
                     order_new.action_confirm()
                     # la orden de confirmación se cambia a la hora real.
@@ -245,10 +156,9 @@ class IncomingDTE(models.Model):
                     # asignar fecha y folio correcto
                     # rebajar el inventario de la tienda que corresponda.
                     # usar el diario correcto de venta sucursal.
-                # self.create_invoice(order_new)  # llamada directa
+
             else:
                 _logger.info('create_sale_order, not out_dte: %s' % x.id)
-
 
     @api.onchange('name')
     def analyze_msg(self):
