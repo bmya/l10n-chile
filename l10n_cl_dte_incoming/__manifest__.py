@@ -35,6 +35,9 @@
     },
     'data': [
         'views/dte_incoming_views.xml',
+        'views/sale_order_view.xml',
+        'views/invoice_view.xml',
+        'data/cron.xml',
     ],
     'installable': True,
     'auto_install': False,

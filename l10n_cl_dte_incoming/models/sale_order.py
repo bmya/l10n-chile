@@ -13,5 +13,4 @@ class SaleOrder(models.Model):
     payment = fields.Text('Payment Term')  # <- JSON payment
     document_type = fields.Integer('Document Type')  # <- sii.inc.dte.TipoDoc
     document_number = fields.Integer('Document Number')  # <- sii.inc.dte.Folio
-
-# dte_email = fields.Char('DTE Email', related='partner_id.dte_email')
+    dte_inc_id = fields.One2many('sii.dte.incoming', 'sale_order_id', string='Incoming DTE')

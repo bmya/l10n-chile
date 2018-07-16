@@ -13,6 +13,9 @@
                             <field name="payment"/>
                             <field name="document_type"/>
                             <field name="document_number"/>
+                            <field name="dte_inc_id" widget="one2many_list"
+                                   attrs="{'readonly': True}"
+                            options="{'no_create': True}"/>
                         </group>
                     </page>
                 </xpath>

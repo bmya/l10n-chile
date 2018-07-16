@@ -56,30 +56,53 @@ class IncomingDTE(models.Model):
 
     def get_product_id(self, product_obj, default_code):
         try:
+            _logger.info('busqueda de producto desactivado %s' % default_code)
             product = product_obj.search(
                 [('default_code', '=', default_code)])[0].id
+            _logger.info('product: %s' % product)
             return product
         except IndexError:
-            raise UserError(
-                'El producto %s no existe en el sistema' % default_code)
+            try:
+                _logger.info('busqueda de producto desactivado %s' % default_code)
+                product = product_obj.search(
+                    [
+                        ('default_code', '=', default_code),
+                        ('active', '=', False), ])[0].id
+                return product
+            except IndexError:
+                message = 'No hay producto para el SKU: %s' % default_code
+                self.flow_status = 'notproc'
+                self.message_post(message)
+                _logger.info(message)
+                return False
 
-    def format_sale_order(self, saorder_obj, partner_id, detail, warehouse_id):
+    def format_sale_order(self, saorder_obj, partner_id, detail, warehouse_id, bsoup, workflow_id):
         order_dict = {
             'partner_id': partner_id.id,
             'origin': 'idn',
             'warehouse_id': warehouse_id.id,
+            'payment':  self.payment,
+            'document_type': int(bsoup.TipoDTE.text),
+            'document_number': int(bsoup.Folio.text),
+            'workflow_process_id': workflow_id.id,
         }
+        if bsoup.TipoDTE.text in ['39']:
+            tax_index = 1.19
+        else:
+            tax_index = 1
         product_obj = self.env['product.product']
         lines = [(5, )]
         for product_line in detail:
             _logger.info('product_line: %s' % product_line)
             name_code = product_line.NmbItem.text.split(' ')
+            product_id = self.get_product_id(product_obj, name_code[0]),
+            if not product_id:
+                return False
             line = {
-                'product_id': self.get_product_id(
-                    product_obj, name_code[0]),
+                'product_id': product_id,
                 'name': ' '.join(name_code[:1]),
                 'product_uom_qty': product_line.QtyItem.text,
-                'price_unit': product_line.PrcItem.text
+                'price_unit': float(product_line.PrcItem.text)/tax_index
             }
             _logger.info(line)
             lines.append((0, 0, line))
@@ -100,7 +123,8 @@ class IncomingDTE(models.Model):
         warehouse_name = self.name.split(' ')[0]
         stock_wh_obj = self.env['stock.warehouse']
         stock_wh_name = stock_wh_obj.search([
-            ('code', '=', warehouse_name)])
+            ('code', 'ilike', warehouse_name)])
+        _logger.info('Warehouse: %s' % stock_wh_name)
         return stock_wh_name
 
     def _choose_workflow(self):
@@ -108,6 +132,7 @@ class IncomingDTE(models.Model):
         stock_wf_obj = self.env['sale.workflow.process']
         stock_wf_name = stock_wf_obj.search([
             ('name', 'ilike', workflow_name)])
+        _logger.info('\nworkflow: %s' % stock_wf_name)
         return stock_wf_name
 
     def create_sale_order(self):
@@ -138,19 +163,43 @@ class IncomingDTE(models.Model):
                     warehouse_id = x._choose_warehouse()
                     workflow_id = x._choose_workflow()
                     order_new = x.format_sale_order(
-                        saorder_obj, partner_id, detail, warehouse_id)
+                        saorder_obj, partner_id, detail, warehouse_id, bsoup, workflow_id)
+                    if not order_new:
+                        continue
                     _logger.info(detail)
                     _logger.info(order_new)
                     x.write({
                         'partner_id': partner_id.id,
                         'flow_status': 'order',
                         'sale_order_id': order_new.id,
-                        'warehouse_id': warehouse_id.id,
-                        'workflow_process_id': workflow_id.id,
-                    })
+                        # 'warehouse_id': warehouse_id.id,
+                        # 'workflow_process_id': workflow_id.id,
+                        'document_type': int(bsoup.TipoDTE.text),
+                        'document_number': int(bsoup.Folio.text), })
                     order_new.action_confirm()
                     # la orden de confirmación se cambia a la hora real.
-                    order_new.write({'confirmation_date': x.date_received})
+                    order_new.write({
+                        # 'confirmation_date': x.date_received,
+                        # 'date_order': x.date_received,
+                        'confirmation_date': bsoup.FchEmis.text,
+                        'date_order': bsoup.FchEmis.text,
+                    })
+                    try:
+                        if order_new.picking_ids[0]:
+                            order_new.picking_ids[0].force_assign()
+                        else:
+                            _logger.info(
+                                u'...... No pudo asignar el stock (no hay picking asociado) ......')
+                        try:
+                            order_new.picking_ids[0].do_transfer()
+                            _logger.info(
+                                u'...... Haciendo transferencia automatica de mov stock ......')
+                        except:
+                            _logger.info(
+                                u' NO FUNCIONA LA TRANSFERENCIA AUTOMATICA VALIDACION MOV STOCK')
+                    except:
+                        _logger.info(
+                            u'\n...... Excepcion en el picking: No pudo asignar el stock ......')
                     # mandar el tipo de dte, folio y fecha de la factura
                     # crear la factura
                     # asignar fecha y folio correcto
@@ -239,6 +288,7 @@ class IncomingDTE(models.Model):
         track_visibility='onchange')
     flow_status = fields.Selection([
         ('new', 'New'),
+        ('notproc', 'Could Not Process'),
         ('order', 'Order'),
         ('draft', 'Draft Invoice'),
         ('invoice', 'Invoice Created'), ], string='Estado Flujo',
@@ -269,6 +319,13 @@ class IncomingDTE(models.Model):
     sii_xml_accept = fields.Text('SII Accept')
     name_xml = fields.Char('Name xml')
     payment = fields.Text('Payment Terms')
+    document_type = fields.Char('Document Type')
+    document_number = fields.Char('Document Number')
+
+    """
+    'warehouse_id': warehouse_id.id,
+    'workflow_process_id': workflow_id.id,
+    """
 
     @api.multi
     def receive_merchandise(self):
@@ -610,3 +667,19 @@ RespuestaEnvioDTE_v10.xsd">
         file_name = attachment[0].name
         result = inv.send_xml_file(self.sii_xml_accept, file_name, company_id)
         _logger.info('result {}'.format(result))
+
+    @api.model
+    def process_dte_incoming_multi(self):
+        records = self.search([('flow_status', '=', 'new')], order='id asc')
+        max_processed = 100
+        i = 0
+        for r in records:
+            try:
+                r.create_sale_order()
+                i += 1
+                if i > max_processed:
+                    return
+                _logger.info('created so %s' % r.id)
+            except:
+                _logger.info('could not create so %s' % r.id)
+                continue
