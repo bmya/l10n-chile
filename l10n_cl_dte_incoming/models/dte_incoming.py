@@ -96,7 +96,8 @@ class IncomingDTE(models.Model):
             _logger.info('product_line: %s' % product_line)
             name_code = product_line.NmbItem.text.split(' ')
             product_id = self.get_product_id(product_obj, name_code[0]),
-            if not product_id:
+            _logger.info('PRODUCT ID: %s' % product_id)
+            if not product_id[0]:
                 return False
             line = {
                 'product_id': product_id,
@@ -135,6 +136,21 @@ class IncomingDTE(models.Model):
         _logger.info('\nworkflow: %s' % stock_wf_name)
         return stock_wf_name
 
+    def get_doc_type_and_number(self):
+        """
+        Funcion provisoria para levantar el numero de documento que viene en el dte
+        :return:
+        """
+        for x in self:
+            if x.type == 'out_dte':
+                _logger.info('create_sale_order, out_dte record: %s' % x.id)
+                incoming_dtes = x.get_incoming_dte_attachment()
+                for inc_dte in incoming_dtes:
+                    bsoup = bs(inc_dte, 'xml')
+                    _logger.info('RUTRecep: %s' % bsoup.RUTRecep.text)
+                    x.document_type = int(bsoup.TipoDTE.text)
+                    x.document_number = int(bsoup.Folio.text)
+
     def create_sale_order(self):
         for x in self:
             if x.type == 'out_dte':
@@ -166,8 +182,8 @@ class IncomingDTE(models.Model):
                         saorder_obj, partner_id, detail, warehouse_id, bsoup, workflow_id)
                     if not order_new:
                         continue
-                    _logger.info(detail)
-                    _logger.info(order_new)
+                    _logger.debug(detail)
+                    _logger.debug(order_new)
                     x.write({
                         'partner_id': partner_id.id,
                         'flow_status': 'order',
@@ -229,7 +245,7 @@ class IncomingDTE(models.Model):
                         attachment_id.name.lower().find('.xml')):
                     _logger.info(u'El adjunto no es un XML. Revisando otro...')
                     continue
-                _logger.info('El adjunto es un XML')
+                _logger.debug('El adjunto es un XML')
                 xml = self._get_xml_content(attachment_id.datas)
                 soup = bs(xml, 'xml')  # se crea un arbol de xml
                 envio_dte = soup.find_all('EnvioDTE')  # busqueda
@@ -338,7 +354,7 @@ class IncomingDTE(models.Model):
                 #    'text/plain'] and attachment_id.name.lower().find('.xml')):
                 #    _logger.info(u'El adjunto no es un XML. Revisando otro...')
                 #     continue
-                _logger.info('El adjunto es un XML')
+                _logger.debug('El adjunto es un XML')
                 xml = self._get_xml_content(attachment_id.datas)
                 soup = bs(xml, 'xml')  # se crea un arbol de xml
                 libro_guia = soup.find_all('EnvioDTE')  # busqueda
@@ -608,7 +624,7 @@ RespuestaEnvioDTE_v10.xsd">
     @api.multi
     def save_xml_knowledge(self, document, file_name):
         attachment_obj = self.env['ir.attachment']
-        _logger.info('Attachment')
+        _logger.debug('Attachment')
         for inv in self:
             name = 'DTE_{}.xml'.format(
                 file_name).replace(' ', '_')
@@ -645,7 +661,7 @@ RespuestaEnvioDTE_v10.xsd">
             [('res_model', '=', 'sii.dte.incoming'), ('res_id', '=', self.id)])
         file_name = attachment[0].name
         result = inv.send_xml_file(self.sii_xml_request, file_name, company_id)
-        _logger.info('result {}'.format(result))
+        _logger.debug('result {}'.format(result))
 
     @api.multi
     def send_xml_merchandise_button(self):
@@ -656,7 +672,7 @@ RespuestaEnvioDTE_v10.xsd">
         file_name = attachment[0].name
         result = inv.send_xml_file(
             self.sii_xml_merchandise, file_name, company_id)
-        _logger.info('result {}'.format(result))
+        _logger.debug('result {}'.format(result))
 
     @api.multi
     def send_xml_accept_button(self):
@@ -666,12 +682,13 @@ RespuestaEnvioDTE_v10.xsd">
             [('res_model', '=', 'sii.dte.incoming'), ('res_id', '=', self.id)])
         file_name = attachment[0].name
         result = inv.send_xml_file(self.sii_xml_accept, file_name, company_id)
-        _logger.info('result {}'.format(result))
+        _logger.debug('result {}'.format(result))
 
     @api.model
     def process_dte_incoming_multi(self):
         records = self.search([('flow_status', '=', 'new')], order='id asc')
-        max_processed = 100
+        conf = self.env['ir.config_parameter'].sudo()
+        max_processed = conf.get_param('dte.sale.order.max.processed', default=30)
         i = 0
         for r in records:
             try:

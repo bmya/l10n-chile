@@ -28,6 +28,9 @@
                             help="Create Sale Order"
                             attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
                             icon="fa-file-o"/>
+                        <button type="object" name="get_doc_type_and_number"
+                            string="Get Document Type and Number"
+                            help="Get Document Type and Number"/>
                         <field name="status" widget="statusbar" attrs="{'invisible': [('type', '=', 'out_dte')]}"/>
                         <field name="flow_status" widget="statusbar"
                                attrs="{'invisible': [('type', '!=', 'out_dte')]}"/>
@@ -38,6 +41,8 @@
                             <field name="date_received"/>
                             <field name="partner_id"/>
                             <field name="type" widget="radio"/>
+                            <field name="document_type" attrs="{'readonly': True}"/>
+                            <field name="document_number" attrs="{'readonly': True}"/>
                             <field name="sale_order_id"/>
                             <field name="purchase_order_id" attrs="{'readonly': True}"/>
                             <field name="invoice_id" attrs="{'readonly': True}"/>
@@ -89,7 +94,10 @@
 			<field name="model">sii.dte.incoming</field>
 			<field name="arch" type="xml">
 				<tree string="Incoming DTEs"
-                      colors="blue:status=='new';
+                      colors="blue:flow_status=='new';
+                        red:flow_status=='notproc';
+                        orchid:flow_status=='order';
+                        black:flow_status=='invoice';
                         blue:check_envelope_status in ('in_envelope');
                         orchid:check_envelope_status in ('in_envelope_wrong');
                         orchid:check_doc_status in ('in_envelope_wrong');

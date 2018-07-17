@@ -38,6 +38,7 @@
         'views/sale_order_view.xml',
         'views/invoice_view.xml',
         'data/cron.xml',
+        'data/ir.config_parameter.xml',
     ],
     'installable': True,
     'auto_install': False,
