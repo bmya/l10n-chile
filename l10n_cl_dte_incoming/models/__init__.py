@@ -6,3 +6,4 @@
 from . import dte_incoming
 from . import sale_order
 from . import invoice
+from . import account_journal

@@ -28,6 +28,17 @@
                             help="Create Sale Order"
                             attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
                             icon="fa-file-o"/>
+                        <!--<button type="object" name="create_account_invoice"
+                            string="Create Account Invoice"
+                            help="Create Account Invoice"
+                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
+                            icon="fa-file-o"/>-->
+                        <button type="object" name="create_centralized_record"
+                            string="Create Centralized Record"
+                            help="Create Centralized Record"
+                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
+                            icon="fa-file-o"/>
+
                         <button type="object" name="get_doc_type_and_number"
                             string="Get Document Type and Number"
                             help="Get Document Type and Number"/>
@@ -43,6 +54,8 @@
                             <field name="type" widget="radio"/>
                             <field name="document_type" attrs="{'readonly': True}"/>
                             <field name="document_number" attrs="{'readonly': True}"/>
+                            <field name="date_invoice" attrs="{'readonly': True}"/>
+                            <field name="total_amount" attrs="{'readonly': True}"/>
                             <field name="sale_order_id"/>
                             <field name="purchase_order_id" attrs="{'readonly': True}"/>
                             <field name="invoice_id" attrs="{'readonly': True}"/>
@@ -102,8 +115,11 @@
                         orchid:check_envelope_status in ('in_envelope_wrong');
                         orchid:check_doc_status in ('in_envelope_wrong');
                         #084B8A:type=='in_dte';">
+                    <field name="id"/>
                     <field name="name"/>
                     <field name="date_received"/>
+                    <field name="date_invoice"/>
+                    <field name="total_amount"/>
                     <!--<field name="filename"/>-->
                     <field name="invoice_id"/>
                     <field name="partner_id"/>

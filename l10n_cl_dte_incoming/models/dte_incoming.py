@@ -7,7 +7,7 @@ from lxml import etree
 import pysiidte
 import collections
 import dicttoxml, xmltodict
-from datetime import datetime
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup as bs
 import pytz
 import json
@@ -56,18 +56,17 @@ class IncomingDTE(models.Model):
 
     def get_product_id(self, product_obj, default_code):
         try:
-            _logger.info('busqueda de producto desactivado %s' % default_code)
             product = product_obj.search(
-                [('default_code', '=', default_code)])[0].id
-            _logger.info('product: %s' % product)
+                [('default_code', '=', default_code)])[0]
+            _logger.info('busqueda de producto %s activado %s' % (default_code, product))
             return product
         except IndexError:
             try:
-                _logger.info('busqueda de producto desactivado %s' % default_code)
                 product = product_obj.search(
                     [
                         ('default_code', '=', default_code),
-                        ('active', '=', False), ])[0].id
+                        ('active', '=', False), ])[0]
+                _logger.info('busqueda de producto %s desactivado %s' % (default_code, product))
                 return product
             except IndexError:
                 message = 'No hay producto para el SKU: %s' % default_code
@@ -96,19 +95,24 @@ class IncomingDTE(models.Model):
             _logger.info('product_line: %s' % product_line)
             name_code = product_line.NmbItem.text.split(' ')
             product_id = self.get_product_id(product_obj, name_code[0]),
-            _logger.info('PRODUCT ID: %s' % product_id)
+            _logger.debug('product id: %s' % product_id)
             if not product_id[0]:
                 return False
+            try:
+                price_unit = float(product_line.PrcItem.text)/tax_index
+            except:
+                price_unit = 0
+                _logger.info('precio de id de producto es cero')
             line = {
-                'product_id': product_id,
+                'product_id': product_id[0].id,
                 'name': ' '.join(name_code[:1]),
                 'product_uom_qty': product_line.QtyItem.text,
-                'price_unit': float(product_line.PrcItem.text)/tax_index
+                'price_unit': price_unit,
             }
             _logger.info(line)
             lines.append((0, 0, line))
         order_dict['order_line'] = lines
-        _logger.info('Orden dictionary: %s' % order_dict)
+        _logger.debug('Orden dictionary: %s' % order_dict)
         order_new = saorder_obj.create(order_dict)
         _logger.info('Orden Creada: %s' % order_new.id)
         orden_creada = {
@@ -117,15 +121,68 @@ class IncomingDTE(models.Model):
             'status': order_new.state,
             'origin': order_new.origin
         }
-        _logger.info(orden_creada)
+        _logger.debug(orden_creada)
         return order_new
+
+    def format_account_invoice(self, account_invoice_obj, partner_id, detail, journal_id, bsoup):
+        invoice_dict = {
+            'date_invoice': bsoup.FchEmis.text,
+            'partner_id': partner_id.id,
+            'origin': self.sale_order_id.name,
+            'journal_id': journal_id.id,
+            'payment':  self.payment,
+            'document_type': int(bsoup.TipoDTE.text),
+            'document_number': int(bsoup.Folio.text),
+        }
+        if bsoup.TipoDTE.text in ['39']:
+            tax_index = 1.19
+        else:
+            tax_index = 1
+        product_obj = self.env['product.product']
+        lines = [(5, )]
+        for product_line in detail:
+            _logger.info('product_line: %s' % product_line)
+            name_code = product_line.NmbItem.text.split(' ')
+            product_id = self.get_product_id(product_obj, name_code[0]),
+            _logger.debug('product id: %s' % product_id)
+            if not product_id[0]:
+                return False
+            try:
+                price_unit = float(product_line.PrcItem.text)/tax_index
+            except:
+                price_unit = 0
+                _logger.info('precio de id de producto es cero')
+
+            account_id = product_id[0].categ_id.property_account_income_categ_id
+            line = {
+                'product_id': product_id[0].id,
+                'account_id': account_id.id,
+                'account_analytic_id': journal_id.analytic_account_id.id,
+                'name': ' '.join(name_code[:1]),
+                'quantity': product_line.QtyItem.text,
+                'price_unit': price_unit,
+            }
+            _logger.info(line)
+            lines.append((0, 0, line))
+        invoice_dict['invoice_line_ids'] = lines
+        _logger.debug('Orden dictionary: %s' % invoice_dict)
+        invoice_new = account_invoice_obj.create(invoice_dict)
+        _logger.info('Factura Creada: %s' % invoice_new.id)
+        invoice_creada = {
+            'invoice_id': invoice_new.id,
+            'invoice_name': invoice_new.name,
+            'status': invoice_new.state,
+            'origin': invoice_new.origin
+        }
+        _logger.debug(invoice_creada)
+        return invoice_new
 
     def _choose_warehouse(self):
         warehouse_name = self.name.split(' ')[0]
         stock_wh_obj = self.env['stock.warehouse']
         stock_wh_name = stock_wh_obj.search([
             ('code', 'ilike', warehouse_name)])
-        _logger.info('Warehouse: %s' % stock_wh_name)
+        _logger.debug('Warehouse: %s' % stock_wh_name)
         return stock_wh_name
 
     def _choose_workflow(self):
@@ -133,13 +190,26 @@ class IncomingDTE(models.Model):
         stock_wf_obj = self.env['sale.workflow.process']
         stock_wf_name = stock_wf_obj.search([
             ('name', 'ilike', workflow_name)])
-        _logger.info('\nworkflow: %s' % stock_wf_name)
+        _logger.debug('workflow: %s' % stock_wf_name)
         return stock_wf_name
+
+    def _choose_journal(self):
+        journal_name = self.name.split(' ')[0]
+        journal_obj = self.env['account.journal']
+        journal_id = journal_obj.search([
+            ('code', 'ilike', journal_name),
+            ('type', '=', 'sale')
+        ])
+        _logger.debug('Journal: %s' % journal_id.name)
+        return journal_id
 
     def get_doc_type_and_number(self):
         """
-        Funcion provisoria para levantar el numero de documento que viene en el dte
-        :return:
+        Funcion (provisoria?<- a permanente para bfs!) para levantar el numero de documento que viene en el dte
+        Se extiende esta función para consolidar la mayor cantidad de datos posibles que se requieran
+        para poder confeccionar el asiento contable que representa la venta.
+        TODO: pasar esta función a un módulo heredado, específico de bfs
+        :return: una serie de campos grabados en el modelo que muestren los datos del xml adjunto
         """
         for x in self:
             if x.type == 'out_dte':
@@ -147,15 +217,62 @@ class IncomingDTE(models.Model):
                 incoming_dtes = x.get_incoming_dte_attachment()
                 for inc_dte in incoming_dtes:
                     bsoup = bs(inc_dte, 'xml')
-                    _logger.info('RUTRecep: %s' % bsoup.RUTRecep.text)
+                    _logger.debug('RUTRecep: %s' % bsoup.RUTRecep.text)
+                    x.date_invoice = datetime.strftime(
+                        datetime.strptime(bsoup.FchEmis.text, '%Y-%m-%d') + timedelta(hours=5), '%Y-%m-%d %H:%M:%S')
                     x.document_type = int(bsoup.TipoDTE.text)
                     x.document_number = int(bsoup.Folio.text)
+                    x.total_amount = float(bsoup.MntTotal.text)
+
+    def create_account_invoice(self):
+        for x in self:
+            if x.type == 'out_dte':
+                partner_obj = x.env['res.partner']
+                try:
+                    account_invoice_obj = x.env['account.invoice']
+                except KeyError:
+                    raise UserError('Debe instalar el modulo invoicing')
+                _logger.info('create_account_invoice, out_dte record: %s' % x.id)
+                incoming_dtes = x.get_incoming_dte_attachment()
+                for inc_dte in incoming_dtes:
+                    bsoup = bs(inc_dte, 'xml')
+                    _logger.debug('RUTRecep: %s' % bsoup.RUTRecep.text)
+                    try:
+                        partner_id = partner_obj.search(
+                            [('vat', '=',
+                              'CL' + bsoup.RUTRecep.text.replace(
+                                  '.', '').replace('-', ''))])[0]
+                        _logger.debug('partner_id: %s' % partner_id)
+                    except IndexError:
+                        _logger.info('El vat no se encuentra en bdd')
+                        partner_id = x.create_sale_partner(
+                            partner_obj, bsoup.Receptor)
+                    detail = bsoup.find_all('Detalle')
+                    journal_id = x._choose_journal()
+                    account_invoice_new = x.format_account_invoice(
+                        account_invoice_obj, partner_id, detail, journal_id, bsoup)
+                    if not account_invoice_new:
+                        _logger.info('308: not invoice new')
+                        continue
+                    _logger.debug(detail)
+                    _logger.debug(account_invoice_new)
+                    x.write({
+                        'partner_id': partner_id.id,
+                        'flow_status': 'draft',
+                        'date_invoice': bsoup.FchEmis.text,
+                        'invoice_id': account_invoice_new.id,
+                        'journal_id': journal_id.id,
+                        'document_type': int(bsoup.TipoDTE.text),
+                        'document_number': int(bsoup.Folio.text), })
+                    account_invoice_new.action_invoice_open()
+                    # la orden de confirmación se cambia a la hora real.
+            else:
+                _logger.info('create_sale_order, not out_dte: %s' % x.id)
 
     def create_sale_order(self):
         for x in self:
             if x.type == 'out_dte':
                 partner_obj = x.env['res.partner']
-                product_obj = x.env['product.product']
                 try:
                     saorder_obj = x.env['sale.order']
                 except KeyError:
@@ -164,13 +281,13 @@ class IncomingDTE(models.Model):
                 incoming_dtes = x.get_incoming_dte_attachment()
                 for inc_dte in incoming_dtes:
                     bsoup = bs(inc_dte, 'xml')
-                    _logger.info('RUTRecep: %s' % bsoup.RUTRecep.text)
+                    _logger.debug('RUTRecep: %s' % bsoup.RUTRecep.text)
                     try:
                         partner_id = partner_obj.search(
                             [('vat', '=',
                               'CL' + bsoup.RUTRecep.text.replace(
                                   '.', '').replace('-', ''))])[0]
-                        _logger.info('partner_id: %s' % partner_id)
+                        _logger.debug('partner_id: %s' % partner_id)
                     except IndexError:
                         _logger.info('El vat no se encuentra en bdd')
                         partner_id = x.create_sale_partner(
@@ -181,6 +298,7 @@ class IncomingDTE(models.Model):
                     order_new = x.format_sale_order(
                         saorder_obj, partner_id, detail, warehouse_id, bsoup, workflow_id)
                     if not order_new:
+                        _logger.info('184: not order new')
                         continue
                     _logger.debug(detail)
                     _logger.debug(order_new)
@@ -194,56 +312,51 @@ class IncomingDTE(models.Model):
                         'document_number': int(bsoup.Folio.text), })
                     order_new.action_confirm()
                     # la orden de confirmación se cambia a la hora real.
+                    date_time_operation = datetime.strftime(datetime.strptime(
+                        bsoup.FchEmis.text, '%Y-%m-%d') + timedelta(hours=5), '%Y-%m-%d %H:%M:%S')
                     order_new.write({
                         # 'confirmation_date': x.date_received,
                         # 'date_order': x.date_received,
-                        'confirmation_date': bsoup.FchEmis.text,
-                        'date_order': bsoup.FchEmis.text,
+                        'confirmation_date': date_time_operation,
+                        'date_order': date_time_operation,
                     })
                     try:
                         if order_new.picking_ids[0]:
+                            order_new.picking_ids[0].min_date = date_time_operation
                             order_new.picking_ids[0].force_assign()
+                            order_new.picking_ids[0].date_done = date_time_operation
                         else:
-                            _logger.info(
-                                u'...... No pudo asignar el stock (no hay picking asociado) ......')
+                            _logger.info('No pudo asignar el stock (no hay picking asociado)' % order_new.id)
                         try:
                             order_new.picking_ids[0].do_transfer()
-                            _logger.info(
-                                u'...... Haciendo transferencia automatica de mov stock ......')
+                            _logger.info('Haciendo transferencia automatica de mov stock orden %s' % order_new.id)
                         except:
-                            _logger.info(
-                                u' NO FUNCIONA LA TRANSFERENCIA AUTOMATICA VALIDACION MOV STOCK')
+                            _logger.info('NO FUNCIONA TRANSFERENCIA AUTOMATICA MOV STOCK orden %s' % order_new.id)
                     except:
-                        _logger.info(
-                            u'\n...... Excepcion en el picking: No pudo asignar el stock ......')
-                    # mandar el tipo de dte, folio y fecha de la factura
-                    # crear la factura
-                    # asignar fecha y folio correcto
-                    # rebajar el inventario de la tienda que corresponda.
-                    # usar el diario correcto de venta sucursal.
-
+                        _logger.info('Excepcion en el picking: No pudo asignar el stock.')
             else:
                 _logger.info('create_sale_order, not out_dte: %s' % x.id)
+        self.create_account_invoice()
 
     @api.onchange('name')
     def analyze_msg(self):
         # inspecciono los mensajes asociados
         for message_id in self.message_ids:
-            _logger.info('Analizando mensaje: %s' % message_id.message_type)
+            _logger.debug('Analizando mensaje: %s' % message_id.message_type)
             if message_id.message_type != 'email':
                 # esto creo que es inutil, ya que en realidad debe buscar
                 # archivos adjuntos y no mensajes
                 # nota de Daniel: no es inútil porque el adjunto está
                 # relacionado al email adjunto y no directamente al registro.
-                _logger.info('busca otro mensaje porque este no tiene adj')
+                _logger.debug('busca otro mensaje porque este no tiene adj')
                 continue
             self.date_received = message_id.date
             _logger.info('set de fecha de recepcion')
             for attachment_id in message_id.attachment_ids:
-                _logger.info('hay attachment %s: ' % attachment_id)
+                _logger.debug('hay attachment %s: ' % attachment_id)
                 if not (attachment_id.mimetype in ['text/plain'] and
                         attachment_id.name.lower().find('.xml')):
-                    _logger.info(u'El adjunto no es un XML. Revisando otro...')
+                    _logger.debug(u'El adjunto no es un XML. Revisando otro...')
                     continue
                 _logger.debug('El adjunto es un XML')
                 xml = self._get_xml_content(attachment_id.datas)
@@ -286,6 +399,7 @@ class IncomingDTE(models.Model):
 #
     name = fields.Char('Nombre', track_visibility='onchange')
     date_received = fields.Datetime('Date and Time Received')
+    date_invoice = fields.Date('Date of Invoice')
     type = fields.Selection([
         ('out_dte', 'DTE Ventas'),
         ('in_dte', 'DTE Proveedor'),
@@ -307,7 +421,7 @@ class IncomingDTE(models.Model):
         ('notproc', 'Could Not Process'),
         ('order', 'Order'),
         ('draft', 'Draft Invoice'),
-        ('invoice', 'Invoice Created'), ], string='Estado Flujo',
+        ('invoice', 'Journal Entry Created'), ], string='Estado Flujo',
         default='new',
         help='Status related to Odoo sale or purchase flow',
         track_visibility='onchange')
@@ -337,6 +451,7 @@ class IncomingDTE(models.Model):
     payment = fields.Text('Payment Terms')
     document_type = fields.Char('Document Type')
     document_number = fields.Char('Document Number')
+    total_amount = fields.Float('Total Amount')
 
     """
     'warehouse_id': warehouse_id.id,
@@ -440,7 +555,7 @@ version="1.0">
                 #    'text/plain'] and attachment_id.name.lower().find('.xml')):
                 #    _logger.info(u'El adjunto no es un XML. Revisando otro...')
                 #    continue
-                _logger.info('El adjunto es un XML')
+                _logger.debug('El adjunto es un XML')
                 xml = self._get_xml_content(attachment_id.datas)
                 soup = bs(xml, 'xml')  # se crea un arbol de xml
                 envio_dte = soup.find_all('EnvioDTE')  # busqueda
@@ -686,17 +801,26 @@ RespuestaEnvioDTE_v10.xsd">
 
     @api.model
     def process_dte_incoming_multi(self):
-        records = self.search([('flow_status', '=', 'new')], order='id asc')
         conf = self.env['ir.config_parameter'].sudo()
-        max_processed = conf.get_param('dte.sale.order.max.processed', default=30)
+        max_processed = int(conf.get_param('dte.sale.order.max.processed', default=30))
+        records = self.search([
+            ('flow_status', '=', 'new'),
+            ('type', '=', 'out_dte'),
+        ], order='id asc', limit=max_processed)
         i = 0
         for r in records:
             try:
                 r.create_sale_order()
                 i += 1
-                if i > max_processed:
-                    return
-                _logger.info('created so %s' % r.id)
+                _logger.info('created so for record dte incoming %s ... processing: %s' % (r.id, i))
             except:
-                _logger.info('could not create so %s' % r.id)
-                continue
+                _logger.info('could not create so for record %s' % r.id)
+
+    def create_centralized_record(self):
+        conf = self.env['ir.config_parameter'].sudo()
+        max_processed = int(conf.get_param('dte.sale.order.max.processed', default=30))
+        initial_record = self.search([
+            ('flow_status', '=', 'new'),
+            ('type', '=', 'out_dte'),
+        ], order='date_invoice asc', limit=1)[0]
+        raise UserError(initial_record)

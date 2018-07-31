@@ -37,6 +37,7 @@
         'views/dte_incoming_views.xml',
         'views/sale_order_view.xml',
         'views/invoice_view.xml',
+        'views/account_journal_view.xml',
         'data/cron.xml',
         'data/ir.config_parameter.xml',
     ],

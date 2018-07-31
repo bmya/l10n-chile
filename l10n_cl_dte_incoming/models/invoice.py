@@ -10,6 +10,21 @@ _logger = logging.getLogger(__name__)
 class Invoice(models.Model):
     _inherit = 'account.invoice'
 
+    def invoice_id_dte_incoming_relationship(self):
+        saorder_obj = self.env['sale.order']
+        for record in self:
+            if record.type not in ['out_invoice', 'out_refund'] and record.state not in ['open', 'paid']:
+                _logger.info('registro %s descartado. Estado: %s, tipo: %s' % (record.id, record.state, record.type))
+                continue
+            for sale_order_id in saorder_obj.search([('name', '=', record.origin)]):
+                _logger.info('registro %s procesando. Orden: %s, tipo: %s' % (record.id, sale_order_id.id, record.type))
+                if sale_order_id.dte_inc_id[0] and not sale_order_id.dte_inc_id[0].invoice_id:
+                    _logger.info('dte_incoming: %s' % sale_order_id.dte_inc_id[0].name)
+                    sale_order_id.dte_inc_id[0].invoice_id = record.id
+                    sale_order_id.dte_inc_id[0].flow_status = 'invoice'
+                else:
+                    _logger.info('registro %s ya procesado' % record.id)
+
     payment = fields.Text('Payment Term')
     document_type = fields.Integer('Document Type')
 
