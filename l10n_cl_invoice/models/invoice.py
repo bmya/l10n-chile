@@ -166,7 +166,7 @@ class AccountInvoice(models.Model):
     def get_taxes_values(self):
         tax_grouped = {}
         for line in self.invoice_line_ids:
-            tot_discount = line.price_unit * ((line.discount or 0.0) / 100.0)
+            # tot_discount = line.price_unit * ((line.discount or 0.0) / 100.0)
             taxes = line.invoice_line_tax_ids.compute_all(
                 line.price_unit, self.currency_id, line.quantity,
                 line.product_id, self.partner_id,
@@ -225,7 +225,7 @@ class AccountInvoice(models.Model):
                 for turn in available_turn_ids:
                     rec.turn_issuer = turn.id
 
-    @api.model
+    # @api.multi
     def name_get(self):
         TYPES = {
             'out_invoice': _('Invoice'),
@@ -443,6 +443,7 @@ a VAT."""))
         else:
             document_number = self.number
         self.document_number = document_number
+        # self.name = document_number
 
     supplier_invoice_number = fields.Char(
         copy=False)
@@ -542,6 +543,12 @@ Company!'))
     _sql_constraints = [('number_supplier_invoice_number',
                          'unique(supplier_invoice_number, partner_id, \
 company_id)', 'Supplier Invoice No must be unique per Supplier and Company!')]
+
+    # @api.multi
+    # def action_invoice_open(self):
+    #     for record in self:
+    #         record.name = record.document_number
+    #     super(AccountInvoice, self).action_invoice_open()
 
     @api.multi
     def action_move_create(self):
@@ -689,6 +696,16 @@ facturas o facturas no afectas')
             new_invoices += self.create(values)
         return new_invoices
 
+    @api.model
+    def replace_document_number(self):
+        """
+        Esta función la escribí para reemplazar todos los name que se encuentran vacíos.
+        No tiene sentido si funciona el action_invoice_open heredado que también agregué
+        :return:
+        """
+        records = self.search(['|', ('name', '=', ''), ('name', '=', False)])
+        for record in records:
+            record.name = record.document_number
 
 class References(models.Model):
     _name = 'account.invoice.referencias'

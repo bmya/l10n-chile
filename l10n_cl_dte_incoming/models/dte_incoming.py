@@ -218,11 +218,11 @@ class IncomingDTE(models.Model):
                 for inc_dte in incoming_dtes:
                     bsoup = bs(inc_dte, 'xml')
                     _logger.debug('RUTRecep: %s' % bsoup.RUTRecep.text)
-                    x.date_invoice = datetime.strftime(
-                        datetime.strptime(bsoup.FchEmis.text, '%Y-%m-%d') + timedelta(hours=5), '%Y-%m-%d %H:%M:%S')
-                    x.document_type = int(bsoup.TipoDTE.text)
-                    x.document_number = int(bsoup.Folio.text)
-                    x.total_amount = float(bsoup.MntTotal.text)
+                    if not x.date_invoice:
+                        x.date_invoice = bsoup.FchEmis.text
+                        x.document_type = int(bsoup.TipoDTE.text)
+                        x.document_number = int(bsoup.Folio.text)
+                        x.total_amount = float(bsoup.MntTotal.text)
 
     def create_account_invoice(self):
         for x in self:
@@ -398,6 +398,7 @@ class IncomingDTE(models.Model):
 #        """
 #
     name = fields.Char('Nombre', track_visibility='onchange')
+    short_name = fields.Char('shortname', compute='_get_shortname')
     date_received = fields.Datetime('Date and Time Received')
     date_invoice = fields.Date('Date of Invoice')
     type = fields.Selection([
@@ -457,6 +458,11 @@ class IncomingDTE(models.Model):
     'warehouse_id': warehouse_id.id,
     'workflow_process_id': workflow_id.id,
     """
+
+    @api.depends('name')
+    def _get_shortname(self):
+        for record in self:
+            record.short_name = record.name.split(' ')[0]
 
     @api.multi
     def receive_merchandise(self):
@@ -817,10 +823,25 @@ RespuestaEnvioDTE_v10.xsd">
                 _logger.info('could not create so for record %s' % r.id)
 
     def create_centralized_record(self):
+        self.get_doc_type_and_number()
         conf = self.env['ir.config_parameter'].sudo()
         max_processed = int(conf.get_param('dte.sale.order.max.processed', default=30))
         initial_record = self.search([
             ('flow_status', '=', 'new'),
             ('type', '=', 'out_dte'),
-        ], order='date_invoice asc', limit=1)[0]
-        raise UserError(initial_record)
+        ], order='short_name asc, date_invoice asc', limit=1)[0]
+        _logger.info('##### Registro inicial. Fecha: %s, documento: %s.' % (
+            initial_record.date_invoice, initial_record.document_number))
+        loop_records = self.search([
+            ('flow_status', '=', 'new'),
+            ('type', '=', 'out_dte'),
+            ('short_name', '=', initial_record.short_name),
+            ('date_invoice', '=', initial_record.date_invoice)
+        ])
+        for record in loop_records:
+            pass
+            # continuar aca con la factura
+        _logger.info('##### Registros a consolidar. Fecha: %s, cantidad: %s.' % (
+            loop_records[0].date_invoice, len(loop_records)))
+
+

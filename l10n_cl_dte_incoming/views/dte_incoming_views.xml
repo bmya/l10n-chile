@@ -28,11 +28,13 @@
                             help="Create Sale Order"
                             attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
                             icon="fa-file-o"/>
-                        <!--<button type="object" name="create_account_invoice"
+                        <!-- comentar una vez que se saquen todas las que estan en order -->
+                        <button type="object" name="create_account_invoice"
                             string="Create Account Invoice"
                             help="Create Account Invoice"
-                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
-                            icon="fa-file-o"/>-->
+                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'order')]}"
+                            icon="fa-file-o"/>
+                        <!-- comentar una vez que se saquen todas las que estan en order -->
                         <button type="object" name="create_centralized_record"
                             string="Create Centralized Record"
                             help="Create Centralized Record"
