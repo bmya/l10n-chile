@@ -22,6 +22,7 @@ class Invoice(models.Model):
                     _logger.info('dte_incoming: %s' % sale_order_id.dte_inc_id[0].name)
                     sale_order_id.dte_inc_id[0].invoice_id = record.id
                     sale_order_id.dte_inc_id[0].flow_status = 'invoice'
+                    _logger.info('registro %s se proceso a factura' % record.id)
                 else:
                     _logger.info('registro %s ya procesado' % record.id)
 
@@ -47,3 +48,40 @@ class Invoice(models.Model):
                 sale_order_id.dte_inc_id[0].flow_status = 'invoice'
                 break
         super(Invoice, self).action_invoice_open()
+
+    def see_invoice(self):
+        invoice = self.browse(3593)  # 20451
+        for line in invoice.invoice_line_ids:
+            _logger.info(line)
+            for taxes in line.invoice_line_tax_ids:
+                _logger.info(taxes)
+        raise UserError('invoice')
+
+    def reassing_account_invoice_lines_account(self):
+        """
+        Esta funcion está hecha para reasignar las cuentas contables obsoletas de las lineas en las facturas
+        en estado borrador. Sirve para que estas se puedan validar, en caso que hayan sido generadas con cuentas
+        del plan de cuentas que sean obsoletas
+        :return:
+        """
+        conf = self.env['ir.config_parameter'].sudo()
+        max_processed = int(conf.get_param('dte.sale.order.max.processed', default=30))
+        _logger.info('will process %s' % max_processed)
+        # records = self.search([('state', '=', 'draft')], order='id asc', limit=max_processed)
+        records = self.search([('state', '=', 'draft')])
+        for record in records:
+            for line in record.invoice_line_ids:
+                if line.account_id.id not in [570, 571]:
+                    try:
+                        if 'ALL / IN' in line.product_id.categ_id.display_name:
+                            _logger.info('Reassing record: %s, product %s to 571' % (record.id, line.product_id.name))
+                            line.account_id = self.env.ref('__export__.account_account_571')
+                        else:
+                            _logger.info('Reassing record: %s, product %s to 570' % (record.id, line.product_id.name))
+                            line.account_id = self.env.ref('__export__.account_account_570')
+                    except:
+                        if not line.product_id.name:
+                            _logger.info('Exception: record: %s, product false detected' % record.id)
+                            continue
+                        _logger.info('Exception: record: %s, product %s to 570' % (record.id, line.product_id.name))
+                        line.account_id = self.env.ref('__export__.account_account_570')

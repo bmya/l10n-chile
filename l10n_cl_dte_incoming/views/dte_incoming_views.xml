@@ -23,8 +23,8 @@
                             string="Commercial Acceptance"
                             help="Inspect Attachment" attrs="{'invisible': [('type', '=', 'out_dte')]}"
                             icon="fa-file-o"/>
-                        <button type="object" name="create_sale_order"
-                            string="Create Sale Order"
+                        <button type="object" name="process_dte_incoming"
+                            string="Create Sale Order and Invoice"
                             help="Create Sale Order"
                             attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
                             icon="fa-file-o"/>
@@ -50,19 +50,23 @@
                     </header>
                     <sheet>
                         <group cols="4">
-                            <field name="name"/>
-                            <field name="date_received"/>
-                            <field name="partner_id"/>
-                            <field name="type" widget="radio"/>
-                            <field name="document_type" attrs="{'readonly': True}"/>
-                            <field name="document_number" attrs="{'readonly': True}"/>
-                            <field name="date_invoice" attrs="{'readonly': True}"/>
-                            <field name="total_amount" attrs="{'readonly': True}"/>
-                            <field name="sale_order_id"/>
-                            <field name="purchase_order_id" attrs="{'readonly': True}"/>
-                            <field name="invoice_id" attrs="{'readonly': True}"/>
-                            <field name="filename" attrs="{'readonly': True}"/>
-                            <field name="payment" attrs="{'readonly': True}"/>
+                            <group>
+                                <field name="name"/>
+                                <field name="date_received"/>
+                                <field name="partner_id"/>
+                                <field name="type" widget="radio"/>
+                                <field name="filename" attrs="{'readonly': True}"/>
+                                <field name="payment" attrs="{'readonly': True}"/>
+                            </group>
+                            <group>
+                                <field name="document_type" attrs="{'readonly': True}"/>
+                                <field name="document_number" attrs="{'readonly': True}"/>
+                                <field name="date_invoice" attrs="{'readonly': True}"/>
+                                <field name="total_amount" attrs="{'readonly': True}"/>
+                                <field name="sale_order_id"/>
+                                <field name="purchase_order_id" attrs="{'readonly': True}"/>
+                                <field name="invoice_id" attrs="{'readonly': True}"/>
+                            </group>
                         </group>
                         <notebook attrs="{'invisible': [('type', '=', 'out_dte')]}">
                             <page string="Mercadería">
