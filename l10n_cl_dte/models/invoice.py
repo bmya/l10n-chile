@@ -18,6 +18,9 @@ import M2Crypto
 import pysiidte
 import pytz
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+# import certifi
 import urllib3
 import xmltodict
 from elaphe import barcode
@@ -29,9 +32,9 @@ from SOAPpy import SOAPProxy
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-try:
+if True:  # try:
     urllib3.disable_warnings()
-except:
+else:  # except:
     pass
 _logger = logging.getLogger(__name__)
 try:
@@ -46,9 +49,11 @@ server_url = pysiidte.server_url
 BC = pysiidte.BC
 EC = pysiidte.EC
 
-try:
+if True:  # try:
     pool = urllib3.PoolManager()
-except:
+    # pool = urllib3.PoolManager(
+    #     cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
+else:  # except:
     pass
 connection_status = pysiidte.connection_status
 xsdpath = os.path.dirname(os.path.realpath(__file__)).replace(
@@ -596,18 +601,23 @@ YComp 5.0.2.4)',
         params['dvSender'] = signature_d['subject_serial_number'][-1]
         params['rutCompany'] = company_id.vat[2:-1]
         params['dvCompany'] = company_id.vat[-1]
+        _logger.info('#######-----####### envio_dte %s' % envio_dte)
         params['archivo'] = (file_name, envio_dte, "text/xml")
         multi = urllib3.filepost.encode_multipart_formdata(params)
         headers.update({'Content-Length': '{}'.format(len(multi[0]))})
         response = pool.request_encode_body(
             'POST', url + post, params, headers)
+        # response = requests.post(url + post, headers=headers, params=json.dumps(params), verify=False) 
+        _logger.info('########################___ response: %s' % response.data)
         retorno = {
             'sii_xml_response': response.data,
             'sii_result': 'NoEnviado',
             'sii_send_ident': '', }
         if response.status != 200:
+            # if response.status_code != 200:
             return retorno
         respuesta_dict = xmltodict.parse(response.data)
+        # respuesta_dict = xmltodict.parse(response.text)
         if respuesta_dict['RECEPCIONDTE']['STATUS'] != '0':
             _logger.info(
                 connection_status[respuesta_dict['RECEPCIONDTE']['STATUS']])

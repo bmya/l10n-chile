@@ -650,7 +650,7 @@ xsi:schemaLocation="http://www.sii.cl/SiiDte LibroCV_v10.xsd" version="1.0">\
             xml1 = xml.dom.minidom.parseString(xml_envio_libro)
             xml_pret = xml1.toprettyxml()
             if True:  # try:
-                xml_pret = inv_obj.convert_encoding(
+                xml_pret = pysiidte.convert_encoding(
                     xml_pret, 'ISO-8859-1').replace(
                     '<?xml version="1.0" ?>', '')
             else:  # except:
