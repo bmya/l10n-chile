@@ -40,6 +40,7 @@
         'views/account_journal_view.xml',
         'data/cron.xml',
         'data/ir.config_parameter.xml',
+        # 'data/sii_dte_incoming_dupes.sql',
     ],
     'installable': True,
     'auto_install': False,

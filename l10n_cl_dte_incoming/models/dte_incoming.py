@@ -70,10 +70,18 @@ class IncomingDTE(models.Model):
                 return product
             except IndexError:
                 message = 'No hay producto para el SKU: %s' % default_code
-                self.flow_status = 'notproc'
+                try:
+                    product = product_obj.search(
+                        [
+                            ('default_code', '=', 'PRODGEN'), ])[0]
+                    message += ' Uso de producto generico %s %s' % (default_code, product)
+                except:
+                    message += ' No se encontró producto genérico PRODGEN'
+                    self.flow_status = 'notproc'
+                    product = False
                 self.message_post(message)
                 _logger.info(message)
-                return False
+                return product
 
     def get_products(self, bsoup, detail, journal_id=False):
         if bsoup.TipoDTE.text in ['39']:
@@ -88,6 +96,7 @@ class IncomingDTE(models.Model):
             product_id = self.get_product_id(product_obj, name_code[0]),
             _logger.debug('product id: %s' % product_id)
             if not product_id[0]:
+                # usar producto generico
                 return False
             try:
                 price_unit = float(product_line.PrcItem.text) / tax_index
@@ -274,15 +283,18 @@ Es fundamental que se haga el asiento de costo de venta.
         """
         for x in self:
             if x.type == 'out_dte' and x.total_amount == 0.0:
-                _logger.info('create_sale_order, out_dte record: %s' % x.id)
+                _logger.info('leyendo datos del xml, out_dte record: %s' % x.id)
                 incoming_dtes = x.get_incoming_dte_attachment()
                 for inc_dte in incoming_dtes:
                     bsoup = bs(inc_dte, 'xml')
                     _logger.debug('RUTRecep: %s' % bsoup.RUTRecep.text)
+                    if x.total_amount <= 0.0 or not x.total_amount:
+                        _logger.info('Tomando monto del xml %s' % bsoup.MntTotal.text)
+                        x.total_amount = float(bsoup.MntTotal.text)
                     if not x.date_invoice:
                         x.date_invoice = bsoup.FchEmis.text
                         x.document_type = int(bsoup.TipoDTE.text)
-                        x.document_number = int(bsoup.Folio.text)
+                        # x.document_number = int(bsoup.Folio.text)
                         x.total_amount = float(bsoup.MntTotal.text)
 
     def create_account_invoice(self):
@@ -321,25 +333,44 @@ Es fundamental que se haga el asiento de costo de venta.
                 ]
             )
             if len(repeated_invoice) > 0:
-                _logger.info(repeated_invoice)
+                _logger.info('Factura repetida: se toma el registro antiguo: %s' % repeated_invoice)
                 self.invoice_id = repeated_invoice[0].id
-                self.flow_status = 'invoice'
+                if self.invoice_id.state == 'draft':
+                    self.flow_status = 'draft'
+                elif self.invoice_id.state in ['open', 'paid']:
+                    self.flow_status = 'invoice'
             else:
                 account_invoice_new = self.format_account_invoice(
                     account_invoice_obj, partner_id, detail, journal_id, bsoup)
                 if not account_invoice_new:
-                    _logger.info('273: not invoice new')
+                    _logger.info('346: not invoice new')
                     continue
                 _logger.debug(detail)
                 _logger.debug(account_invoice_new)
-                try:
-                    self.write({
+                if True:
+                    invoice_dict = {
                         'partner_id': partner_id.id,
                         'flow_status': 'draft',
                         'date_invoice': bsoup.FchEmis.text,
                         'invoice_id': account_invoice_new.id,
+                        'payment': self.payment,
                         'document_type': int(bsoup.TipoDTE.text),
-                        'document_number': int(bsoup.Folio.text), })
+                        'document_number': int(bsoup.Folio.text),
+                    }
+                    _logger.info('sale order: invoice_dict: %s' % invoice_dict)
+                    account_invoice_new.write(invoice_dict)
+                    _logger.info('invoice_id: %s' % account_invoice_new.id)
+                    # raise UserError(
+                    #     '$$$$$$$$$ %s' % self.document_number)
+                    document_codes = {}
+                    _logger.info('JOURNAL ID: %s' % account_invoice_new.journal_id)
+                    for documents in account_invoice_new.journal_id.journal_document_class_ids:
+                        document_codes[documents.sii_document_class_id.sii_code] = documents.id
+                    account_invoice_new.journal_document_class_id = document_codes[int(self.document_type)]
+                    account_invoice_new.journal_document_class_id.sequence_id.number_next_actual = self.document_number
+                    account_invoice_new.turn_issuer = account_invoice_new.company_id.company_activities_ids[0]
+                    self.invoice_id = account_invoice_new.id
+                    self.flow_status = 'draft'
                     return True
                     """
                     try:
@@ -348,16 +379,17 @@ Es fundamental que se haga el asiento de costo de venta.
                             account_invoice_new.id, account_invoice_new.number))
                         self.flow_status = 'invoice'
                         return True
-                    except:
+                    except InternalError:
                         message = 'No pudo validar factura: %s Folio: %s Para dte entrante: %s' % (
                             account_invoice_new.id, account_invoice_new.name, self.id)
-                        self.flow_status = 'draft'
-                        self.message_post(message)
+                        dte_obj = self.browse(dte_obj_id)
+                        dte_obj.message_post(message)
+                        # self.message_post(message)
                         _logger.info(message)
                         return False
                     """
                     # la orden de confirmación se cambia a la hora real.
-                except:
+                else:
                     message = 'could not create invoice for dte %s' % self.id
                     try:
                         self.write({
@@ -383,6 +415,10 @@ Es fundamental que se haga el asiento de costo de venta.
         incoming_dtes = self.get_incoming_dte_attachment()
         for inc_dte in incoming_dtes:
             bsoup = bs(inc_dte, 'xml')
+            if int(bsoup.TipoDTE.text) not in [39, 33]:
+                _logger.info('el documento no es una boleta o factura')
+                self.flow_status = 'notproc'
+                return False
             _logger.debug('RUTRecep: %s' % bsoup.RUTRecep.text)
             try:
                 partner_id = partner_obj.search(
@@ -907,10 +943,14 @@ RespuestaEnvioDTE_v10.xsd">
         i = 1
         for r in self:
             if True:
-                r.create_sale_order()
-                message = 'created so for record dte incoming %s ... processing: %s' % (r.id, i)
-                _logger.info(message)
+                if r.create_sale_order():
+                    _logger.info('created so for record dte incoming %s ... processing: %s' % (r.id, i))
+                else:
+                    _logger.info('could not create SO for record dte incoming %s ... processing: %s' % (r.id, i))
+                    i += 1
+                    continue
                 r.flow_status = 'order'
+                # raise UserError('SALE ORDER ID: %s' % r.sale_order_id)
                 if r.create_account_invoice():
                     message = 'created invoice for record dte incoming %s ... processing: %s' % (r.id, i)
                 else:
@@ -918,22 +958,22 @@ RespuestaEnvioDTE_v10.xsd">
                 _logger.info(message)
             i += 1
     """
-                        r.flow_status = 'invoice'
-                        r.message_post(message)
-                    else:
-                        message = '(ORDER1) could not create invoice for record dte incoming %s ... processing: %s' % (
-                            r.id, i)
-                        r.flow_status = 'draft'
-                        _logger.info(message)
-                        r.message_post(message)
-                else:
-                    message = '(ORDER2) could not create order for record dte incoming %s ... processing: %s' % (r.id, i)
-                    _logger.info(message)
-                    try:
-                        r.flow_status = 'order'
-                        r.message_post(message)
-                    except:
-                        _logger.info('No pudo fijar estado para registro: %s ... procesando: %s' % (r.id, i))
+    r.flow_status = 'invoice'
+    r.message_post(message)
+    else:
+    message = '(ORDER1) could not create invoice for record dte incoming %s ... processing: %s' % (
+    r.id, i)
+    r.flow_status = 'draft'
+    _logger.info(message)
+    r.message_post(message)
+    else:
+    message = '(ORDER2) could not create order for record dte incoming %s ... processing: %s' % (r.id, i)
+    _logger.info(message)
+    try:
+    r.flow_status = 'order'
+    r.message_post(message)
+    except:
+    _logger.info('No pudo fijar estado para registro: %s ... procesando: %s' % (r.id, i))
     """
 
     @api.model
@@ -951,7 +991,6 @@ RespuestaEnvioDTE_v10.xsd">
         i = 1
         for r in records:
             if True:
-                # r.get_doc_type_and_number()
                 if r.create_account_invoice():
                     message = 'created invoice for record dte incoming %s ... processing: %s' % (r.id, i)
                 else:
@@ -970,6 +1009,10 @@ RespuestaEnvioDTE_v10.xsd">
         records.process_dte_incoming()
 
     def create_centralized_record(self):
+        """
+        Este codigo esta sin uso por ahora
+        :return:
+        """
         self.get_doc_type_and_number()
         conf = self.env['ir.config_parameter'].sudo()
         max_processed = int(conf.get_param('dte.sale.order.max.processed', default=30))
@@ -992,23 +1035,40 @@ RespuestaEnvioDTE_v10.xsd">
             loop_records[0].date_invoice, len(loop_records)))
 
     def action_invoice_open_multi(self):
+        # this query is for sanitizing draft records previous to process
+        query = '''delete from sii_dte_incoming where id in (
+select id from sii_dte_incoming_dupes where flow_status = 'draft' and row > 1);'''
+        cursor = self.env.cr
+        cursor.execute(query)
+        invoice_obj = self.env['account.invoice']
+        not_processed = []
         conf = self.env['ir.config_parameter'].sudo()
         max_processed = int(conf.get_param('dte.sale.order.max.processed', default=30))
-        records = self.search([
-            ('flow_status', '=', 'draft'),
-            ('type', '=', 'out_dte'),
-            ('invoice_id', '!=', False),
-        ], order='id asc', limit=max_processed)
+        domain = [
+                ('flow_status', '=', 'draft'),
+                ('type', '=', 'out_dte'),
+                ('invoice_id', '!=', False),
+                ('invoice_id', 'not in', not_processed)
+            ]
+        records = self.search(domain, order='id asc', limit=max_processed)
         i = 1
+        _logger.info('seleccionadas %s facturas para validar' % len(records) or 0)
         for record in records:
-            record.flow_status = 'notproc'
-            _logger.info('Intentando validar factura: %s Folio: %s Para dte entrante: %s. proc: %s' % (
-                record.invoice_id.id, record.document_number, record.id, i))
-            if True:  # try:
-                record.invoice_id.action_invoice_open()
-                _logger.info('Factura id: %s validada: %s, dte id: %s. proc: %s' % (
+            _logger.debug('Intentando validar factura: %s Folio: %s Para dte entrante: %s. proc: %s' % (
+                record.invoice_id, record.document_number, record.id, i))
+            inv = invoice_obj.browse(record.invoice_id.id)
+            try:
+                if inv.action_invoice_open():
+                    _logger.info('Factura id: %s validada: %s, dte id: %s. proc: %s' % (
+                        record.invoice_id.id, record.document_number, record.id, i))
+                    record.flow_status = 'invoice'
+
+                else:
+                    _logger.info('no pudo validar factura id: %s folio: %s, dte id: %s. proc: %s' % (
+                        record.invoice_id.id, record.document_number, record.id, i))
+                    record.flow_status = 'notproc'
+            except:
+                record.flow_status = 'notproc'
+                _logger.info('no pudo validar factura id: %s folio: %s, dte id: %s. proc: %s' % (
                     record.invoice_id.id, record.document_number, record.id, i))
-                record.flow_status = 'invoice'
-            else:  # except:
-                _logger.info('No pudo validar factura')
             i += 1
