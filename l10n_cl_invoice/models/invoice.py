@@ -3,6 +3,7 @@ from odoo import osv, models, fields, api, _
 from odoo.exceptions import except_orm, UserError
 import json
 import logging
+import re
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -88,6 +89,22 @@ class AccountInvoiceTax(models.Model):
 class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
+    @api.one
+    def _get_outstanding_info_JSON(self):
+        account_move_obj = self.env['account.move']
+        result = super(AccountInvoice, self)._get_outstanding_info_JSON()
+        outstanding_info = json.loads(self.outstanding_credits_debits_widget)
+        if outstanding_info:
+            outstanding_info['content'] = []
+            for content in json.loads(self.outstanding_credits_debits_widget)['content']:
+                c = content
+                _logger.info('journal name: %s' % content['journal_name'])
+                account_move_id = account_move_obj.search([('name', '=', content['journal_name'])])
+                if len(account_move_id) == 1 and account_move_id.document_number:
+                    c['journal_name'] = account_move_id.document_number
+                outstanding_info['content'].append(c)
+            self.outstanding_credits_debits_widget = json.dumps(outstanding_info)
+
     def _repair_diff(self, move_lines, dif):
         if move_lines[0][2]['currency_id'] != self.company_id.currency_id:
             return move_lines
@@ -166,7 +183,7 @@ class AccountInvoice(models.Model):
     def get_taxes_values(self):
         tax_grouped = {}
         for line in self.invoice_line_ids:
-            tot_discount = line.price_unit * ((line.discount or 0.0) / 100.0)
+            # tot_discount = line.price_unit * ((line.discount or 0.0) / 100.0)
             taxes = line.invoice_line_tax_ids.compute_all(
                 line.price_unit, self.currency_id, line.quantity,
                 line.product_id, self.partner_id,
@@ -225,7 +242,7 @@ class AccountInvoice(models.Model):
                 for turn in available_turn_ids:
                     rec.turn_issuer = turn.id
 
-    @api.model
+    # @api.multi
     def name_get(self):
         TYPES = {
             'out_invoice': _('Invoice'),
@@ -443,6 +460,7 @@ a VAT."""))
         else:
             document_number = self.number
         self.document_number = document_number
+        # self.name = document_number
 
     supplier_invoice_number = fields.Char(
         copy=False)
@@ -542,6 +560,12 @@ Company!'))
     _sql_constraints = [('number_supplier_invoice_number',
                          'unique(supplier_invoice_number, partner_id, \
 company_id)', 'Supplier Invoice No must be unique per Supplier and Company!')]
+
+    # @api.multi
+    # def action_invoice_open(self):
+    #     for record in self:
+    #         record.name = record.document_number
+    #     super(AccountInvoice, self).action_invoice_open()
 
     @api.multi
     def action_move_create(self):
@@ -678,6 +702,60 @@ facturas o facturas no afectas')
                             invoice.reference, invoice.partner_id.name))
         return self.write({'state': 'open'})
 
+    @api.model
+    def _prepare_refund(
+            self, invoice, date_invoice=None, date=None, description=None, journal_id=None, tipo_nota=61, mode='1'):
+        values = super(AccountInvoice, self)._prepare_refund(invoice, date_invoice, date, description, journal_id)
+        document_type = self.env['account.journal.sii_document_class'].search(
+                [
+                    ('sii_document_class_id.sii_code','=', tipo_nota),
+                    ('journal_id','=', invoice.journal_id.id),
+                ],
+                limit=1,
+            )
+        if invoice.type == 'out_invoice':
+            type = 'out_refund'
+        elif invoice.type == 'out_refund':
+            type = 'out_invoice'
+        elif invoice.type == 'in_invoice':
+            type = 'in_refund'
+        elif invoice.type == 'in_refund':
+            type = 'in_invoice'
+        values.update({
+                'type': type,
+                'journal_document_class_id': document_type.id,
+                'turn_issuer': invoice.turn_issuer.id,
+                'referencias': [[0, 0, {
+                        'origen': int(re.sub('\D', '', invoice.sii_document_number or invoice.reference)),
+                        'sii_referencia_TpoDocRef': invoice.sii_document_class_id.id,
+                        'sii_referencia_CodRef': mode,
+                        'motivo': description,
+                        'fecha_documento': invoice.date_invoice
+                    }]],
+            })
+        return values
+
+    @api.multi
+    @api.returns('self')
+    def refund(self, date_invoice=None, date=None, description=None, journal_id=None, tipo_nota=61, mode='1'):
+        new_invoices = self.browse()
+        for invoice in self:
+            # create the new invoice
+            values = self._prepare_refund(invoice, date_invoice=date_invoice, date=date,
+                                          description=description, journal_id=journal_id,
+                                          tipo_nota=tipo_nota, mode=mode)
+            refund_invoice = self.create(values)
+            invoice_type = {'out_invoice': ('customer invoices credit note'),
+                            'out_refund': ('customer invoices debit note'),
+                            'in_invoice': ('vendor bill credit note'),
+                            'in_refund': ('vendor bill debit note')}
+            message = _(
+                "This %s has been created from: <a href=# data-oe-model=account.invoice data-oe-id=%d>%s</a>") % \
+                      (invoice_type[invoice.type], invoice.id, invoice.number)
+            refund_invoice.message_post(body=message)
+            new_invoices += refund_invoice
+        return new_invoices
+
     @api.multi
     @api.returns('self')
     def refund_overwrite(self, date_invoice=None, date=None, description=None, journal_id=None):
@@ -689,6 +767,16 @@ facturas o facturas no afectas')
             new_invoices += self.create(values)
         return new_invoices
 
+    @api.model
+    def replace_document_number(self):
+        """
+        Esta función la escribí para reemplazar todos los name que se encuentran vacíos.
+        No tiene sentido si funciona el action_invoice_open heredado que también agregué
+        :return:
+        """
+        records = self.search(['|', ('name', '=', ''), ('name', '=', False)])
+        for record in records:
+            record.name = record.document_number
 
 class References(models.Model):
     _name = 'account.invoice.referencias'

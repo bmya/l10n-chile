@@ -23,11 +23,24 @@
                             string="Commercial Acceptance"
                             help="Inspect Attachment" attrs="{'invisible': [('type', '=', 'out_dte')]}"
                             icon="fa-file-o"/>
-                        <button type="object" name="create_sale_order"
-                            string="Create Sale Order"
+                        <button type="object" name="process_dte_incoming"
+                            string="Create Sale Order and Invoice"
                             help="Create Sale Order"
                             attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
                             icon="fa-file-o"/>
+                        <!-- comentar una vez que se saquen todas las que estan en order -->
+                        <button type="object" name="create_account_invoice"
+                            string="Create Account Invoice"
+                            help="Create Account Invoice"
+                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'order')]}"
+                            icon="fa-file-o"/>
+                        <!-- comentar una vez que se saquen todas las que estan en order -->
+                        <button type="object" name="create_centralized_record"
+                            string="Create Centralized Record"
+                            help="Create Centralized Record"
+                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
+                            icon="fa-file-o"/>
+
                         <button type="object" name="get_doc_type_and_number"
                             string="Get Document Type and Number"
                             help="Get Document Type and Number"/>
@@ -37,17 +50,23 @@
                     </header>
                     <sheet>
                         <group cols="4">
-                            <field name="name"/>
-                            <field name="date_received"/>
-                            <field name="partner_id"/>
-                            <field name="type" widget="radio"/>
-                            <field name="document_type" attrs="{'readonly': True}"/>
-                            <field name="document_number" attrs="{'readonly': True}"/>
-                            <field name="sale_order_id"/>
-                            <field name="purchase_order_id" attrs="{'readonly': True}"/>
-                            <field name="invoice_id" attrs="{'readonly': True}"/>
-                            <field name="filename" attrs="{'readonly': True}"/>
-                            <field name="payment" attrs="{'readonly': True}"/>
+                            <group>
+                                <field name="name"/>
+                                <field name="date_received"/>
+                                <field name="partner_id"/>
+                                <field name="type" widget="radio"/>
+                                <field name="filename" attrs="{'readonly': True}"/>
+                                <field name="payment" attrs="{'readonly': True}"/>
+                            </group>
+                            <group>
+                                <field name="document_type" attrs="{'readonly': True}"/>
+                                <field name="document_number" attrs="{'readonly': True}"/>
+                                <field name="date_invoice" attrs="{'readonly': True}"/>
+                                <field name="total_amount" attrs="{'readonly': True}"/>
+                                <field name="sale_order_id"/>
+                                <field name="purchase_order_id" attrs="{'readonly': True}"/>
+                                <field name="invoice_id" attrs="{'readonly': True}"/>
+                            </group>
                         </group>
                         <notebook attrs="{'invisible': [('type', '=', 'out_dte')]}">
                             <page string="Mercadería">
@@ -102,8 +121,11 @@
                         orchid:check_envelope_status in ('in_envelope_wrong');
                         orchid:check_doc_status in ('in_envelope_wrong');
                         #084B8A:type=='in_dte';">
+                    <field name="id"/>
                     <field name="name"/>
                     <field name="date_received"/>
+                    <field name="date_invoice"/>
+                    <field name="total_amount"/>
                     <!--<field name="filename"/>-->
                     <field name="invoice_id"/>
                     <field name="partner_id"/>
