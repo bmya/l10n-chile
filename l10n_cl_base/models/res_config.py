@@ -120,7 +120,6 @@ in order to issue your payroll""")
         help="""Installs l10n_cl_send_to_previred module, which allows you to \
 send a monthly report with 105 fields per employee, to Previred.""")
 
-
     module_l10n_cl_base_rut = fields.Boolean(
         'Validate Chilean VAT (RUT) and format to 99.999.999-X',
         help="""Installs l10n_cl_base_rut in ordar to validate de VAT (RUT) \
@@ -128,13 +127,13 @@ send a monthly report with 105 fields per employee, to Previred.""")
 
     @api.onchange('module_l10n_cl_invoice') # if these fields are changed, call method
     def check_change_cl_invoice(self):
-        if self.module_l10n_cl_invoice == True:
+        if self.module_l10n_cl_invoice:
             self.module_l10n_cl_partner_activities = True
             self.module_l10n_cl_base_rut = True
 
     @api.onchange('module_l10n_cl_dte', 'module_l10n_cl_libro_compra_venta')  # if these fields are changed, call method
     def check_change_cl_dte(self):
-        if self.module_l10n_cl_dte == True or self.module_l10n_cl_libro_compra_venta == True:
+        if self.module_l10n_cl_dte or self.module_l10n_cl_libro_compra_venta:
             self.module_l10n_cl_invoice = True
             self.module_l10n_cl_counties = True
 

@@ -17,5 +17,7 @@
     'license': 'AGPL-3',
     'name': u'Chile - Sistema de apoyo a la facturación - modelado',
     'data': [
+        'data/sii.document_class.csv',
+        'views/account_invoice_view.xml',
     ]    
 }

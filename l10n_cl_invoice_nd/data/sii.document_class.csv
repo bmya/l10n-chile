@@ -1,0 +1,5 @@
+id,active,document_letter_id/id,sii_code,dte,doc_code_prefix,document_type,report_name,name,code_template
+l10n_cl_invoice.dc_nd_f_dtn,True,l10n_cl_invoice.dl_a,55,False,N/D ,debit_note,NOTA DE DEBITO ,Nota de Débito,NDA
+l10n_cl_invoice.dc_nd_f_dte,True,l10n_cl_invoice.dl_a,56,True,N/D ,debit_note,NOTA DE DEBITO ,Nota de Débito Electrónica,NDA
+l10n_cl_invoice.dc_ndex_dte,True,,111,True,NDXE,debit_note,NDXE ,Nota de Débito de Exportación Electrónica,NDXE
+l10n_cl_invoice.dc_ncex_dte,True,,112,True,NCXE,credit_note,NCXE ,Nota de Crédito de Exportación Electrónica,NCXE
