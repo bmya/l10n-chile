@@ -20,14 +20,10 @@
 ##############################################################################
 {
     'active': False,
-    'author': u'Blanco Martín & Asociados, Odoo Chile Regionalización',
+    'author': u'Blanco Martín & Asociados',
     'category': 'Localization/Chile',
     'demo_xml': [],
     'depends': ['account'],
-    'description': u'''
-        Módulo de Actividades Económicas de la localización chilena.
-        Fuente: http://www.sii.cl/catastro/codigos.htm
-    ''',
     'installable': True,
     'license': 'AGPL-3',
     'name': u'Chile - Actividades Económicas',
@@ -42,6 +38,6 @@
         'views/sii_activity_description.xml',
         'security/ir.model.access.csv',
     ],
-    'version': '10.0.3',
+    'version': '10.0.4.0.0',
     'website': 'http://blancomartin.cl'
 }

@@ -8021,7 +8021,7 @@ msgstr "Suministro de Vapor y Agua Caliente"
 #. module: l10n_cl_partner_activities
 #: model:ir.model.fields,field_description:l10n_cl_partner_activities.field_partner_activities_tax_category
 msgid "TAX Category"
-msgstr "Categoría impuetos"
+msgstr "Categoría impuestos"
 
 #. module: l10n_cl_partner_activities
 #: model:partner.activities,name:l10n_cl_partner_activities.eco_acti_642

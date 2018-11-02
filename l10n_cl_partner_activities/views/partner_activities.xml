@@ -19,10 +19,12 @@
                 <group>
                     <field name="code"/>
                     <field name="parent_id"/>
+                    <field name="grand_parent_id" invisible="1"/>
                     <field name="name"/>
-                    <field name="vat_affected"/>
-                    <field name="tax_category"/>
-                    <field name="internet_available"/>
+                    <field name="vat_affected" attrs="{'required': [('parent_id', '!=', False), ('grand_parent_id', '!=', False)]}"/>
+                    <field name="tax_category" attrs="{'required': [('parent_id', '!=', False), ('grand_parent_id', '!=', False)]}"/>
+                    <field name="internet_available" attrs="{'required': [('parent_id', '!=', False), ('grand_parent_id', '!=', False)]}"/>
+                    <field name="new_activity" readonly="1"/>
                     <field name="active"/>
                 </group>
             </form>
@@ -39,6 +41,7 @@
                 <field name="name"/>
                 <field name="vat_affected"/>
                 <field name="tax_category"/>
+                <field name="new_activity"/>
                 <field name="internet_available"/>
             </tree>
         </field>
