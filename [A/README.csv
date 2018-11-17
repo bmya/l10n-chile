@@ -1,0 +1,32 @@
+# Localizacion Chilena
+
+## Organizacion De Modulos
+
+
+Nombre Técnico;Propósito;Estado;Autor;Dependencia;Estado
+----------------------------;------------------------;---------;---------;-----------------;---------
+l10n_cl_base.              ;Wizard instalador;10.0.    ;BMyA ;
+l10n_cl_base_rut.       ;Validador de RUT;10.0.   ;BMyA ;
+base_state_ubication ;Base de comunas Relacion entre comunas/ciudades       ;10.0; cubic.      ;X;Mejorar
+l10n_cl_counties;Comunas y Ciudades ;10.0;BMyA;;
+l10n_cl_banks_sbif;Nomina de bancos;10.0;BMyA;;
+l10n_cl_chart;Plan de cuentas SVyS;10.0;BMyA;;
+l10n_cl_financial_indicators;SBIF UF/USD/EUR/UTM;10.0;BMyA;;
+l10n_cl_invoice;Organizacion documentos tributarios ;10.0 ;BMyA;;
+l10n_cl_partner_activities;Actividades económicas / giro por glosa;10.0;BMyA Odoocoop;;
+l10n_cl_dte;Facturacion electronica;10.0;BMyA/odoocoop;;
+l10n_cl_dte_caf;Administracion de folios;10.0;BMyA;;
+l10n_cl_dte_incoming;DTE entrantes;10.0;BMyA;;
+l10n_cl_clean_doc_number;Limpieza de números de folio para anulaciones ;10.0;BMyA;;
+l10n_cl_clear_translation;Auxiliar para limpiar traducciones;10.0;BMyA;;
+l10n_cl_dte_point_of_sale;Facturacion para POS;9.0;odoocoop;;
+l10n_cl_fut;Reportes FUT;;BMyA;;
+l10n_cl_hr_payroll;Remuneraciones ;10.0;BMyA / Nelson Ramirez;;
+l10n_cl_libro_compra_venta;Libro compra/venta electronico;10.0;BMyA / Odoocoop;;
+l10n_cl_account_vat_ledger;Libro de compra/venta;8.0;bmya;;
+l10n_cl_partner_docsonline;Busqueda de partners mediante documentos online;10.0;BMyA;;
+l10n_cl_stock_picking;Guias de despacho;9.0;Odoocoop;;
+user_signature_key;Manejo de llave de firma electrónica;10.0;BMyA;;
+webservices_generic;Interfaz de webservices;10.0;BMyA;;
+
+

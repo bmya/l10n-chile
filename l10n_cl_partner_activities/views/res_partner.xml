@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    
     <record model="ir.ui.view" id="view_partner_activity_inherit_form">
         <field name="name">res.partner.activities.form.inherit</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
@@ -8,26 +7,13 @@
         <field name="arch" type="xml">
             <field name="lang" position="before">
                 <field name="partner_activities_ids"
-                    placeholder="Giros del Partner" widget="many2many_tags"
-                    options="{'no_create': True}" 
+                    placeholder="Actividades del Partner" widget="many2many_tags"
+                    options="{'no_create': True}"
                     domain="[('new_activity', '=', True)]"
-                    invisible="False"/>
-                <field name="activity_description" invisible="False"/>
+                    context="{'search_by_code': True}"
+                    attrs="{'invisible': False}"/>
+                <field name="activity_description"/>
             </field>
         </field>
     </record>
-
-    
-    <!--<record model="ir.ui.view" id="view_partner_activity_kanban_view">
-        <field name="name">view.partner.activities.kanban.inherit</field>
-        <field name="inherit_id" ref="base.res_partner_kanban_view"/>
-        <field name="model">res.partner</field>
-        <field name="arch" type="xml">
-            <kanban>
-                <field name="display_name" position="after">
-                    <field name="partner_activities_ids"/>
-                </field>
-            </kanban>
-        </field>
-    </record>-->
 </odoo>

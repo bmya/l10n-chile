@@ -1,0 +1,7 @@
+.DS_Store
+*.pyc
+.idea
+.settings/org.eclipse.wst.jsdt.ui.superType.container
+.project
+.settings/org.eclipse.wst.jsdt.ui.superType.name
+.settings/.jsdtscope

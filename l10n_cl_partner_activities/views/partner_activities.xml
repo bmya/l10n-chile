@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record model="ir.ui.view" id="activity_search_view">
-         <field name="name">activity.search</field>
-         <field name="model">partner.activities</field>
-         <field name="arch" type="xml">
-             <search>
-                  <field name="code"/>
-                  <field name="name"/>
-             </search>
-         </field>
-     </record>
+
+    <record id="view_partner_activities_search" model="ir.ui.view">
+        <field name="name">partner.activities.search</field>
+        <field name="model">partner.activities</field>
+        <field name="arch" type="xml">
+            <search string="Search By">
+                <field name="code"/>
+                <field name="name"/>
+                <filter string="New Activities" domain="[('new_activity','=',True)]" help="New Activities Filter"/>
+            </search>
+        </field>
+    </record>
 
     <record id="view_partner_activities_form" model="ir.ui.view">
         <field name="name">partner.activities.form</field>
@@ -37,12 +39,12 @@
         <field name="arch" type="xml">
             <tree string="SII Economic Activities">
                 <field name="code"/>
-                <field name="parent_id"/>
+                <field name="parent_id" invisible="1"/>
                 <field name="name"/>
                 <field name="vat_affected"/>
                 <field name="tax_category"/>
-                <field name="new_activity"/>
-                <field name="internet_available"/>
+                <field name="new_activity" invisible="1"/>
+                <field name="internet_available" invisible="1"/>
             </tree>
         </field>
     </record>
@@ -51,8 +53,10 @@
         <field name="name">SII Partner Activities</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">partner.activities</field>
+        <field name="domain">[('new_activity', '=', True)]</field>
+        <field name="context">{'group_by': ['grand_parent_id', 'parent_id']}</field>
         <field name="view_type">form</field>
-        <!-- <field name="view_mode">tree,form</field>-->
+        <field name="view_mode">tree,form</field>
     </record>
 
     <menuitem name="SII Partner Activities" action="act_partner_activities" id="menu_action_act_partner_activities" parent="menu_sii_config"/>

@@ -1,0 +1,367 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_cl_base
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 10.0+e-20170812\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-10-13 18:30+0000\n"
+"PO-Revision-Date: 2017-10-13 16:07-0300\n"
+"Last-Translator: <>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: \n"
+"Language: es_CL\n"
+"X-Generator: Poedit 2.0.4\n"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Apply"
+msgstr "Aplicar"
+
+#. module: l10n_cl_base
+#: model:ir.ui.menu,name:l10n_cl_base.menu_bmya_base_configuration
+msgid "BMyA Menu Options"
+msgstr "Opciones de Menú BMyA"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_banks_sbif
+msgid "Banks in Chile, According SBIF"
+msgstr "Bancos de Chile, según SBIF"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_invoice
+msgid "Centralized sales journal for multiple type of document stubs          (recommended)!"
+msgstr "Diarios de venta para múltiples tipos de talonarios de documentos (recomendado!)"
+
+#. module: l10n_cl_base
+#: model:ir.ui.menu,name:l10n_cl_base.menu_chilean_base_configuration
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Chilean Localization"
+msgstr "Localización Chilena"
+
+#. module: l10n_cl_base
+#: model:ir.actions.act_window,name:l10n_cl_base.action_chilean_base_configuration
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Configure"
+msgstr "Configurar"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_create_date
+msgid "Created on"
+msgstr "Creado en"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_display_name
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Easily configure your options for chilean localization."
+msgstr "Configurar de manera fácil sus opciones de la localizaión chilena"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_einvoice
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_dte_pdf
+msgid "Electronic Invoice Format"
+msgstr "Formato de Factura Electrónica"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_stock
+msgid "Electronic Stock picking"
+msgstr "Guía de Despacho electrónica"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_pos_credit_card_voucher
+msgid "Exclude final consumer credit card sales from VAT report (recommended only for pre-printed invoicing)"
+msgstr "Excluye las ventas con tarjetas a consumidores finales del libro de ventas (sólo recomendado para documentos preimpresos - resolución exenta 05/2015)"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Finance"
+msgstr "Finanzas"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Human Resources"
+msgstr "Remuneraciones"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_id
+msgid "ID"
+msgstr "ID (identificación)"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_counties
+msgid "Include Chilean Counties for partners and companies"
+msgstr "Incluye regiones / comunas chilenas"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_partner_activities
+msgid "Include Partner's turn"
+msgstr "Incluye actividades económicas (giros)"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_chart
+msgid "Install Chilean Accounting Plan"
+msgstr "Instalar plan de cuentas de Chile (SVS + Cuentas agregadas BMyA)"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_libro_compra_venta
+msgid "Install VAT Ledger"
+msgstr "Instala Libro de Compras y Ventas"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_pos_basic_users
+msgid "Install dummy-proof terminology - (not recommended)"
+msgstr "Terminología para personas no contables (Boleta - Factura)"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_hr_payroll
+msgid "Install l10n_cl_hr_payroll for payroll and AFPs chilean modules"
+msgstr "Instala los módulos de remuneraciones, AFP, ISAPRES y Previred para Chile"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_hr_payroll
+msgid "Install payroll and AFPs chilean modules"
+msgstr "Instala los módulos de remuneraciones, AFP, ISAPRES y Previred para Chile"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_invoice_printed
+msgid "Installs invoice_printed module, to interact with prnfiscal dependency in your local machine, in order to have your fiscal documents rendered in TXT format. This allows printing in fiscal printers, or connect to external electronic invoices services"
+msgstr "Instala el addon “invoice_printed”, el que interactúa con la aplicación “prnfiscal” (agente de impresión local) para renderizar documentos fiscales en formato TXT. Esto habilita la impresión en impresoras fiscales, o conecta a servicios externos de facturacion a través de agente de impresión en Windows (requiere “prnfiscalwin”)."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_base_rut
+msgid "Installs l10n_cl_base_rut in ordar to validate de VAT (RUT)         ant to have it formatted correctly, according Chilean usage."
+msgstr "Intala el mòdulo l10n_cl_base_rut el cual valida el RUT y lo formatea de acuerdo al uso en Chile."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_counties
+msgid "Installs l10n_cl_counties, which includes all chilean counties to partners."
+msgstr "Instala l10n_cl_counties, que incluye todas las comunas chilenas a los clientes/proveedores."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_hr_previred
+msgid "Installs l10n_cl_hr_previred module, to update needed indexes in order to issue your payroll"
+msgstr "Instala el módulo para leer datos de Previred."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_invoice
+msgid "Installs l10n_cl_invoice. It links your invoicing, picking and receipts stubs with journals for easiest configuration. This is a base module for DTE compliance, and a fundamental option for companies with multiple branches."
+msgstr "Instala l10n_cl_invoice. Enlaza sus talonarios de facturas, guías de despacho y boletas con diarios para configuración más sencilla. Este es el módulo base para cubrir la característica de Documentos Tributarios Electrónicos."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_partner_activities
+msgid "Installs l10n_cl_partner_activities module, which includes your partners' turns in their record using the SII activities table and allows you to select the activity when invoicing."
+msgstr "Instala el addon “l10n_cl_partner_activities” el que incluye las actividades económicas utilizando la tabla de actividades económicas del SII y permite seleccionar los giros al facturar."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_pos_basic_users
+msgid "Installs l10n_cl_pos_basic_users module, which helps against POS closed minded operators. (factura/boleta cliente factura, cliente boleta. Adds generic partners to make invoicing easier, but is not recommended, except for dummy users."
+msgstr "Instala el addon “l10n_cl_pos_basic_users” el cual ayuda a operadores que no tienen nociones contables (reemplaza terminologías como “IVA Afecto” por “Cliente Factura” o “Consumidor Final” por “Cliente Boleta”). Además agrega clientes genéricos para hacer la facturación más sencilla, pero no se recomienda, excepto para usuarios de POS sin nociones contables o tributarias."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_hr_send_to_previred
+msgid "Installs l10n_cl_send_to_previred module, which allows you to send a monthly report with 105 fields per employee, to Previred."
+msgstr "Instala el addons “l10n_cl_send_to_previred” el que permite envio de datos de remuneraciones a Previred."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_libro_compra_venta
+msgid "Installs module for vat ledger, allowing to export sales and purchases VAT ledger in XLS format. Requires Aeroo Reports."
+msgstr "Instala el componente que permite imprimir en PDF y exportar los libros de compra y venta a formato XLS."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_banks_sbif
+msgid "Installs module l10n_cl_banks_sbif, and includes authorized banks, and financial institutions in Chile."
+msgstr "Instala el addon “l10n_cl_banks_sbif” que incluye los bancos e instituciones financieras de Chile."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_chart
+msgid "Installs module l10n_cl_chart, allowing to choose different account options."
+msgstr "Instala el addon “l10n_cl_chart” que permite tener un plan de cuenta adaptado para Chile en base al propuesto por Superintendencia de Valores y Seguros, más cuentas adicionadas por BMyA, en base a experiencias de implementación en Chile."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_financial_indicators
+msgid "Installs module l10n_cl_financial_indicators, allowing to update indicators daily, from SBIF."
+msgstr "Instala el módulo “l10n_cl_financial_indicators” que permite actualizar periodicamente la cotización de USD, EUR, UF y UTM."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_pos_credit_card_voucher
+msgid "Installs module l10n_cl_pos_credit_card_voucher, allowing you to link the sales note with a credit card voucher, in order to keep it unreported in boletas sales."
+msgstr "El addon “l10n_cl_pos_credit_card_voucher” permite incluir el número de voucher de ventas con tarjeta, en el apunte contable de cobro usado en los diarios de ventas débito y/o crédito."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_dte_pdf
+msgid "Installs output form report     including PDF417 electronic stamp"
+msgstr "Instala el módulo de impresión de facturas/boletas en formato PDF, incluyendo el timbre electrónico."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_einvoice
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_stock
+msgid "Installs output form report including PDF417 electronic stamp"
+msgstr "Instala el módulo de impresión de facturas/boletas en formato PDF, incluyendo el timbre electrónico."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_dte
+msgid "Installs several dependencies in order to performn Electronic invoicing, and sales invoicing in xml."
+msgstr "Instala varios componentes requerido para crear facturas electrónicas"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_invoice_printed
+msgid "Invoice in TXT Format"
+msgstr "Facturas en formato TXT"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Invoicing"
+msgstr "Facturación"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings___last_update
+msgid "Last Modified on"
+msgstr "Última modificación en"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_write_uid
+msgid "Last Updated by"
+msgstr "Última actualización de"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_write_date
+msgid "Last Updated on"
+msgstr "Última actualización en"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Manual POS Usage"
+msgstr "Uso de POS manual"
+
+#. module: l10n_cl_base
+#: model:ir.model,name:l10n_cl_base.model_ir_module_module
+msgid "Module"
+msgstr "Módulo"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Partner Activities"
+msgstr "Actividades económicas"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Partners"
+msgstr "Empresas"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_receipt
+msgid "Payment Receipt Form"
+msgstr "Formulario de recibo de pago"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Payroll"
+msgstr "Remuneraciones"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_purchase
+msgid "Purchase Order Form"
+msgstr "Formulario de Orden de Compra"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "RUT (VAT) Validation"
+msgstr "Validación de RUT"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_receipt
+msgid "Report for payment receipt"
+msgstr "Reporte para recibos de pago (egresos)"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_purchase
+msgid "Report for purchase order"
+msgstr "Reporte para órdenes de compra"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_sale
+msgid "Report for sales order"
+msgstr "Reporte para órdenes de venta"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Reporting"
+msgstr "Informes"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_user_signature_key
+msgid "SII Directly (adds User signature and CAF management)."
+msgstr "Conexión directa SII (agrega manejo de certificado digital de usuarios y timbraje electrónico)."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_aeroo_sale
+msgid "Sales Order Form"
+msgstr "Formulario de órdenes de venta"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Sales and Purchases"
+msgstr "Compras y Ventas"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "Send Files to Previred"
+msgstr "Envía archivo a Previred"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_hr_send_to_previred
+msgid "Send payroll Information to Previred monthly"
+msgstr "Envía información de remuneraciones mensual a Previred"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_hr_previred
+msgid "Update Previred's Monthly indexes"
+msgstr "Actualiza los índices mensuales de Previred"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_financial_indicators
+msgid "Update UF, UTM, Dollar and Euro automatically"
+msgstr "Actualiza UF, UTM, Dólar y Euros automáticamente."
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_dte
+msgid "Use Electronic Invoicing"
+msgstr "Usa Facturación Electrónica"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,field_description:l10n_cl_base.field_chilean_base_config_settings_module_l10n_cl_base_rut
+msgid "Validate Chilean VAT (RUT) and format to 99.999.999-X"
+msgstr "Valida EL RUT de Chile y lo formatea a 99.999.999-X"
+
+#. module: l10n_cl_base
+#: model:ir.model.fields,help:l10n_cl_base.field_chilean_base_config_settings_module_user_signature_key
+msgid "Works without gateways, directly to SII. This set Odoo to work directly with SII, installing module l10n_cl_dte_caf and other dependencies"
+msgstr "Trabaja sin intermediarios, directamente al SII, instalando las dependencias necesarias."
+
+#. module: l10n_cl_base
+#: model:ir.model,name:l10n_cl_base.model_chilean_base_config_settings
+msgid "chilean.base.config.settings"
+msgstr "chilean.base.config.settings"
+
+#. module: l10n_cl_base
+#: model:ir.ui.view,arch_db:l10n_cl_base.view_chilean_base_configuration
+msgid "or"
+msgstr "o"

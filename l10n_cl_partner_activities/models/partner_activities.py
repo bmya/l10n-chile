@@ -10,7 +10,8 @@ class PartnerActivities(models.Model):
     parent_id = fields.Many2one(
         'partner.activities', 'Parent Activity', ondelete='cascade')
     grand_parent_id = fields.Many2one(
-        'partner.activities', related='parent_id.parent_id', string='Grand Parent Activity', ondelete='cascade')
+        'partner.activities', related='parent_id.parent_id', string='Grand Parent Activity',
+        ondelete='cascade', store=True)
     name = fields.Char('Complete Name', required=True, translate=True)
     vat_affected = fields.Selection(
         [('SI', 'Si'), ('NO', 'No'), ('ND', 'ND')], 'VAT Affected', translate=True, default='SI')
@@ -25,6 +26,25 @@ class PartnerActivities(models.Model):
     new_activity = fields.Boolean(
         'New Activity Code',
         help='Your activity codes must be replaced with the new ones. Effective November 1, 2018')
+
+    @api.multi
+    def name_get(self):
+        result = []
+        for record in self:
+            name = record.name
+            if record.code:
+                name = '(%s) %s' % (record.code, name)
+            result.append((record.id, name))
+        return result
+
+    @api.model
+    def name_search(self, name='', args=None, operator='ilike', limit=100):
+        if self._context.get('search_by_code', False):
+            if name:
+                args = args if args else []
+                args.extend(['|', ['name', 'ilike', name], ['code', 'ilike', name]])
+                name = ''
+        return super(PartnerActivities, self).name_search(name=name, args=args, operator=operator, limit=limit)
 
 
 class PartnerTurns(models.Model):

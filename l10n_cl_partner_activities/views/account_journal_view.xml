@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_l10n_cl_account_document_journal_form" model="ir.ui.view">
+            <field name="model">account.journal</field>
+            <field name="name">cl_account.document.journal.form</field>
+            <field name="inherit_id" ref="l10n_cl_account.view_account_document_journal_form_wizard"/>
+            <field name="arch" type="xml">
+                <button name="%(l10n_cl_account.action_account_journal_document_config_form)d" position="before">
+                  <group>
+                    <field name="journal_activities_ids"
+                           attrs="{'invisible': ['|',('type','not in',['purchase','sale','purchase_refund','sale_refund'])],'required': [('use_documents','=',True),('type','in',['sale','sale_refund'])]}"
+                           placeholder="Giros del Diario" widget="many2many_tags"
+                           options="{'no_create': True}"
+                           context="{'default_company_id':company_id}"/>
+                           <!--domain="[('partner_ids', '=', company_id)]"-->
+                    <field name="excempt_documents" readonly="True"/>
+                  </group>
+                </button>
+            </field>
+  </record>
+</odoo>

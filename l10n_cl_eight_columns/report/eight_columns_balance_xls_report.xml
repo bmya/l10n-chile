@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <report
+        id="eight_columns_balance_xlsx"
+        model="account.balance.report"
+        string="Print to XLSX"
+        report_type="xlsx"
+        name="trialbalance_xlsx"
+        file="eight_columns_balance_xlsx"
+        attachment_use="False"/>
+</odoo>

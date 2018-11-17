@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Account Tags -->
+        <record id="tag_cl_01" model="account.account.tag">
+            <field name="name">Impuestos Directos a Pagar</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_02" model="account.account.tag">
+            <field name="name">Impuesto a la Renta Primera Categoría a Pagar</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_03" model="account.account.tag">
+            <field name="name">Impuesto General a las Ventas (IVA) Total a Pagar</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_04" model="account.account.tag">
+            <field name="name">Impuesto Pagado</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_05" model="account.account.tag">
+            <field name="name">Impuesto Pagado IVA</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_06" model="account.account.tag">
+            <field name="name">Impuesto Pagado de Exonerados al IVA</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_07" model="account.account.tag">
+            <field name="name">Impuesto Pagado Fuera de Ámbito</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_08" model="account.account.tag">
+            <field name="name">Impuesto Cobrado</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_09" model="account.account.tag">
+            <field name="name">Impuesto Cobrado IVA</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_10" model="account.account.tag">
+            <field name="name">Impuesto Cobrado de Exonerados al IVA</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_11" model="account.account.tag">
+            <field name="name">Impuesto Cobrado Fuera de Ámbito</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_12" model="account.account.tag">
+            <field name="name">Base Imponible</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_13" model="account.account.tag">
+            <field name="name">Base Imponible - Ventas</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_14" model="account.account.tag">
+            <field name="name">Ventas Gravadas con IVA</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_15" model="account.account.tag">
+            <field name="name">Ventas NO Gravadas (Exoneradas)</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_16" model="account.account.tag">
+            <field name="name">Ventas Gravadas Fuera de Ámbito</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_17" model="account.account.tag">
+            <field name="name">Base Imponible - Compras</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_18" model="account.account.tag">
+            <field name="name">Compras Gravadas con IVA</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_19" model="account.account.tag">
+            <field name="name">Compras NO Gravadas (Exoneradas)</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_20" model="account.account.tag">
+            <field name="name">Compras Gravadas Fuera de Ámbito</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_21" model="account.account.tag">
+            <field name="name">Compras Retención a la Renta 2da Categoría a Pagar</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <record id="tag_cl_22" model="account.account.tag">
+            <field name="name">Impuesto Retenido 2da Categoría</field>
+            <field name="applicability">taxes</field>
+        </record>
+        <!-- taxes -->
+        <record id="IVAV_19" model="account.tax.template">
+          <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+          <field name="name">IVA 19% Venta </field>
+          <field name="description">IVA 19% Venta </field>
+          <field name="amount">19</field>
+          <field name="sii_code">14</field>
+          <field name="amount_type">percent</field>
+          <field name="type_tax_use">sale</field>
+          <field name="refund_account_id" ref="210710"/>
+          <field name="account_id" ref="210710"/>
+          <field name="tag_ids" eval="[(6,0,[ref('tag_cl_09'), ref('tag_cl_14')])]"/>
+        </record>
+        <record id="IVAC_19" model="account.tax.template">
+          <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+          <field name="name">IVA 19% Compra </field>
+          <field name="description">IVA 19% Compra </field>
+          <field name="amount">19</field>
+          <field name="sii_code">14</field>
+          <field name="sequence" eval="1"/>
+          <field name="amount_type">percent</field>
+          <field name="type_tax_use">purchase</field>
+          <field name="refund_account_id" ref="110710"/>
+          <field name="account_id" ref="110710"/>
+          <field name="tag_ids" eval="[(6,0,[ref('tag_cl_05'), ref('tag_cl_18')])]"/>
+        </record>
+        <record id="I_IU2C" model="account.tax.template">
+          <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+          <field name="name">Retención de Segunda Categoría </field>
+          <field name="description">Retención de 2da Categoría </field>
+          <field name="amount">-10</field>
+          <field name="sequence" eval="2"/>
+          <field name="amount_type">percent</field>
+          <field name="type_tax_use">purchase</field>
+          <field name="refund_account_id" ref="210740"/>
+          <field name="account_id" ref="210740"/>
+          <field name="tag_ids" eval="[(6,0,[ref('tag_cl_22'), ref('tag_cl_21')])]"/>
+        </record>
+        <record id="especifico_compra" model="account.tax.template">
+            <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+            <field name="name">Específico Compra</field>
+            <field name="description">Especifico</field>
+            <field name="amount">63</field>
+            <field name="sii_code">29</field>
+            <field name="amount_type">percent</field>
+            <field name="type_tax_use">purchase</field>
+            <field name="sequence" eval="5"/>
+            <field name="refund_account_id" ref="110710"/>
+            <field name="account_id" ref="110710"/>
+            <field name="tag_ids" eval="[(6,0,[ref('tag_cl_05'), ref('tag_cl_18')])]"/>
+        </record>
+        <record id="iva_activo_fijo" model="account.tax.template">
+            <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+            <field name="name">Activo Fijo</field>
+            <field name="description">19%</field>
+            <field name="amount">19</field>
+            <field name="sii_code">14</field>
+            <field name="amount_type">percent</field>
+            <field name="type_tax_use">purchase</field>
+            <field name="sequence" eval="6"/>
+            <field name="refund_account_id" ref="110740"/>
+            <field name="account_id" ref="110740"/>
+            <field name="tag_ids" eval="[(6,0,[ref('tag_cl_05'), ref('tag_cl_18')])]"/>
+        </record>
+        <record id="retencion_iva" model="account.tax.template">
+            <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+            <field name="name">Retención Total IVA</field>
+            <field name="description">Retención</field>
+            <field name="amount">19</field>
+            <field name="sii_code">15</field>
+            <field name="amount_type">percent</field>
+            <field name="type_tax_use">purchase</field>
+            <field name="sequence" eval="4"/>
+            <field name="refund_account_id" ref="210710"/>
+            <field name="account_id" ref="210710"/>
+            <field name="tag_ids" eval="[(6,0,[ref('tag_cl_05'), ref('tag_cl_18')])]"/>
+        </record>
+        <record id="ila_a_100" model="account.tax.template">
+            <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+            <field name="active">True</field>
+            <field name="activo_fijo">False</field>
+            <field name="tax_adjustment">False</field>
+            <field name="include_base_amount">"False</field>
+            <field name="refund_account_id" ref="110740"/>
+            <field name="account_id" ref="110740"/>
+            <field name="amount_type">percent</field>
+            <field name="sii_code">27</field>
+            <field name="no_rec">True</field>
+            <field name="description">ILA A 10</field>
+            <field name="tag_ids">l10n_cl_chart.tag_cl_04</field>
+            <field name="amount">10.0</field>
+            <field name="price_include">False</field>
+            <field name="name">Beb. Analcólicas 10%</field>
+            <field name="sequence">10</field>
+            <field name="sii_type"></field>
+            <field name="type_tax_use">purchase</field>
+        </record>
+        <record id="ila_a_180" model="account.tax.template">
+            <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+            <field name="active">True</field>
+            <field name="activo_fijo">False</field>
+            <field name="tax_adjustment">False</field>
+            <field name="include_base_amount">False</field>
+            <field name="refund_account_id" ref="110740"/>
+            <field name="account_id" ref="110740"/>
+            <field name="amount_type">percent</field>
+            <field name="sii_code">26</field>
+            <field name="no_rec">True</field>
+            <field name="description">ILA A 18</field>
+            <field name="tag_ids">l10n_cl_chart.tag_cl_04</field>
+            <field name="amount">18.0</field>
+            <field name="price_include">False</field>
+            <field name="name">Beb. Analcólicas 18%</field>
+            <field name="sequence">12</field>
+            <field name="sii_type"></field>
+            <field name="type_tax_use">purchase</field>
+        </record>
+        <record id="ila_l_315" model="account.tax.template">
+            <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+            <field name="active">True</field>
+            <field name="activo_fijo">False</field>
+            <field name="tax_adjustment">False</field>
+            <field name="include_base_amount">False</field>
+            <field name="refund_account_id" ref="110740"/>
+            <field name="account_id" ref="110740"/>
+            <field name="amount_type">percent</field>
+            <field name="sii_code">24</field>
+            <field name="no_rec">True</field>
+            <field name="description">ILA L 31.5</field>
+            <field name="tag_ids">l10n_cl_chart.tag_cl_04</field>
+            <field name="amount">31.5</field>
+            <field name="price_include">False</field>
+            <field name="name">Licores 31.5%</field>
+            <field name="sequence">14</field>
+            <field name="sii_type"></field>
+            <field name="type_tax_use">purchase</field>
+        </record>
+        <record id="ila_v_205" model="account.tax.template">
+            <field name="chart_template_id" ref="cl_chart_template_bmya"/>
+            <field name="active">True</field>
+            <field name="activo_fijo">False</field>
+            <field name="tax_adjustment">False</field>
+            <field name="include_base_amount">False</field>
+            <field name="refund_account_id" ref="110740"/>
+            <field name="account_id" ref="110740"/>
+            <field name="amount_type">percent</field>
+            <field name="sii_code">25</field>
+            <field name="no_rec">True</field>
+            <field name="description">ILA V 20.5</field>
+            <field name="tag_ids">l10n_cl_chart.tag_cl_04</field>
+            <field name="amount">20.5</field>
+            <field name="price_include">False</field>
+            <field name="name">Vinos</field>
+            <field name="sequence">15</field>
+            <field name="sii_type"> etc 20.5%</field>
+            <field name="type_tax_use">purchase</field>
+        </record>
+    </data>
+</odoo>

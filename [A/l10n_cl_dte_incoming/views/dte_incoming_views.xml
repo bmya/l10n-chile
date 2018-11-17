@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_sii_incoming_dte_form" model="ir.ui.view">
+			<field name="name">sii.dte.incoming.form</field>
+			<field name="model">sii.dte.incoming</field>
+			<field name="arch" type="xml">
+                <form string="Incoming DTE">
+                    <header>
+                        <button type="object" name="analyze_msg"
+                            string="Analyze Message"
+                            help="Inspect Attachment" attrs="{'invisible': [('type', '=', 'out_dte')]}"
+                            icon="fa-file-o"/>
+                        <button type="object" name="receive_merchandise"
+                            string="Receive Merchandise"
+                            help="Inspect Attachment" attrs="{'invisible': [('type', '=', 'out_dte')]}"
+                            icon="fa-file-o"/>
+                        <button type="object" name="document_received"
+                            string="Document Received"
+                            help="Inspect Attachment" attrs="{'invisible': [('type', '=', 'out_dte')]}"
+                            icon="fa-file-o"/>
+                        <button type="object" name="commercial_acceptance"
+                            string="Commercial Acceptance"
+                            help="Inspect Attachment" attrs="{'invisible': [('type', '=', 'out_dte')]}"
+                            icon="fa-file-o"/>
+                        <button type="object" name="process_dte_incoming"
+                            string="Create Sale Order and Invoice"
+                            help="Create Sale Order"
+                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
+                            icon="fa-file-o"/>
+                        <!-- comentar una vez que se saquen todas las que estan en order -->
+                        <button type="object" name="create_account_invoice"
+                            string="Create Account Invoice"
+                            help="Create Account Invoice"
+                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'order')]}"
+                            icon="fa-file-o"/>
+                        <!-- comentar una vez que se saquen todas las que estan en order -->
+                        <button type="object" name="create_centralized_record"
+                            string="Create Centralized Record"
+                            help="Create Centralized Record"
+                            attrs="{'invisible': ['|', ('type', '!=', 'out_dte'), ('flow_status', '!=', 'new')]}"
+                            icon="fa-file-o"/>
+
+                        <button type="object" name="get_doc_type_and_number"
+                            string="Get Document Type and Number"
+                            help="Get Document Type and Number"/>
+                        <field name="status" widget="statusbar" attrs="{'invisible': [('type', '=', 'out_dte')]}"/>
+                        <field name="flow_status" widget="statusbar"
+                               attrs="{'invisible': [('type', '!=', 'out_dte')]}"/>
+                    </header>
+                    <sheet>
+                        <group cols="4">
+                            <group>
+                                <field name="name"/>
+                                <field name="date_received"/>
+                                <field name="partner_id"/>
+                                <field name="type" widget="radio"/>
+                                <field name="filename" attrs="{'readonly': True}"/>
+                                <field name="payment" attrs="{'readonly': True}"/>
+                            </group>
+                            <group>
+                                <field name="document_type" attrs="{'readonly': True}"/>
+                                <field name="document_number" attrs="{'readonly': True}"/>
+                                <field name="date_invoice" attrs="{'readonly': True}"/>
+                                <field name="total_amount" attrs="{'readonly': True}"/>
+                                <field name="sale_order_id"/>
+                                <field name="purchase_order_id" attrs="{'readonly': True}"/>
+                                <field name="invoice_id" attrs="{'readonly': True}"/>
+                            </group>
+                        </group>
+                        <notebook attrs="{'invisible': [('type', '=', 'out_dte')]}">
+                            <page string="Mercadería">
+                                <button type="object" name="send_xml_merchandise_button"
+                            string="Send"
+                            help="Inspect Attachment"
+                            icon="fa-file-o"/>
+                                <group>
+                                    <field name="sii_xml_merchandise" />
+                                </group>
+                            </page>
+                            <page string="Acuse de recibo">
+                                <button type="object" name="send_xml_file_button"
+                                string="Send"
+                                help="Inspect Attachment"
+                                icon="fa-file-o"/>
+                                <group>
+                                    <field name="sii_xml_request" />
+                                </group>
+                            </page>
+                            <page string="Aceptación comercial">
+                                <button type="object" name="send_xml_accept_button"
+                                string="Send"
+                                help="Inspect Attachment"
+                                icon="fa-file-o"/>
+                                <group>
+                                    <field name="sii_xml_accept" />
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"
+                            widget="mail_followers" groups="base.group_user" />
+                        <field name="message_ids"
+                            widget="mail_thread" />
+                    </div>
+                </form>
+            </field>
+        </record>
+		<!-- Base Config Settings List View -->
+		<record id="view_sii_incoming_dte_tree" model="ir.ui.view">
+			<field name="name">sii.dte.incoming.tree</field>
+			<field name="model">sii.dte.incoming</field>
+			<field name="arch" type="xml">
+				<tree string="Incoming DTEs"
+                      colors="blue:flow_status=='new';
+                        red:flow_status=='notproc';
+                        orchid:flow_status=='order';
+                        black:flow_status=='invoice';
+                        blue:check_envelope_status in ('in_envelope');
+                        orchid:check_envelope_status in ('in_envelope_wrong');
+                        orchid:check_doc_status in ('in_envelope_wrong');
+                        #084B8A:type=='in_dte';">
+                    <field name="id"/>
+                    <field name="name"/>
+                    <field name="date_received"/>
+                    <field name="date_invoice"/>
+                    <field name="total_amount"/>
+                    <!--<field name="filename"/>-->
+                    <field name="invoice_id"/>
+                    <field name="partner_id"/>
+                    <field name="type"/>
+                    <field name="status"/>
+                    <field name="flow_status"/>
+                    <field name="check_envelope_status"/>
+                    <field name="check_doc_status"/>
+                    <button type="object" name="analyze_msg"
+                            help="Dar Acuse de Recibo"
+                            icon="fa-check"
+                            attrs="{'invisible': [('type', '!=' ,'in_dte')]}"/>
+                    <button type="object" name="analyze_msg"
+                            help="Dar Acuse de Recibo de Mercadería"
+                            icon="fa-truck"
+                            attrs="{'invisible': [('type', '!=' ,'in_dte')]}"/>
+                    <button type="object" name="analyze_msg"
+                            help="Dar Aceptación Comercial"
+                            icon="fa-usd"
+                            attrs="{'invisible': [('type', '!=' ,'in_dte')]}"/>
+                    <button type="object" name="analyze_msg"
+                            help="Enlazar"
+                            icon="fa-link"/>
+                </tree>
+            </field>
+		</record>
+
+        <!-- attachment -->
+        <!--<record model="ir.values" id="ir_action_document_file_directory_form">
+            <field name="key2" eval="'tree_but_open'"/>
+            <field name="model" eval="'document.directory'"/>
+            <field name="name">Browse Files</field>
+            <field name="value" eval="'ir.actions.act_window,%d'%action_document_file_directory_form"/>
+        </record>
+        no anduvo -->
+
+		<!-- Base Config Settings Action -->
+		<record id="action_open_incoming_dte" model="ir.actions.act_window">
+			<field name="name">DTEs Entrantes</field>
+			<field name="type">ir.actions.act_window</field>
+			<field name="res_model">sii.dte.incoming</field>
+			<field name="view_mode">tree,form</field>
+			<!--<field name="target">inline</field>-->
+		</record>
+
+		<!-- Base Config Settings Menu -->
+		<menuitem id="menu_open_incoming_dte"
+			action="action_open_incoming_dte"
+			name="DTEs Entrantes"
+            groups="account.group_account_manager"
+            parent="account.menu_finance_entries"
+            sequence="1" />
+    </data>
+</odoo>

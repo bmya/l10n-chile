@@ -1,0 +1,38 @@
+id,name,sbif_code,country
+rb_0010,Banco de Chile,"001",Chile
+rb_0011,Banco Edwards,"001",Chile
+rb_0012,Citi,"001",Chile
+rb_0013,Atlas,"001",Chile
+rb_0014,CrediChile,"001",Chile
+rb_0090,Banco Internacional,"009",Chile
+rb_0120,Banco Estado,"012",Chile
+rb_0140,Scotiabank Chile,"014",Chile
+rb_0160,Banco De Credito e Inversiones (BCI),"016",Chile
+rb_0161,Tbanc,"016",Chile
+rb_0162,BCI Nova,"016",Chile
+rb_0270,Corpbanca,"027",Chile
+rb_0271,Banco Condell,"027",Chile
+rb_0280,Banco Bice,"028",Chile
+rb_0310,Hsbc Bank,"031",Chile
+rb_0370,Banco Santander-Chile,"037",Chile
+rb_0371,Banefe,"037",Chile
+rb_0390,Banco Itaú Chile,"039",Chile
+rb_0490,Banco Security,"049",Chile
+rb_0510,Banco Falabella,"051",Chile
+rb_0520,Deutsche Bank,"052",Chile
+rb_0530,Banco Ripley,"053",Chile
+rb_0540,Rabobank Chile (Ex Hns Banco),"054",Chile
+rb_0550,Banco Consorcio (Ex Banco Monex),"055",Chile
+rb_0560,Banco Penta,"056",Chile
+rb_0570,Banco Paris,"057",Chile
+rb_5040,Banco Bilbao Vizcaya Argentaria Chile (BBVA),"504",Chile
+rb_5041,BBVA Express,"504",Chile
+rb_0590,Banco Btg Pactual Chile,"059",Chile
+rb_0170,Banco Do Brasil S.A.,"017",Chile
+rb_0410,Jp Morgan Chase Bank  N. A.,"041",Chile
+rb_0430,Banco De La Nacion Argentina,"043",Chile
+rb_0110,Dresdner Bank Leteinamerika,"011",Chile
+rb_0450,The Bank of Tokyo – Mitsubishi,"045",Chile
+rb_0460,Abn Amro Bank,"046",Chile
+rb_5070,Banco del Desarrollo,"507",Chile
+rb_7340,Banco Conosur,"734",Chile
