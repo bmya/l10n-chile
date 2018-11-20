@@ -1,2 +1,0 @@
-# addons-konos
-Konos Addons

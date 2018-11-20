@@ -1,5 +1,0 @@
-languages:
-  Python: true
-exclude_paths:
-- "*/__openerp__.py"
-- "*/__manifest__.py"
