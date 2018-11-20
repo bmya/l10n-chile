@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<openerp>
+    <data noupdate="1">
+
+
+<record id="exempt_fp" model="account.fiscal.position">
+    <field name="name">Ventas Locales Exentas</field>
+    <field name="active" eval="True"/>
+    <field name="tax_ids/tax_src_id" ref="l10n_cl_chart.IVAV_19"/>
+</record>
+
+
+    </data>
+</openerp>

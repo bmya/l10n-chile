@@ -351,7 +351,6 @@ class Invoice(models.Model):
 </SetDTE>'''.format(RutEmisor, signature_d['subject_serial_number'],
                     RutReceptor, FchResol, NroResol, TmstFirmaEnv, SubTotDTE,
                     EnvioDTE)
-        print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
         _logger.error(xml)
         return xml
 
@@ -1622,10 +1621,7 @@ boundary=33b4531a79be4b278de5f5688fab7701',
         }
         r = requests.post(
             host + '/dte/hgen/token', files=dict(file_upload=file_upload))
-        print r
-        print r.text
         if r.status_code == 200:
-            print json.loads(r.text)['token']
             self.docs_online_token = 'https://www.documentosonline.cl/\
 dte/hgen/html/{}'.format(json.loads(r.text)['token'])
             headers['Connection'] = 'keep-alive'
@@ -1633,13 +1629,11 @@ dte/hgen/html/{}'.format(json.loads(r.text)['token'])
             data = {
                 'params': json.loads(r.text)
             }
-            print data
             r = requests.post(
                 host + '/dte/jget',
                 headers=headers,
                 data=json.dumps(data))
             if r.status_code == 200:
-                print r.json()
                 invoice_pdf = json.loads(r.json()['result'])['pdf']
                 attachment_name = self.get_attachment_name(
                     self, call_model=str(self._name))

@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<openerp>
+    <data noupdate="1">
+
+
+<record id="base.CLP" model="res.currency">
+    <field name="sii_code">CLP</field>
+    <field name="name">CLP</field>
+    <field name="symbol">CL$</field>
+</record>
+
+<record id="base.AUD" model="res.currency">
+    <field name="sii_code">AUD</field>
+    <field name="name">AUD</field>
+    <field name="symbol">AU$</field>
+</record>
+
+<record id="base.CAD" model="res.currency">
+    <field name="sii_code">CAD</field>
+    <field name="name">CAD</field>
+    <field name="symbol">CA$</field>
+</record>
+
+<record id="base.GBP" model="res.currency">
+    <field name="sii_code">GBP</field>
+    <field name="name">GBP</field>
+    <field name="symbol">£</field>
+</record>
+
+<record id="base.JPY" model="res.currency">
+    <field name="sii_code">JPY</field>
+    <field name="name">JPY</field>
+    <field name="symbol">¥</field>
+</record>
+
+<record id="base.MXN" model="res.currency">
+    <field name="sii_code">MXN</field>
+    <field name="name">MXN</field>
+    <field name="symbol">MX$</field>
+</record>
+
+<record id="base.USD" model="res.currency">
+    <field name="sii_code">USD</field>
+    <field name="name">USD</field>
+    <field name="symbol">U$S</field>
+</record>
+
+<record id="base.UYU" model="res.currency">
+    <field name="sii_code">UYU</field>
+    <field name="name">UYU</field>
+    <field name="symbol">UY$</field>
+</record>
+
+<record id="base.VEF" model="res.currency">
+    <field name="sii_code">VEF</field>
+    <field name="name">VEF</field>
+    <field name="symbol">VE$</field>
+</record>
+
+<record id="base.ARS" model="res.currency">
+    <field name="sii_code">ARS</field>
+    <field name="name">ARS</field>
+    <field name="symbol">AR$</field>
+</record>
+
+<record id="base.EUR" model="res.currency">
+    <field name="sii_code">EUR</field>
+    <field name="name">EUR</field>
+    <field name="symbol">€</field>
+</record>
+
+<record id="base.UTM" model="res.currency">
+    <field name="sii_code">UTM</field>
+    <field name="name">UTM</field>
+    <field name="symbol">UTM</field>
+</record>
+
+<record id="base.UF" model="res.currency">
+    <field name="sii_code">UF</field>
+    <field name="name">UF</field>
+    <field name="symbol">UF</field>
+</record>
+
