@@ -1,24 +1,7 @@
 <odoo>
 
     <template id="journal_book_pdf_menu_view">
-        <!--<t t-name="journal_book">
-            <t t-call="web.html_container">
-                <t t-call="web.external_layout">
-                    <div class="page">
-                        <div class="row">
-                            <div class="col-md-12 text-center">
-                                <h3>Libro Diario</h3>
-                                <p>Test de plantilla</p>
-                                <p>
-                                    <span t-esc="data"/>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </t>
-            </t>
-        </t>
-    </template>-->
+
         <t t-name="journal_book">
             <t t-call="web.html_container">
                 <t t-foreach="docs" t-as="doc">
@@ -262,24 +245,7 @@
 
                             </table>
                         </div>
-        <!--                    <t t-foreach foreach period in periods>
-            <foreach move in objects.search([('id', 'in', objects.ids),('date', '>=', period[0]),('date', '<=', period[1]), ('journal_id.book_group_id', '=', False)], order='date')>-->
-                <!-- incrementar nro --> formatLang(move.date, date='True') display_name
-        <!--            <foreach each="line in move.line_ids.sorted(lambda x: x.credit)">
-                    python://line.account_id.name python://line.debit python://line.credit
 
-                </foreach>
-
-            </foreach>
-            <foreach python://for each="group in objects.env['account.move.line'].search(
-                [('move_id', 'in', objects.ids),('date', '>=', period[0]),('date', '<=', period[1]), ('journal_id.book_group_id', '!=', False)]).mapped('journal_id.book_group_id')">-->
-                <!-- incrementar nro -->
-                <!--python://formatLang(period[1], date='True') python://group.name
-                <foreach each="line in objects.env['account.move.line'].read_group([('move_id', 'in', objects.ids),('date', '>=', period[0]),('date', '<=', period[1]), ('journal_id.book_group_id', '=', group.id), ('debit', '>', 0.0)], ['account_id', 'debit', 'credit'], ['account_id'], orderby='debit desc') + objects.env['account.move.line'].read_group([('move_id', 'in', objects.ids), ('date', '>=', period[0]),('date', '<=', period[1]),('journal_id.book_group_id', '=', group.id), ('credit', '>', 0.0)], ['account_id', 'debit', 'credit'], ['account_id'], orderby='debit desc')"
-                    python://objects.env['account.account'].browse(line['account_id'][0]).name python://line.debit python://line.credit
-                </foreach>
-            </foreach>
-         </foreach>-->
 
                         <div class="row">
                             <div class="col-md-12 text-center" style="font-size:9px;">
