@@ -8,12 +8,16 @@
                 print_report_name="'Extracto de Líneas del Diario'"
                 paperformat="base.paperformat_euro"
                 model="account.move.line"/>
+        -->
+        <report
+                id="account_journal_book_xlsx"
+                model="account.move"
+                string="Print to XLSX"
+                report_type="xlsx"
+                name="l10n_cl_account_journal_reports.journal_xlsx"
+                file="l10n_cl_account_journal_reports.journal_xlsx"
+                attachment_use="False"
+        />
 
-        <report id="account_journal_book_xlsx"
-            model="account.move"
-            string="Print to XLSX"
-            report_type="xlsx"
-            name="journal_xlsx"
-            file="Account Journal Book Report XLSX"
-            attachment_use="False"/>-->
+
 </odoo>
