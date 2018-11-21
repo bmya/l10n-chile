@@ -200,7 +200,6 @@
                                 </thead>
                                 <tbody>
                                     <t t-set="move" t-value="'999'"/>
-                                    <!--<foreach move in objects.search([('id', 'in', objects.ids),('date', '>=', period[0]),('date', '<=', period[1]), ('journal_id.book_group_id', '=', False)], order='date')>-->
                                     <t t-foreach="docs.search([('id', 'in', docs.ids), ('move_id.state', '=', 'posted')], order='id')" t-as="doc">
                                         <t t-if="move != doc.move_id.name">
                                             <t t-set="move" t-value="doc.move_id.name"/>
