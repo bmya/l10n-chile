@@ -17,6 +17,5 @@
                 report_name="journal_xlsx"
                 name="journal_xlsx"
                 file="journal_xlsx"
-                attachment_use="False"
-        />
+                attachment_use="False"/>
 </odoo>
