@@ -206,3 +206,6 @@ class JournalXlsx(ReportXlsx):
                     sheet.write(row, 3, '', cell_format)
                 sheet.write_number(row, 4, l.debit, cell_format)
                 sheet.write_number(row, 5, l.credit, cell_format)
+
+
+JournalXlsx('report.journal_xlsx', 'account.common.journal.report')
