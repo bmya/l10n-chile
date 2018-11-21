@@ -14,7 +14,6 @@
                 model="account.move"
                 string="Print to XLSX"
                 report_type="xlsx"
-                report_name="journal_xlsx"
                 name="journal_xlsx"
                 file="journal_xlsx"
                 attachment_use="False"/>
