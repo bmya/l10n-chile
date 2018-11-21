@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import _, api, fields, models
 from dateutil.relativedelta import relativedelta
+from odoo.addons.report_xlsx.report.report_xlsx import ReportXlsx
 import xmltodict
 from odoo.exceptions import UserError
 
@@ -123,9 +124,7 @@ class AccountJournalBookWizard(models.TransientModel):
         return self._print_report_xlsx(data)
 
 
-class JournalXlsx(models.AbstractModel):
-    _name = "report.journal_xlsx"
-    # _inherit = 'report.report_xlsx.abstract'
+class JournalXlsx(ReportXlsx):
 
     @staticmethod
     def generate_xlsx_report(workbook, data, records):
