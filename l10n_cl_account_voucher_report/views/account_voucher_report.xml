@@ -1,4 +1,5 @@
 <odoo>
+    <data>
     <template id="account_voucher_report_pdf_view">
         <t t-name="account_cl_voucher">
             <t t-call="web.html_container">
@@ -85,7 +86,7 @@
             </t>
         </t>
     </template>
-    <report id="account_voucher_report_pdf  "
+    <report id="account_voucher_report_pdf"
             name="l10n_cl_account_voucher_report.account_voucher_report_pdf_view"
             string="Comprobante Contable"
             report_type="qweb-pdf"
@@ -101,4 +102,5 @@
           view_mode="form"
           target="new"
           view_type="form" />
+</data>
 </odoo>
