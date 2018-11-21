@@ -127,6 +127,7 @@ class AccountJournalBookWizard(models.TransientModel):
 class JournalXlsx(ReportXlsx):
 
     def generate_xlsx_report(self, workbook, data, records):
+        records = self.env['account.move'].browse(records.ids)
         active_model = self.env.context.get('active_model', 'ir.ui.menu')
         _logger.info('data: %s, records: %s' % (data, records))
         report_name = 'Libro Diario'
