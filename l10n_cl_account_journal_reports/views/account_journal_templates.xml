@@ -94,8 +94,7 @@
                             </div>
                             <table class="table table-striped">
                                 <t t-set="journal" t-value="''"/>
-                                <t t-foreach="docs.search([('id', 'in', docs.ids), ('state', '=', 'posted')], order='journal_id, id')" t-as="doc">-->
-                                <!--<t t-foreach="docs.search([('id', 'in', data['moves'].ids), ('state', '=', 'posted')], order='journal_id, id')" t-as="doc">-->
+                                <t t-foreach="docs.search([('id', 'in', docs.ids), ('state', '=', 'posted')], order='journal_id, id')" t-as="doc">
 
                                     <t t-if="journal != doc.journal_id.name">
                                         <t t-set="journal" t-value="doc.journal_id.name"/>
