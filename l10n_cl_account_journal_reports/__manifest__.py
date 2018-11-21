@@ -9,6 +9,7 @@
         # 'report', para 10.0
         'account',
         'account_accountant',
+        'report_xlsx',
     ],
     'license': 'AGPL-3',
     'name': u'Chile - Impresión de Extractos de Diario a partir de asientos o apuntes contables',
