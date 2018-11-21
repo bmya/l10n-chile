@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<odoo>
+    <!--<report id="journal_book_pdf_view_pdf"
+            name="l10n_cl_account_journal_reports.journal_book_pdf_view"
+            string="Extracto Libro Diario"
+            report_type="qweb-pdf"
+            file="'Extracto de Libro Diario'"
+            print_report_name="'Extracto de Libro Diario'"
+            paperformat="base.paperformat_euro"
+            model="account.move"/>-->
+
+    <!--<report id="journal_book_pdf_view_pdf_menu"
+            name="l10n_cl_account_journal_reports.journal_book_pdf_menu_view"
+            string="Libro Diario"
+            report_type="qweb-pdf"
+            file="'Libro Diario'"
+            print_report_name="Libro Diario'"
+            paperformat="base.paperformat_euro"
+            model="account.move"/>-->
+
+    <report id="journal_lines_pdf_view_pdf"
+            name="l10n_cl_account_journal_reports.journal_lines_pdf_view"
+            string="Extracto de Líneas del Diario"
+            report_type="qweb-pdf"
+            file="'Extracto de Líneas del Diario'"
+            print_report_name="'Extracto de Líneas del Diario'"
+            paperformat="base.paperformat_euro"
+            model="account.move.line"/>
+
+    <report id="account_journal_book_xlsx"
+        model="account.move"
+        string="Print to XLSX"
+        report_type="xlsx"
+        name="journal_xlsx"
+        file="Account Journal Book Report XLSX"
+        attachment_use="False"/>
+
+    <!--<act_window id="journal_book_report"
+          multi="True"
+          key2="action_journal_report_multi"
+          name="Extracto Libro Diario"
+          res_model="account.move"
+          src_model="account.move"
+          view_mode="form"
+          target="new"
+          view_type="form" />-->
+
+    <!--<act_window id="account_lines_book_report"
+          multi="True"
+          key2="action_lines_report_multi"
+          name="Extracto Lineas del Libro Diario"
+          res_model="account.move.line"
+          src_model="account.move.line"
+          view_mode="form"
+          target="new"
+          view_type="form" />-->
+</odoo>

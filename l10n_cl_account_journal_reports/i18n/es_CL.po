@@ -1,0 +1,112 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* l10n_cl_account_voucher_report
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 11.0+e-20180814\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-10-21 01:18+0000\n"
+"PO-Revision-Date: 2018-10-20 22:20-0300\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.2\n"
+"Last-Translator: \n"
+"Language: es_CL\n"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "<b>Totals</b>"
+msgstr "<b>Totales</b>"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid ""
+"<br/>\n"
+"                                                Date:"
+msgstr ""
+"<br/>\n"
+"                                                Fecha:"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "<br/><br/>Journal:"
+msgstr "<br/><br/>Auxiliar:"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "<br/>Refference:"
+msgstr "<br/>Referencia:"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "<br/>User:"
+msgstr "<br/>Usuario:"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Account"
+msgstr "Cuenta"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Account Voucher"
+msgstr "Comprobante Contable"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Amnt in other Currency"
+msgstr "Monto en otra moneda"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Analytic Account"
+msgstr "Centro de Costos"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "CL$"
+msgstr "CL$"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Company:"
+msgstr "Compañía:"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Credit"
+msgstr "Haber"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Currency"
+msgstr "Moneda"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Debit"
+msgstr "Debe"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Number:"
+msgstr "Número:"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.ui.view,arch_db:l10n_cl_account_voucher_report.account_voucher_report_pdf_view
+msgid "Reference or Description"
+msgstr "Referencia o Glosa"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.actions.act_window,name:l10n_cl_account_voucher_report.action_voucher_report
+msgid "Voucher Rep."
+msgstr "Comprobante Contable"
+
+#. module: l10n_cl_account_voucher_report
+#: model:ir.actions.report,name:l10n_cl_account_voucher_report.account_voucher_report_pdf
+msgid "Voucher Report"
+msgstr "Comprobante Contable"

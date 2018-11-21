@@ -1,0 +1,105 @@
+<odoo>
+    <template id="account_voucher_report_pdf_view">
+        <t t-name="account_cl_voucher">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="doc">
+                    <t t-call="web.external_layout">
+                        <div class="page">
+                            <div class="row">
+                                <div class="col-md-12 text-center">
+                                    <h2>Account Voucher</h2>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <h4>Company: <span t-field="doc.partner_id"/>
+                                                <br/>
+                                                Date: <span t-field="doc.date"/>
+                                                <br/>Refference: <span t-field="doc.ref"/>
+                                                <br/>User: <span t-field="doc.write_uid.name"/>
+                                                </h4>
+                                            </td>
+                                            <td class="text-right">
+                                                <h4>
+                                                    Number: <span t-field="doc.name"/>
+                                                    <br/><br/>Journal: <span t-field="doc.journal_id"/>
+                                                </h4>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="row">
+                                <table class="table table-striped">
+                                    <thead>
+                                      <tr>
+                                        <th>Account</th>
+                                        <th>Reference or Description</th>
+                                        <th>Analytic Account</th>
+                                        <th>Amnt in other Currency</th>
+                                        <th>Currency</th>
+                                        <th>Debit</th>
+                                        <th>Credit</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-set="t_debit" t-value="0.0"/>
+                                        <t t-set="t_credit" t-value="0.0"/>
+                                        <t t-foreach="doc.line_ids" t-as="l">
+                                            <tr>
+                                                <td><span t-field="l.account_id"/></td>
+                                                <td><span t-field="l.name"/></td>
+                                                <td><span t-field="l.analytic_account_id"/></td>
+                                                <td class="text-right"><span t-field="l.amount_currency"/></td>
+                                                <td><span t-field="l.currency_id"/></td>
+                                                <td class="text-right"><span t-field="l.debit"/></td>
+                                                <td class="text-right"><span t-field="l.credit"/></td>
+                                            </tr>
+                                            <t t-set="t_debit" t-value="t_debit + l.debit"/>
+                                            <t t-set="t_credit" t-value="t_credit + l.credit"/>
+                                        </t>
+                                        <tr>
+                                            <td colspan="5">
+                                                <b>Totals</b>
+                                            </td>
+                                            <td class="text-right">
+                                                <b>
+                                                    CL$ <span t-esc="'{:20,.0f}'.format(t_debit).replace(',','.')"/>
+                                                </b>
+                                            </td>
+                                            <td class="text-right">
+                                                <b>
+                                                    CL$ <span t-esc="'{:20,.0f}'.format(t_credit).replace(',','.')"/>
+                                                </b>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </t>
+    </template>
+    <report id="account_voucher_report_pdf  "
+            name="l10n_cl_account_voucher_report.account_voucher_report_pdf_view"
+            string="Comprobante Contable"
+            report_type="qweb-pdf"
+            file="'Comprobante Contable Folio %s' % (object.name)"
+            print_report_name="'Comprobante Contable Folio %s' % (object.name)"
+            model="account.move"/>
+    <act_window id="action_voucher_report"
+          multi="True"
+          key2="action_voucher_multi"
+          name="Comprobante Contable"
+          res_model="account.move"
+          src_model="account.move"
+          view_mode="form"
+          target="new"
+          view_type="form" />
+</odoo>
+
