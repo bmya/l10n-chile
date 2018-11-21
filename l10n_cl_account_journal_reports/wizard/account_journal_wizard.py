@@ -106,7 +106,7 @@ class AccountJournalBookWizard(models.TransientModel):
             '\n\n\n\n\n Periods: %s, last_entry_number: %s, data: %s' % (periods, self.last_entry_number, data))
         # return self.env.ref(
         #     'l10n_cl_account_journal_reports.account_journal_book_xlsx').report_action(records, data=data)
-
+        # l10n_cl_account_journal_reports.account_journal_book_xlsx
         return self.env['report'].get_action(
             records, 'l10n_cl_account_journal_reports.account_journal_book_xlsx', data=data)
 
