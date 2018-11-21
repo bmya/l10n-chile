@@ -41,7 +41,7 @@
     <menuitem
         id="menu_action_journal_form"
         action="action_journal_pdf_xlsx_view"
-        parent="account.account_menu_finance_reports"
+        parent="account_reports.account_reports_legal_statements_menu"
         groups="account.group_account_manager"
         sequence="20"/>
 </data>

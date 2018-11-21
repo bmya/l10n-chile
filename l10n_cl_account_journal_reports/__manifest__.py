@@ -6,7 +6,7 @@
     'category': 'Localization/Chile',
     'demo_xml': [],
     'depends': [
-        # 'report', para 10.0
+        'report',
         'account',
         'account_accountant',
         'report_xlsx',
