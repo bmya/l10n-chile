@@ -1,5 +1,6 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <data>
         <!--<report id="journal_lines_pdf_view_pdf"
                 name="l10n_cl_account_journal_reports.journal_lines_pdf_view"
                 string="Extracto de Líneas del Diario"
@@ -18,6 +19,5 @@
                 file="l10n_cl_account_journal_reports.journal_xlsx"
                 attachment_use="False"
         />
-
-
+    </data>
 </odoo>
