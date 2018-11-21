@@ -19,7 +19,6 @@
                             <table class="table table-striped">
                                 <t t-set="journal" t-value="''"/>
                                 <t t-foreach="docs.search([('id', 'in', data['moves'].ids), ('state', '=', 'posted')], order='journal_id, id')" t-as="doc">
-
                                     <t t-if="journal != doc.journal_id.name">
                                         <t t-set="journal" t-value="doc.journal_id.name"/>
                                         <thead>
@@ -79,8 +78,6 @@
             </t>
         </t>
     </template>
-
-
     <template id="journal_book_pdf_view">
         <t t-name="journal_book">
             <t t-call="web.html_container">
@@ -173,27 +170,14 @@
                                 <h3>Extracto de Líneas del Libro Diario</h3>
                             </div>
                         </div>
-                        <!--<div class="row">
-                            <table class="table">
-                                <tbody>
-                                    <tr>
-                                        <td>Encabezado - A determinar</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>-->
                         <div class="row">
                             <table class="table table-striped">
                                 <thead>
                                     <tr style="font-size:10px;">
-                                        <!--<th>Nº</th>-->
-                                        <!--<th>Fecha</th>-->
                                         <th>Cod. Cta</th>
                                         <th>Cta</th>
-                                        <!--<th>Ent. Comercial</th>-->
                                         <th>Ctro. Costos</th>
                                         <th>Glosa</th>
-                                        <!--<th>Ref</th>-->
                                         <th>Débito</th>
                                         <th>Crédito</th>
                                     </tr>
@@ -226,14 +210,10 @@
                                             </tr>
                                         </t>
                                         <tr style="font-size:10px;">
-                                            <!--<td><span t-field="doc.move_id.name"/></td>-->
-                                            <!--<td><span t-field="doc.date"/></td>-->
                                             <td><span t-field="doc.account_id.code"/></td>
                                             <td><span t-field="doc.account_id.name"/></td>
-                                            <!--<td><span t-field="doc.partner_id.name"/></td>-->
                                             <td><span t-field="doc.analytic_account_id.name"/></td>
                                             <td><span t-field="doc.name"/></td>
-                                            <!--<td><span t-field="doc.move_id.document_type_id.doc_code_prefix"/>-<span t-field="doc.move_id.document_number"/></td>-->
                                             <td class="text-right"><span t-field="doc.debit"/></td>
                                             <td class="text-right"><span t-field="doc.credit"/></td>
                                         </tr>
@@ -242,8 +222,6 @@
 
                             </table>
                         </div>
-
-
                         <div class="row">
                             <div class="col-md-12 text-center" style="font-size:9px;">
                                 <p>Corresponde a un extracto del libro diario, tomado desde la pantalla del sistema. Puede no contener todos los asientos si no se han solicitado todos.</p>

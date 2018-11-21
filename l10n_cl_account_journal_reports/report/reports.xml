@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <odoo>
-    <data>
-        <report id="journal_lines_pdf_view_pdf"
+        <!--<report id="journal_lines_pdf_view_pdf"
                 name="l10n_cl_account_journal_reports.journal_lines_pdf_view"
                 string="Extracto de Líneas del Diario"
                 report_type="qweb-pdf"
@@ -16,6 +15,5 @@
             report_type="xlsx"
             name="journal_xlsx"
             file="Account Journal Book Report XLSX"
-            attachment_use="False"/>
-    </data>
+            attachment_use="False"/>-->
 </odoo>
