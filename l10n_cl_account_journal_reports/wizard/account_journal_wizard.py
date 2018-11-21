@@ -121,7 +121,7 @@ class AccountJournalBookWizard(models.TransientModel):
 
 class JournalXlsx(models.AbstractModel):
     _name = "report.journal_xlsx"
-    _inherit = 'report.report_xlsx.abstract'
+    # _inherit = 'report.report_xlsx.abstract'
 
     @staticmethod
     def generate_xlsx_report(workbook, data, records):
