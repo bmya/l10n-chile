@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="account_voucher_report_pdf_view">
         <t t-name="account_cl_voucher">
