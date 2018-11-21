@@ -185,10 +185,10 @@ class JournalXlsx(ReportXlsx):
                 sheet.write(row, 2, obj.ref, entry_format)
             else:
                 sheet.write(row, 2, '', entry_format)
-            if obj.document_type_id.doc_code_prefix and obj.document_number:
+            if obj.document_class_id.doc_code_prefix and obj.document_number:
                 sheet.write(
                     row, 3, 'Ref: %s %s' % (
-                        obj.document_type_id.doc_code_prefix, obj.document_number), entry_format)
+                        obj.document_class_id.doc_code_prefix, obj.document_number), entry_format)
             else:
                 sheet.write(row, 3, '', entry_format)
             sheet.write(row, 4, '', entry_format)
