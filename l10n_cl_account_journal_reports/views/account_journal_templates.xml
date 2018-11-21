@@ -1,5 +1,5 @@
 <odoo>
-
+<data>
     <template id="journal_book_pdf_menu_view">
 
         <t t-name="journal_book">
@@ -257,5 +257,5 @@
             </t>
         </t>
     </template>
+</data>
 </odoo>
-

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
+<data>
     <record id="account_journal_wizard" model="ir.ui.view">
         <field name="name">Print journal by entries</field>
         <field name="model">account.journal.sheet.report</field>
@@ -23,19 +23,6 @@
         </field>
     </record>
 
-    <!--<record id="action_move_books" model="ir.actions.act_window">
-        <field name="name">Libro Diario</field>
-        <field name="res_model">account.move</field>
-        <field name="view_type">form</field>
-        <field name="view_mode">form</field>
-        <field name="view_id" ref="l10n_cl_account_journal_reports.account_journal_wizard"/>
-        <field name="help" type="html">
-            <p class="oe_view_nocontent_create">
-                Click to get the Journal Book
-            </p>
-        </field>
-    </record>-->
-
     <record id="action_journal_pdf_xlsx_view" model="ir.actions.act_window">
         <field name="name">Libro Diario</field>
         <field name="type">ir.actions.act_window</field>
@@ -57,6 +44,5 @@
         parent="account.account_reports_legal_statements_menu"
         groups="account.group_account_manager"
         sequence="20"/>
-
+</data>
 </odoo>
-

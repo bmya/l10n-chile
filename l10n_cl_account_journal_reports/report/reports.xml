@@ -1,23 +1,21 @@
 <?xml version="1.0"?>
 <odoo>
+    <data>
+        <report id="journal_lines_pdf_view_pdf"
+                name="l10n_cl_account_journal_reports.journal_lines_pdf_view"
+                string="Extracto de Líneas del Diario"
+                report_type="qweb-pdf"
+                file="'Extracto de Líneas del Diario'"
+                print_report_name="'Extracto de Líneas del Diario'"
+                paperformat="base.paperformat_euro"
+                model="account.move.line"/>
 
-
-    <report id="journal_lines_pdf_view_pdf"
-            name="l10n_cl_account_journal_reports.journal_lines_pdf_view"
-            string="Extracto de Líneas del Diario"
-            report_type="qweb-pdf"
-            file="'Extracto de Líneas del Diario'"
-            print_report_name="'Extracto de Líneas del Diario'"
-            paperformat="base.paperformat_euro"
-            model="account.move.line"/>
-
-    <report id="account_journal_book_xlsx"
-        model="account.move"
-        string="Print to XLSX"
-        report_type="xlsx"
-        name="journal_xlsx"
-        file="Account Journal Book Report XLSX"
-        attachment_use="False"/>
-
-
+        <report id="account_journal_book_xlsx"
+            model="account.move"
+            string="Print to XLSX"
+            report_type="xlsx"
+            name="journal_xlsx"
+            file="Account Journal Book Report XLSX"
+            attachment_use="False"/>
+    </data>
 </odoo>
