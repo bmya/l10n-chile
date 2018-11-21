@@ -150,7 +150,7 @@ class JournalXlsx(ReportXlsx):
         # sheet.merge_range('A6:B6', "Periodo Tributario", bold)
 
         sheet.merge_range('C3:F3', records[0].company_id.name, bold)
-        sheet.merge_range('C4:F4', records[0].company_id.document_number, bold)
+        sheet.merge_range('C4:F4', records[0].company_id.partner_id.document_number, bold)
         date_emision = records[0].date[8:] + '-' + records[0].date[5:7] + '-' + records[0].date[:4]
         sheet.merge_range('C5:F5', date_emision, bold)
         # # sheet.merge_range('C6:D6', obj.fiscal_period, center)
