@@ -10,7 +10,7 @@
                 model="account.move.line"/>
         -->
         <report
-                id="account_journal_book_xlsx"
+                id="l10n_cl_account_journal_reports.account_journal_book_xlsx"
                 model="account.move"
                 string="Print to XLSX"
                 report_type="xlsx"
