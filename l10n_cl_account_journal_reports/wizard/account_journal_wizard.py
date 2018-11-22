@@ -36,17 +36,6 @@ class AccountJournalBookWizard(models.TransientModel):
         required=True,
     )
 
-    # target_move = fields.Char('Target Move')  # definido por mi para evitar error
-    # company_id = fields.Many2one('Company')
-
-    # @api.onchange('company_id')
-    # def _onchange_company_id(self):
-    #     dates = self.company_id.compute_fiscalyear_dates(
-    #         fields.Date.from_string(fields.Date.today()))
-    #     if dates:
-    #         self.date_from = dates['date_from']
-    #         self.date_to = dates['date_to']
-
     @api.multi
     def _print_report(self, data):
         date_from = fields.Date.from_string(self.date_from)
@@ -105,9 +94,6 @@ class AccountJournalBookWizard(models.TransientModel):
         data['model'] = 'account.move'
         _logger.info(
             '\n\n\n\n\n Periods: %s, last_entry_number: %s, data: %s' % (periods, self.last_entry_number, data))
-        # return self.env.ref(
-        #     'l10n_cl_account_journal_reports.account_journal_book_xlsx').report_action(records, data=data)
-        # l10n_cl_account_journal_reports.account_journal_book_xlsx
         return self.env['report'].get_action(
             records, 'journal_xlsx', data=data)
 
