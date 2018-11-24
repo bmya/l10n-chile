@@ -173,11 +173,11 @@ class JournalXlsx(ReportXlsx):
             sheet.write(row, 2, '', entry_format)
             sheet.write(row, 3, '', entry_format)
             if obj.document_number:
-                sheet.write(row, 4, 'DOC Nº: %s' % obj.document_number, entry_format)
-                sheet.write(row, 5, '', entry_format)
+                sheet.write(row, 4, '', entry_format)
+                sheet.write(row, 5, 'DOC Nº: %s' % obj.document_number, entry_format)
             elif obj.ref:
-                sheet.write(row, 4, 'REF:', entry_format)
-                sheet.write(row, 5, obj.ref, entry_format)
+                sheet.write(row, 4, obj.ref, entry_format)
+                sheet.write(row, 5, 'REF:', entry_format)
             else:
                 sheet.write(row, 4, '', entry_format)
                 sheet.write(row, 5, '', entry_format)
