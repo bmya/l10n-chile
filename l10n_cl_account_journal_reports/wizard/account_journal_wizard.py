@@ -147,7 +147,7 @@ class JournalXlsx(ReportXlsx):
         })
         entry_format_centered = workbook.add_format({
             'bg_color': '#e6e6e6',
-            'text-align': 'center';
+            'text-align': 'center',
         })
         bold = workbook.add_format({'bold': True})
 
