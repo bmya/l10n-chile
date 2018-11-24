@@ -169,17 +169,20 @@ class JournalXlsx(ReportXlsx):
 
             date_day = obj.date[8:] + '-' + obj.date[5:7] + '-' + obj.date[:4]
             sheet.write(row, 0, date_day, entry_format)
-            sheet.write(row, 1, obj.name, entry_format)
-            if obj.ref:
-                sheet.write(row, 2, obj.ref, entry_format)
-            else:
-                sheet.write(row, 2, '', entry_format)
+            sheet.write(row, 1, ASIENTO Nº, entry_format)
+            sheet.write(row, 2, obj.name, entry_format)
             if obj.document_number:
-                sheet.write(row, 3, obj.document_number, entry_format)
+                sheet.write(row, 4, 'DOC:', entry_format)
+                sheet.write(row, 5, obj.document_number, entry_format)
+            elif obj.ref:
+                sheet.write(row, 4, 'REF:', entry_format)
+                sheet.write(row, 5, obj.ref, entry_format)
             else:
-                sheet.write(row, 3, '', entry_format)
-            sheet.write(row, 4, '', entry_format)
-            sheet.write(row, 5, '', entry_format)
+                sheet.write(row, 4, '', entry_format)
+                sheet.write(row, 5, '', entry_format)
+            sheet.write(row, 6, '', entry_format)
+            sheet.write(row, 7, '', entry_format)
+            sheet.write(row, 8, '', entry_format)
             for l in obj.line_ids:
                 row += 1
                 sheet.write(row, 0, l.account_id.code, cell_format)
