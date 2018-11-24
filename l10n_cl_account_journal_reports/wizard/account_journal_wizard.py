@@ -157,10 +157,13 @@ class JournalXlsx(ReportXlsx):
                 row += 1
                 sheet.write(row, 0, 'Cod. Cta', bold)
                 sheet.write(row, 1, 'Cta', bold)
-                sheet.write(row, 2, 'Glosa', bold)
-                sheet.write(row, 3, 'Ctro. Costos', bold)
-                sheet.write(row, 4, 'Débito', bold)
-                sheet.write(row, 5, 'Crédito', bold)
+                sheet.write(row, 2, 'Ctro. Costos', bold)
+                sheet.write(row, 3, 'Auxiliar (RUT)', bold)
+                sheet.write(row, 4, 'Auxiliar (Nombre)', bold)
+                sheet.write(row, 5, 'Nº Documento Asoc.', bold)
+                sheet.write(row, 6, 'Glosa', bold)
+                sheet.write(row, 7, 'Débito', bold)
+                sheet.write(row, 8, 'Crédito', bold)
                 journal = obj.journal_id.name
                 row += 1
 
@@ -183,16 +186,24 @@ class JournalXlsx(ReportXlsx):
                 row += 1
                 sheet.write(row, 0, l.account_id.code, cell_format)
                 sheet.write(row, 1, l.account_id.name, cell_format)
-                if l.name:
-                    sheet.write(row, 2, l.name, cell_format)
+                if l.analytic_account_id.name:
+                    sheet.write(row, 2, l.analytic_account_id.name, cell_format)
                 else:
                     sheet.write(row, 2, '', cell_format)
-                if l.analytic_account_id.name:
-                    sheet.write(row, 3, l.analytic_account_id.name, cell_format)
+                if l.partner_id:
+                    sheet.write(row, 3, l.partner_id.document_number, cell_format)
+                    sheet.write(row, 4, l.partner_id.name, cell_format)
+                if obj.document_number:
+                    sheet.write(row, 5, obj.document_number)
                 else:
-                    sheet.write(row, 3, '', cell_format)
-                sheet.write_number(row, 4, l.debit, cell_format)
-                sheet.write_number(row, 5, l.credit, cell_format)
+                    sheet.write(row, 5, obj.ref)
+                if l.name:
+                    sheet.write(row, 6, l.name, cell_format)
+                else:
+                    sheet.write(row, 6, '', cell_format)
+
+                sheet.write_number(row, 7, l.debit, cell_format)
+                sheet.write_number(row, 8, l.credit, cell_format)
 
 
 JournalXlsx('report.journal_xlsx', 'account.common.journal.report')
