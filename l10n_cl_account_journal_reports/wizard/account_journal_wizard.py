@@ -169,7 +169,7 @@ class JournalXlsx(ReportXlsx):
 
             date_day = obj.date[8:] + '-' + obj.date[5:7] + '-' + obj.date[:4]
             sheet.write(row, 0, date_day, entry_format)
-            sheet.write(row, 1, ASIENTO Nº, entry_format)
+            sheet.write(row, 1, 'ASIENTO Nº', entry_format)
             sheet.write(row, 2, obj.name, entry_format)
             if obj.document_number:
                 sheet.write(row, 4, 'DOC:', entry_format)
