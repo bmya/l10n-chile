@@ -129,16 +129,16 @@ class JournalXlsx(ReportXlsx):
         })
         # sheet.set_column(0, 15, 18)
 
-        sheet.merge_range('A1:F1', "LIBRO DIARIO", bold)
+        sheet.merge_range('A1:I1', "LIBRO DIARIO", bold)
         sheet.merge_range('A3:B3', "Nombre o Razón Social", bold)
         sheet.merge_range('A4:B4', "Rol Único Tributario", bold)
         sheet.merge_range('A5:B5', "Fecha Inicial", bold)
         # sheet.merge_range('A6:B6', "Periodo Tributario", bold)
 
-        sheet.merge_range('C3:F3', records[0].company_id.name, bold)
-        sheet.merge_range('C4:F4', records[0].company_id.partner_id.document_number, bold)
+        sheet.merge_range('C3:I3', records[0].company_id.name, bold)
+        sheet.merge_range('C4:I4', records[0].company_id.partner_id.document_number, bold)
         date_emision = records[0].date[8:] + '-' + records[0].date[5:7] + '-' + records[0].date[:4]
-        sheet.merge_range('C5:F5', date_emision, bold)
+        sheet.merge_range('C5:I5', date_emision, bold)
         # # sheet.merge_range('C6:D6', obj.fiscal_period, center)
 
         cell_format = workbook.add_format()
@@ -153,7 +153,7 @@ class JournalXlsx(ReportXlsx):
         for obj in records:
             row += 3
             if journal != obj.journal_id.name:
-                sheet.merge_range('A{0}:F{0}'.format(row), "DIARIO: %s" % obj.journal_id.name, bold1)
+                sheet.merge_range('A{0}:I{0}'.format(row), "DIARIO: %s" % obj.journal_id.name, bold1)
                 row += 1
                 sheet.write(row, 0, 'Cod. Cta', bold)
                 sheet.write(row, 1, 'Cta', bold)
@@ -174,10 +174,8 @@ class JournalXlsx(ReportXlsx):
                 sheet.write(row, 2, obj.ref, entry_format)
             else:
                 sheet.write(row, 2, '', entry_format)
-            if obj.document_class_id.doc_code_prefix and obj.document_number:
-                sheet.write(
-                    row, 3, 'Ref: %s %s' % (
-                        obj.document_class_id.doc_code_prefix, obj.document_number), entry_format)
+            if obj.document_number:
+                sheet.write(row, 3, obj.document_number, entry_format)
             else:
                 sheet.write(row, 3, '', entry_format)
             sheet.write(row, 4, '', entry_format)
