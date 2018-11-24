@@ -145,6 +145,10 @@ class JournalXlsx(ReportXlsx):
         entry_format = workbook.add_format({
             'bg_color': '#e6e6e6',
         })
+        entry_format_centered = workbook.add_format({
+            'bg_color': '#e6e6e6',
+            'text-align': 'center';
+        })
         bold = workbook.add_format({'bold': True})
 
         row = 5
@@ -182,8 +186,8 @@ class JournalXlsx(ReportXlsx):
                 sheet.write(row, 4, '', entry_format)
                 sheet.write(row, 5, '', entry_format)
             sheet.write(row, 6, '', entry_format)
-            sheet.write(row, 7, '', entry_format)
-            sheet.write(row, 8, '', entry_format)
+            sheet.write(row, 7, 'D', entry_format_centered)
+            sheet.write(row, 8, 'H', entry_format_centered)
             for l in obj.line_ids:
                 row += 1
                 sheet.write(row, 0, l.account_id.code, cell_format)
