@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="account_ledger_wizard" model="ir.ui.view">
+            <field name="name">Account Range</field>
+            <field name="model">account.report.general.ledger</field>
+            <field name="type">form</field>
+            <field name="inherit_id" ref="account.account_report_general_ledger_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='target_move']" position="after">
+                    <field name="from_account"/>
+                    <field name="to_account"/>
+                    <newline/>
+                </xpath>
+                <!--<field name="journal_ids" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </field>
+                <button name="check_report" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </button>
+                <button name="check_report" position="after">
+                    <button name="check_report_xlsx" string="Print XLSX" type="object" class="oe_highlight"/>
+                </button>-->
+            </field>
+        </record>
+    </data>
+</odoo>

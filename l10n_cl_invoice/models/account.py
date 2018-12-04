@@ -258,6 +258,24 @@ class AccountMove(models.Model):
             'exento'] - imps['iva']
         return imps
 
+    @api.multi
+    @api.depends(
+        'name', 'state',
+        'document_number', 'document_class_id.doc_code_prefix')
+    def name_get(self):
+        """
+        We overwrite default name_get function to use document_number if
+        available
+        """
+        result = []
+        for move in self:
+            if move.state == 'draft':
+                name = '* ' + str(move.id)
+            else:
+                name = move.display_name
+            result.append((move.id, name))
+        return result
+
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"

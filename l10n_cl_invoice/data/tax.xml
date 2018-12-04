@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="0">
+    <data noupdate="1">
         <record id="l10n_cl_chart.IVAV_19" model="account.tax.template">
           <field name="sii_code">14</field>
         </record>
         <record id="l10n_cl_chart.IVAC_19" model="account.tax.template">
           <field name="sii_code">14</field>
         </record>
-        <record id="retencion_iva" model="account.tax.template">
+        <!--<record id="retencion_iva" model="account.tax.template">
           <field name="chart_template_id" ref="l10n_cl_chart.cl_chart_template_bmya"/>
           <field name="sii_code">15</field>
           <field name="name">Retención Total IVA</field>
@@ -53,6 +53,6 @@
           <field name="no_rec" eval="True" />
           <field name="refund_account_id" ref="l10n_cl_chart.210760"/>
           <field name="account_id" ref="l10n_cl_chart.210760"/>
-        </record>
+        </record>-->
     </data>
 </odoo>
