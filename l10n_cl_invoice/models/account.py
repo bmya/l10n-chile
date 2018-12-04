@@ -272,7 +272,7 @@ class AccountMove(models.Model):
             if move.state == 'draft':
                 name = '* ' + str(move.id)
             else:
-                name = move.display_name
+                name = move.document_number
             result.append((move.id, name))
         return result
 
