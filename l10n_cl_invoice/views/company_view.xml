@@ -13,10 +13,11 @@
                 <field name="company_activities_ids" position="replace">
                     <field name="tp_sii_code" invisible="True"/>
                     <field name="company_activities_ids"
-                        placeholder="Giros de La Compañia" widget="many2many_tags"
+                        placeholder="Actividades de La Compañia" widget="many2many_tags"
                         options="{'no_create': True}"
-                        domain="[('parent_id', '>=', 1),
-                        ('tax_category', '=', tp_sii_code)]"/>
+                           domain="[('new_activity', '=', True),
+                                ('tax_category', '=', tp_sii_code)]"
+                        context="{'search_by_code': True}"/>
                 </field>
                 <field name="website" position="after">
                     <group name="account_grp">

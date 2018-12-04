@@ -89,21 +89,25 @@ class AccountInvoiceTax(models.Model):
 class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
-    # @api.one
-    # def _get_outstanding_info_JSON(self):
-    #     account_move_obj = self.env['account.move']
-    #     result = super(AccountInvoice, self)._get_outstanding_info_JSON()
-    #     outstanding_info = json.loads(self.outstanding_credits_debits_widget)
-    #     if outstanding_info:
-    #         outstanding_info['content'] = []
-    #         for content in json.loads(self.outstanding_credits_debits_widget)['content']:
-    #             c = content
-    #             _logger.info('journal name: %s' % content['journal_name'])
-    #             account_move_id = account_move_obj.search([('name', '=', content['journal_name'])])
-    #             if len(account_move_id) == 1 and account_move_id.document_number:
-    #                 c['journal_name'] = account_move_id.document_number
-    #             outstanding_info['content'].append(c)
-    #         self.outstanding_credits_debits_widget = json.dumps(outstanding_info)
+    @api.one
+    def _get_outstanding_info_JSON(self):
+        account_move_line_obj = self.env['account.move.line']
+        result = super(AccountInvoice, self)._get_outstanding_info_JSON()
+        outstanding_info = json.loads(self.outstanding_credits_debits_widget)
+        _logger.info('###########-------------- %s' % outstanding_info)
+        if outstanding_info:
+            outstanding_info['content'] = []
+            for content in json.loads(self.outstanding_credits_debits_widget)['content']:
+                c = content
+                try:
+                    account_move_line_id = account_move_line_obj.search([('id', '=', content['id'])])
+                    if account_move_line_id.move_id.document_number:
+                        c['journal_name'] = account_move_line_id.move_id.document_number
+                        outstanding_info['content'].append(c)
+                except:
+                    _logger.info('NO ENCUENTRA EL ID DE LA CUENTA')
+            _logger.info('============###########-------------- %s' % outstanding_info)
+            self.outstanding_credits_debits_widget = json.dumps(outstanding_info)
 
     def _repair_diff(self, move_lines, dif):
         if move_lines[0][2]['currency_id'] != self.company_id.currency_id:
