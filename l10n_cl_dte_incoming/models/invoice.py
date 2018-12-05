@@ -48,8 +48,8 @@ class Invoice(models.Model):
                     record.journal_document_class_id = document_codes[sale_order_id.document_type]
                     record.journal_document_class_id.sequence_id.number_next_actual = sale_order_id.document_number
                     record.turn_issuer = record.company_id.company_activities_ids[0]
-                    sale_order_id.dte_inc_id[0].invoice_id = record.id
-                    sale_order_id.dte_inc_id[0].flow_status = 'invoice'
+                    # sale_order_id.dte_inc_id[0].invoice_id = record.id
+                    # sale_order_id.dte_inc_id[0].flow_status = 'invoice'
                 try:
                     super(Invoice, self).action_invoice_open()
                     return True
