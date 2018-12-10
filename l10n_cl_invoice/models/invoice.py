@@ -572,9 +572,9 @@ readonly', False)]}, default='1')
                     _('Supplier Invoice Number must be unique per Supplier and \
 Company!'))
 
-    _sql_constraints = [('number_supplier_invoice_number',
-                         'unique(supplier_invoice_number, partner_id, \
-company_id)', 'Supplier Invoice No must be unique per Supplier and Company!')]
+#     _sql_constraints = [('number_supplier_invoice_number',
+#                          'unique(supplier_invoice_number, partner_id, \
+# company_id)', 'Supplier Invoice No must be unique per Supplier and Company!')]
 
     # @api.multi
     # def action_invoice_open(self):
