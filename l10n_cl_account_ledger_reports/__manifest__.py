@@ -13,7 +13,7 @@
     'name': u'Chile - Impresión de Diario Filtrado por Cuenta',
     'test': [],
     'data': [
-        'views/account_ledger_wizard.xml',
+        'wizard/account_ledger_wizard.xml',
     ],
     'installable': True,
     'active': False,
