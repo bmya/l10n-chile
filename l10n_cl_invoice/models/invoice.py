@@ -557,15 +557,17 @@ readonly', False)]}, default='1')
     @api.constrains('supplier_invoice_number', 'partner_id', 'company_id', 'sii_document_class_id', 'state')
     def _check_reference(self):
         if self.state == 'open':
-            domain = [('document_number', '=', self.document_number),
-                      ('sii_document_class_id', '=', self.sii_document_class_id.id),
-                      ('company_id', '=', self.company_id.id),
-                      ('id', '!=', self.id)]
+            if type in ['out_invoice', 'out_refund']:
+                domain = [('document_number', '=', self.document_number)]
+            else:
+                domain = [('supplier_invoice_number', '=', self.supplier_invoice_number)]
+            domain.append(
+                [('sii_document_class_id', '=', self.sii_document_class_id.id),
+                 ('company_id', '=', self.company_id.id),
+                 ('id', '!=', self.id)])
             invoice_ids = self.search(domain)
             if invoice_ids:
-                raise UserError(
-                    _('Supplier Invoice Number must be unique per Supplier and \
-Company!'))
+                raise UserError(_('Invoice Number must be unique per Partner and Company!'))
 
 #     _sql_constraints = [('number_supplier_invoice_number',
 #                          'unique(supplier_invoice_number, partner_id, \
