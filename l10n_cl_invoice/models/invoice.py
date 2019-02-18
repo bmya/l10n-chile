@@ -558,7 +558,7 @@ readonly', False)]}, default='1')
     def _check_reference(self):
         if self.state == 'open':
             domain = [('document_number', '=', self.document_number),
-                      ('sii_document_class_id', '=', self.sii_document_class_id),
+                      ('sii_document_class_id', '=', self.sii_document_class_id.id),
                       ('company_id', '=', self.company_id.id),
                       ('id', '!=', self.id)]
             invoice_ids = self.search(domain)
