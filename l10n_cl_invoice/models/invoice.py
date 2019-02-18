@@ -562,10 +562,9 @@ readonly', False)]}, default='1')
             else:
                 domain = [('supplier_invoice_number', '=', self.supplier_invoice_number)]
             domain.append(
-                [('sii_document_class_id', '=', self.sii_document_class_id.id),
-                 ('company_id', '=', self.company_id.id),
-                 ('id', '!=', self.id)])
-            raise UserError('domain: %s' % domain)
+                ('sii_document_class_id', '=', self.sii_document_class_id.id),
+                ('company_id', '=', self.company_id.id),
+                ('id', '!=', self.id))
             invoice_ids = self.search(domain)
             if invoice_ids:
                 raise UserError(_('Invoice Number must be unique per Partner and Company!'))
