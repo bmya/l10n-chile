@@ -554,15 +554,10 @@ readonly', False)]}, default='1')
     contact_id = fields.Many2one('res.partner', string="Contacto")
 
     @api.one
-    @api.constrains('supplier_invoice_number', 'partner_id', 'company_id', 'sii_document_class_id')
+    @api.constrains('supplier_invoice_number', 'partner_id', 'company_id', 'sii_document_class_id', 'state')
     def _check_reference(self):
-        if self.type in ['out_invoice', 'out_refund', 'in_invoice', 'in_refund'] and self.reference and \
-                        self.state == 'open':
-            domain = [('type', 'in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')),
-                      # ('reference', '=', self.reference),
-                      ('document_number', '=', self.document_number),
-                      # ('journal_document_class_id.sii_document_class_id', '=',
-                      #  self.journal_document_class_id.sii_document_class_id.id),
+        if self.state == 'open':
+            domain = [('document_number', '=', self.document_number),
                       ('sii_document_class_id', '=', self.sii_document_class_id),
                       ('company_id', '=', self.company_id.id),
                       ('id', '!=', self.id)]
