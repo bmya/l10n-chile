@@ -562,6 +562,7 @@ readonly', False)]}, default='1')
             else:
                 domain = [('supplier_invoice_number', '=', self.supplier_invoice_number)]
             domain.extend([
+                ('partner_id', '=', self.partner_id.id),
                 ('sii_document_class_id', '=', self.sii_document_class_id.id),
                 ('company_id', '=', self.company_id.id),
                 ('id', '!=', self.id), ])
