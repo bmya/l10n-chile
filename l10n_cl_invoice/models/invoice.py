@@ -565,7 +565,7 @@ readonly', False)]}, default='1')
                 ('partner_id', '=', self.partner_id.id),
                 ('sii_document_class_id', '=', self.sii_document_class_id.id),
                 ('company_id', '=', self.company_id.id),
-                ('id', '!=', self.id), ])
+                ('id', '!=', self.id), ('state', 'in', ['open', 'paid'])])
             invoice_ids = self.search(domain)
             if invoice_ids:
                 raise UserError(_('Invoice Number must be unique per Partner and Company!'))
