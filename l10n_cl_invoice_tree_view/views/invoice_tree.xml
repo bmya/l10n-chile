@@ -8,7 +8,7 @@
 
             <xpath expr="//field[@name='partner_id'][not(ancestor::field)]" position="before">
                 <field name="id" invisible="1"/>
-                <field name="document_code"/>
+                <!--<field name="document_code"/>-->
                 <field name="vat_id"/>
             </xpath>
             <xpath expr="//tree" position ="attributes">
@@ -67,7 +67,7 @@
 
             <xpath expr="//field[@name='partner_id'][not(ancestor::field)]" position="before">
                 <field name="id" invisible="1"/>
-                <field name="document_code"/>
+                <!--<field name="document_code"/>-->
                 <field name="vat_id"/>
             </xpath>
             <xpath expr="//tree" position ="attributes">
