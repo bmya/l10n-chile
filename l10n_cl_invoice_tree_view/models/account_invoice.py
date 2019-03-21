@@ -14,7 +14,7 @@ class AccountInvoiceTree(models.Model):
     _name = 'account.invoice'
     _inherit = 'account.invoice'
 
-    document_code = fields.Char(related='document_class_id.code', string="Doc Type")
+    document_code = fields.Char(related='sii_document_class_id.code', string="Doc Type")
     vat_id = fields.Char(related='partner_id.document_number', string="RUT")
     amount_untaxed_signed = fields.Monetary(compute='_get_amount_signed', string='Net Amount')
     amount_tax_signed = fields.Monetary(compute='_get_amount_signed', string='Net Amount')
