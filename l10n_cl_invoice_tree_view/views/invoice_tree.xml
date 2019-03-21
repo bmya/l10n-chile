@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="ir.ui.view" id="invoice_supplier_tree">
+        <field name="name">invoice.supplier.tree</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_supplier_tree"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='partner_id'][not(ancestor::field)]" position="before">
+                <field name="id" invisible="1"/>
+                <field name="document_code"/>
+                <field name="vat_id"/>
+            </xpath>
+            <xpath expr="//tree" position ="attributes">
+                <attribute name="default_order">id desc</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Proveedor</attribute>
+            </xpath>
+            <xpath expr="//field[@name='number'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Asiento Contable</attribute>
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='reference'][not(ancestor::field)]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_due'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Vencimiento</attribute>
+            </xpath>
+            <xpath expr="//field[@name='residual_signed'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Saldo a Pagar</attribute>
+            </xpath>
+            <xpath expr="//field[@name='state'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Estado</attribute>
+            </xpath>
+            <xpath expr="//field[@name='origin'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Originada por</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id'][not(ancestor::field)]" position="after">
+                <field name="date"/>
+            </xpath>
+            <xpath expr="//field[@name='date'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Fecha Contable</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_invoice'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Fecha Factura</attribute>
+            </xpath>
+            <xpath expr="//field[@name='origin'][not(ancestor::field)]" position="after">
+                <field name="amount_untaxed_signed" sum="Total Neto"/>
+            </xpath>
+            <xpath expr="//field[@name='amount_untaxed_signed'][not(ancestor::field)]" position="after">
+                <field name="amount_tax_signed" sum="Total Impuestos"/>
+            </xpath>
+            <xpath expr="//field[@name='amount_untaxed_signed'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Monto sin impuestos</attribute>
+            </xpath>
+            <xpath expr="//field[@name='amount_tax_signed'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Impuestos</attribute>
+            </xpath>
+        </field>
+    </record>
+    <record model="ir.ui.view" id="account_invoice_tree">
+        <field name="name">account.invoice.supplier.tree</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_tree"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='partner_id'][not(ancestor::field)]" position="before">
+                <field name="id" invisible="1"/>
+                <field name="document_code"/>
+                <field name="vat_id"/>
+            </xpath>
+            <xpath expr="//tree" position ="attributes">
+                <attribute name="default_order">id desc</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Cliente</attribute>
+            </xpath>
+            <xpath expr="//field[@name='number'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Asiento Contable</attribute>
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_due'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Vencimiento</attribute>
+            </xpath>
+            <xpath expr="//field[@name='residual_signed'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Saldo a Pagar</attribute>
+            </xpath>
+            <xpath expr="//field[@name='state'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Estado</attribute>
+            </xpath>
+            <xpath expr="//field[@name='origin'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Originada por</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id'][not(ancestor::field)]" position="after">
+                <field name="date"/>
+            </xpath>
+            <xpath expr="//field[@name='date'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Fecha Contable</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_invoice'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Fecha Factura</attribute>
+            </xpath>
+            <xpath expr="//field[@name='origin'][not(ancestor::field)]" position="after">
+                <field name="amount_untaxed_signed" sum="Total Neto"/>
+            </xpath>
+            <xpath expr="//field[@name='amount_untaxed_signed'][not(ancestor::field)]" position="after">
+                <field name="amount_tax_signed" sum="Total Impuestos"/>
+            </xpath>
+            <xpath expr="//field[@name='amount_untaxed_signed'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Monto sin impuestos</attribute>
+            </xpath>
+            <xpath expr="//field[@name='amount_tax_signed'][not(ancestor::field)]" position="attributes">
+                <attribute name="string">Impuestos</attribute>
+            </xpath>
+            <xpath expr="//field[@name='reference'][not(ancestor::field)]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
